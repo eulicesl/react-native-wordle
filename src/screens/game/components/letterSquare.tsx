@@ -8,7 +8,6 @@ import Animated, {
   Easing,
   withDelay,
   useDerivedValue,
-  // eslint-disable-next-line
 } from 'react-native-reanimated';
 
 import { useAppSelector } from '../../../hooks/storeHooks';
@@ -16,6 +15,14 @@ import { guess } from '../../../types';
 import { adjustLetterDisplay } from '../../../utils/adjustLetterDisplay';
 import { colors, SIZE } from '../../../utils/constants';
 import interpolateColorBugFix from '../../../utils/interpolateColorFix';
+
+// High contrast color palette
+const highContrastColors = {
+  correct: '#f5793a', // Orange
+  present: '#85c0f9', // Blue
+  absent: '#282828',
+  keyDefault: '#606060',
+};
 
 interface LetterSquareProps {
   guess: guess;
@@ -27,6 +34,11 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
   const { currentGuessIndex, wrongGuessShake, gameLanguage } = useAppSelector(
     (state) => state.gameState
   );
+  const { highContrastMode, hapticFeedback } = useAppSelector(
+    (state) => state.settings
+  );
+  const { theme } = useAppSelector((state) => state.theme);
+
   const scale = useSharedValue(1);
   const rotateDegree = useSharedValue(0);
   const progress = useDerivedValue(() => {
@@ -41,24 +53,26 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
     'worklet';
     switch (matchStatus) {
       case 'correct':
-        return colors.correct;
+        return highContrastMode ? highContrastColors.correct : colors.correct;
       case 'present':
-        return colors.present;
+        return highContrastMode ? highContrastColors.present : colors.present;
       case 'absent':
-        return colors.absent;
+        return highContrastMode ? highContrastColors.absent : colors.absent;
       case '':
-        return colors.keyDefault;
+        return highContrastMode ? highContrastColors.keyDefault : colors.keyDefault;
       default:
-        return colors.keyDefault;
+        return highContrastMode ? highContrastColors.keyDefault : colors.keyDefault;
     }
   }
+
+  const defaultColor = highContrastMode ? highContrastColors.keyDefault : colors.keyDefault;
 
   const bgStyle = useAnimatedStyle(() => {
     const colorByMatch = matchColor();
     const backgroundColor = interpolateColorBugFix(
       progress.value,
       [0, 1],
-      [colors.keyDefault, colorByMatch]
+      [defaultColor, colorByMatch]
     );
 
     return { backgroundColor };
@@ -80,7 +94,9 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         duration: 50,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
-      Vibration.vibrate(1);
+      if (hapticFeedback) {
+        Vibration.vibrate(1);
+      }
       scale.value = withDelay(50, withTiming(1));
     }
     if (matchStatus !== '') {
@@ -97,7 +113,7 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         })
       );
     }
-  }, [letter, matchStatus]);
+  }, [letter, matchStatus, hapticFeedback]);
 
   useEffect(() => {
     if (wrongGuessShake && currentGuessIndex === guess.id) {
@@ -142,6 +158,7 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
           ...styles.square,
           backgroundColor: matchColor(),
           borderWidth: guess.isComplete ? 0 : 1,
+          borderColor: theme.colors.tertiary,
         },
         animatedStyles,
         bgStyle,

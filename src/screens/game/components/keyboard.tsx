@@ -19,25 +19,38 @@ const keysTR: string[][] = [
   ['Enter', 'z', 'c', 'v', 'b', 'n', 'm', 'ö', 'ç', '<'],
 ];
 
+// High contrast color palette
+const highContrastColors = {
+  correct: '#f5793a', // Orange
+  present: '#85c0f9', // Blue
+  absent: '#282828',
+  keyDefault: '#606060',
+};
+
 interface KeyboardProps {
   handleGuess: (keyPressed: string) => void;
 }
 
 export default function Keyboard({ handleGuess }: KeyboardProps) {
   const { usedKeys, gameLanguage } = useAppSelector((state) => state.gameState);
+  const { highContrastMode } = useAppSelector((state) => state.settings);
+
   const keyboard = gameLanguage === 'en' ? keysEN : keysTR;
+  const colorPalette = highContrastMode ? highContrastColors : colors;
+
   const handleKeyboardKeyColor = (key: string) => {
     const keyData = usedKeys[key];
     if (keyData) {
       if (keyData === 'correct') {
-        return colors.correct;
+        return colorPalette.correct;
       } else if (keyData === 'present') {
-        return colors.present;
+        return colorPalette.present;
       } else if (keyData === 'absent') {
-        return colors.absent;
-      } else return colors.keyDefault;
-    } else return colors.keyDefault;
+        return colorPalette.absent;
+      } else return colorPalette.keyDefault;
+    } else return colorPalette.keyDefault;
   };
+
   return (
     <View style={styles.keyboardContainer}>
       {keyboard.map((keysRow, idx) => (
@@ -60,6 +73,7 @@ export default function Keyboard({ handleGuess }: KeyboardProps) {
                   flex: keyboardKey === '<' || keyboardKey === 'Enter' ? 2 : 1,
                 }}
                 onPress={() => handleGuess(keyboardKey)}
+                activeOpacity={0.7}
               >
                 {keyboardKey === '<' ? (
                   <Ionicons
@@ -86,17 +100,18 @@ export default function Keyboard({ handleGuess }: KeyboardProps) {
 }
 
 const styles = StyleSheet.create({
-  keyboardContainer: { display: 'flex', alignItems: 'center' },
+  keyboardContainer: {
+    alignItems: 'center',
+    paddingBottom: 10,
+  },
   keyboardRow: {
     width: SIZE,
     marginBottom: 5,
-    display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
   keyContainer: {
-    display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     margin: 2,
