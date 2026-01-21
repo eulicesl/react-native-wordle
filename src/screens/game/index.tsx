@@ -152,15 +152,18 @@ export default function Game() {
     const tempUsedKeys = { ...usedKeys };
     guess.letters.forEach((letter: string, idx: number) => {
       const keyValue = tempUsedKeys[letter];
+      const matchValue = guess.matches[idx];
+      if (!matchValue) return;
+
       if (!keyValue) {
-        tempUsedKeys[letter] = guess.matches[idx];
+        tempUsedKeys[letter] = matchValue;
       } else {
         if (keyValue === 'correct') return;
-        else if (keyValue && guess.matches[idx] === 'correct') {
+        else if (keyValue && matchValue === 'correct') {
           tempUsedKeys[letter] = 'correct';
-        } else if (keyValue === 'present' && guess.matches[idx] !== 'correct')
+        } else if (keyValue === 'present' && matchValue !== 'correct')
           return;
-        else tempUsedKeys[letter] = guess.matches[idx];
+        else tempUsedKeys[letter] = matchValue;
       }
     });
     dispatch(setUsedKeys(tempUsedKeys));
@@ -176,15 +179,19 @@ export default function Game() {
     for (const prevGuess of previousGuesses) {
       // Check that all correct letters are in the same position
       for (let i = 0; i < 5; i++) {
-        if (prevGuess.matches[i] === 'correct' && currentWord[i] !== prevGuess.letters[i]) {
-          return `${i + 1}${getOrdinalSuffix(i + 1)} letter must be ${prevGuess.letters[i].toUpperCase()}`;
+        const prevLetter = prevGuess.letters[i];
+        const prevMatch = prevGuess.matches[i];
+        if (prevMatch === 'correct' && prevLetter && currentWord[i] !== prevLetter) {
+          return `${i + 1}${getOrdinalSuffix(i + 1)} letter must be ${prevLetter.toUpperCase()}`;
         }
       }
 
       // Check that all present letters are used somewhere
       for (let i = 0; i < 5; i++) {
-        if (prevGuess.matches[i] === 'present' && !currentWord.includes(prevGuess.letters[i])) {
-          return `Guess must contain ${prevGuess.letters[i].toUpperCase()}`;
+        const prevLetter = prevGuess.letters[i];
+        const prevMatch = prevGuess.matches[i];
+        if (prevMatch === 'present' && prevLetter && !currentWord.includes(prevLetter)) {
+          return `Guess must contain ${prevLetter.toUpperCase()}`;
         }
       }
     }

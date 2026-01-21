@@ -36,7 +36,7 @@ export function getDailyWord(dateString: string, language: 'en' | 'tr' = 'en'): 
   const seed = dateToSeed(dateString + language); // Include language in seed for different words
   const rng = mulberry32(seed);
   const index = Math.floor(rng() * answers.length);
-  return answers[index];
+  return answers[index] ?? answers[0] ?? 'words';
 }
 
 // Get today's daily word
@@ -47,7 +47,8 @@ export function getTodaysDailyWord(language: 'en' | 'tr' = 'en'): string {
 // Get a random word (for unlimited mode)
 export function getRandomWord(language: 'en' | 'tr' = 'en'): string {
   const answers = language === 'en' ? answersEN : answersTR;
-  return answers[Math.floor(Math.random() * answers.length)];
+  const index = Math.floor(Math.random() * answers.length);
+  return answers[index] ?? answers[0] ?? 'words';
 }
 
 // Check if a saved game is for today's daily challenge
