@@ -2,11 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
+import Keyboard from './keyboard';
+import LetterSquare from './letterSquare';
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
 import { HEIGHT, SIZE } from '../../../utils/constants';
-import Keyboard from './keyboard';
-import LetterSquare from './letterSquare';
 
 interface GameBoardProps {
   solution: string;
