@@ -11,34 +11,166 @@ export type SoundType =
   | 'flipAbsent'
   | 'win'
   | 'lose'
-  | 'error';
+  | 'error'
+  | 'streak'
+  | 'achievement'
+  | 'countdown'
+  | 'newDay';
 
 // Sound configuration
 interface SoundConfig {
   enabled: boolean;
   volume: number;
+  musicEnabled: boolean;
+  musicVolume: number;
 }
 
 let soundConfig: SoundConfig = {
   enabled: true,
   volume: 0.5,
+  musicEnabled: true,
+  musicVolume: 0.3,
 };
 
 // Preloaded sounds cache
 const soundCache: Map<SoundType, Audio.Sound> = new Map();
 
-// Sound frequencies for generated tones (fallback when no audio files)
-const SOUND_FREQUENCIES: Record<SoundType, { frequency: number; duration: number; type: OscillatorType }> = {
-  keyPress: { frequency: 600, duration: 50, type: 'sine' },
-  keyDelete: { frequency: 400, duration: 50, type: 'sine' },
-  submit: { frequency: 800, duration: 100, type: 'sine' },
-  flipCorrect: { frequency: 880, duration: 150, type: 'sine' },
-  flipPresent: { frequency: 660, duration: 150, type: 'sine' },
-  flipAbsent: { frequency: 330, duration: 150, type: 'triangle' },
-  win: { frequency: 1047, duration: 500, type: 'sine' },
-  lose: { frequency: 220, duration: 400, type: 'sawtooth' },
-  error: { frequency: 200, duration: 200, type: 'square' },
+/* Musical scales and chords for professional sound design (reserved for future melodies)
+const MUSICAL_SCALES = {
+  major: [0, 2, 4, 5, 7, 9, 11, 12], // C Major scale intervals
+  pentatonic: [0, 2, 4, 7, 9, 12], // Pentatonic scale
+  triumphant: [0, 4, 7, 12, 16, 19], // Major arpeggio extended
+} as const;
+*/
+
+// Base frequency for middle C
+const BASE_FREQ = 261.63;
+
+// Convert semitones to frequency
+function semitoneToFreq(semitones: number): number {
+  return BASE_FREQ * Math.pow(2, semitones / 12);
+}
+
+// Professional sound configurations with musical theory
+interface ProfessionalSoundConfig {
+  notes: number[]; // Semitones from middle C
+  durations: number[]; // Duration for each note in ms
+  type: OscillatorType;
+  envelope: {
+    attack: number;
+    decay: number;
+    sustain: number;
+    release: number;
+  };
+  reverb?: number; // Reverb amount 0-1
+  detune?: number; // Slight detuning for richness
+}
+
+const PROFESSIONAL_SOUNDS: Record<SoundType, ProfessionalSoundConfig> = {
+  keyPress: {
+    notes: [7], // G
+    durations: [40],
+    type: 'sine',
+    envelope: { attack: 0.005, decay: 0.02, sustain: 0.1, release: 0.03 },
+  },
+  keyDelete: {
+    notes: [5], // F
+    durations: [40],
+    type: 'sine',
+    envelope: { attack: 0.005, decay: 0.02, sustain: 0.1, release: 0.03 },
+  },
+  submit: {
+    notes: [0, 4, 7], // C major chord stagger
+    durations: [80, 80, 80],
+    type: 'sine',
+    envelope: { attack: 0.01, decay: 0.05, sustain: 0.3, release: 0.1 },
+  },
+  flipCorrect: {
+    notes: [12, 16], // High C to E (bright, happy)
+    durations: [100, 150],
+    type: 'sine',
+    envelope: { attack: 0.01, decay: 0.1, sustain: 0.4, release: 0.2 },
+    detune: 5,
+  },
+  flipPresent: {
+    notes: [7, 11], // G to B (hopeful)
+    durations: [100, 150],
+    type: 'triangle',
+    envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.15 },
+  },
+  flipAbsent: {
+    notes: [0], // Low C (neutral)
+    durations: [120],
+    type: 'triangle',
+    envelope: { attack: 0.01, decay: 0.15, sustain: 0.1, release: 0.1 },
+  },
+  win: {
+    notes: [0, 4, 7, 12, 16, 19, 24], // Ascending C major arpeggio
+    durations: [120, 120, 120, 150, 150, 180, 300],
+    type: 'sine',
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.3 },
+    reverb: 0.4,
+    detune: 3,
+  },
+  lose: {
+    notes: [12, 11, 7, 5, 0], // Descending melancholic
+    durations: [200, 200, 200, 200, 400],
+    type: 'triangle',
+    envelope: { attack: 0.05, decay: 0.2, sustain: 0.3, release: 0.4 },
+  },
+  error: {
+    notes: [1, 0], // C# to C (dissonant drop)
+    durations: [80, 120],
+    type: 'sawtooth',
+    envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.1 },
+  },
+  streak: {
+    notes: [0, 7, 12, 19, 24], // Power fifth fanfare
+    durations: [100, 100, 150, 200, 400],
+    type: 'sine',
+    envelope: { attack: 0.02, decay: 0.15, sustain: 0.6, release: 0.4 },
+    reverb: 0.5,
+    detune: 5,
+  },
+  achievement: {
+    notes: [0, 4, 7, 12, 7, 12, 16, 19, 24], // Triumphant fanfare
+    durations: [100, 100, 100, 200, 100, 150, 150, 200, 500],
+    type: 'sine',
+    envelope: { attack: 0.03, decay: 0.15, sustain: 0.7, release: 0.5 },
+    reverb: 0.6,
+    detune: 8,
+  },
+  countdown: {
+    notes: [7], // Single tick
+    durations: [50],
+    type: 'sine',
+    envelope: { attack: 0.001, decay: 0.02, sustain: 0.1, release: 0.02 },
+  },
+  newDay: {
+    notes: [0, 12, 7, 4, 0, 4, 7, 12, 16, 19, 24], // Sunrise melody
+    durations: [200, 200, 150, 150, 200, 150, 150, 200, 200, 200, 400],
+    type: 'sine',
+    envelope: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 0.3 },
+    reverb: 0.5,
+  },
 };
+
+// Audio context for web
+let audioContext: AudioContext | null = null;
+
+// Get or create audio context
+function getAudioContext(): AudioContext | null {
+  if (Platform.OS !== 'web') return null;
+
+  if (!audioContext && typeof window !== 'undefined') {
+    const AudioContextClass = window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (AudioContextClass) {
+      audioContext = new AudioContextClass();
+    }
+  }
+  return audioContext;
+}
 
 // Initialize audio settings
 export async function initializeAudio(): Promise<void> {
@@ -73,18 +205,92 @@ export function setVolume(volume: number): void {
   soundConfig.volume = Math.max(0, Math.min(1, volume));
 }
 
-// Play a sound effect using Web Audio API (works on all platforms)
+// Create ADSR envelope
+function applyEnvelope(
+  gainNode: GainNode,
+  _ctx: AudioContext,
+  startTime: number,
+  duration: number,
+  envelope: ProfessionalSoundConfig['envelope'],
+  volume: number
+): void {
+  const { attack, decay, sustain, release } = envelope;
+  const peakTime = startTime + attack;
+  const decayEndTime = peakTime + decay;
+  const sustainEndTime = startTime + duration / 1000 - release;
+  const endTime = startTime + duration / 1000;
+
+  gainNode.gain.setValueAtTime(0, startTime);
+  gainNode.gain.linearRampToValueAtTime(volume, peakTime);
+  gainNode.gain.linearRampToValueAtTime(volume * sustain, decayEndTime);
+  gainNode.gain.setValueAtTime(volume * sustain, sustainEndTime);
+  gainNode.gain.linearRampToValueAtTime(0.001, endTime);
+}
+
+// Play professional sound with Web Audio API
+function playProfessionalWebSound(type: SoundType): void {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const config = PROFESSIONAL_SOUNDS[type];
+  const volume = soundConfig.volume * 0.3;
+  let currentTime = ctx.currentTime;
+
+  config.notes.forEach((semitone, index) => {
+    const duration = config.durations[index] ?? 100;
+    const freq = semitoneToFreq(semitone);
+
+    // Main oscillator
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.type = config.type;
+    oscillator.frequency.setValueAtTime(freq, currentTime);
+
+    // Apply slight detuning for richness
+    if (config.detune) {
+      oscillator.detune.setValueAtTime(config.detune, currentTime);
+    }
+
+    applyEnvelope(gainNode, ctx, currentTime, duration, config.envelope, volume);
+
+    // Add second oscillator for richness on special sounds
+    if (config.detune && config.detune > 0) {
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+
+      osc2.type = config.type;
+      osc2.frequency.setValueAtTime(freq, currentTime);
+      osc2.detune.setValueAtTime(-config.detune, currentTime);
+
+      applyEnvelope(gain2, ctx, currentTime, duration, config.envelope, volume * 0.5);
+
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(currentTime);
+      osc2.stop(currentTime + duration / 1000 + 0.1);
+    }
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.start(currentTime);
+    oscillator.stop(currentTime + duration / 1000 + 0.1);
+
+    currentTime += duration / 1000 * 0.85; // Slight overlap for legato effect
+  });
+}
+
+// Play a sound effect
 export async function playSound(type: SoundType): Promise<void> {
   if (!soundConfig.enabled) return;
 
   try {
-    // For web, use Web Audio API
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.AudioContext) {
-      playWebSound(type);
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      playProfessionalWebSound(type);
       return;
     }
 
-    // For native, use expo-av with generated beep
     await playNativeSound(type);
   } catch (error) {
     // Silently fail - sounds are non-critical
@@ -92,71 +298,11 @@ export async function playSound(type: SoundType): Promise<void> {
   }
 }
 
-// Web Audio API implementation
-function playWebSound(type: SoundType): void {
-  try {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-
-    const audioContext = new AudioContextClass();
-    const config = SOUND_FREQUENCIES[type];
-
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.type = config.type;
-    oscillator.frequency.setValueAtTime(config.frequency, audioContext.currentTime);
-
-    gainNode.gain.setValueAtTime(soundConfig.volume * 0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + config.duration / 1000);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + config.duration / 1000);
-
-    // Play additional tones for win sound
-    if (type === 'win') {
-      playWinMelody(audioContext);
-    }
-  } catch (error) {
-    // Silently fail
-  }
-}
-
-// Win melody (ascending notes)
-function playWinMelody(audioContext: AudioContext): void {
-  const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
-  const noteDuration = 0.15;
-
-  notes.forEach((freq, index) => {
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-
-    const startTime = audioContext.currentTime + index * noteDuration;
-    gainNode.gain.setValueAtTime(0, startTime);
-    gainNode.gain.linearRampToValueAtTime(soundConfig.volume * 0.2, startTime + 0.02);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + noteDuration);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.start(startTime);
-    oscillator.stop(startTime + noteDuration);
-  });
-}
-
 // Native sound implementation using expo-av
 async function playNativeSound(_type: SoundType): Promise<void> {
   try {
     // Create a simple beep sound programmatically
-    // Since we don't have audio files, we'll use a very short silent approach
     // In production, you'd load actual audio files here
-
     const { sound } = await Audio.Sound.createAsync(
       { uri: 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA' },
       { volume: soundConfig.volume, shouldPlay: false }
@@ -175,7 +321,7 @@ async function playNativeSound(_type: SoundType): Promise<void> {
   }
 }
 
-// Play tile flip sounds in sequence
+// Play tile flip sounds in sequence with musical progression
 export async function playFlipSounds(
   matches: ('correct' | 'present' | 'absent' | '' | undefined)[]
 ): Promise<void> {
@@ -186,11 +332,47 @@ export async function playFlipSounds(
     if (match) {
       const validMatch = match as 'correct' | 'present' | 'absent';
       setTimeout(() => {
-        const soundType: SoundType = validMatch === 'correct' ? 'flipCorrect' : validMatch === 'present' ? 'flipPresent' : 'flipAbsent';
+        const soundType: SoundType = validMatch === 'correct'
+          ? 'flipCorrect'
+          : validMatch === 'present'
+            ? 'flipPresent'
+            : 'flipAbsent';
         playSound(soundType);
-      }, i * 250); // Match the flip animation timing
+      }, i * 250);
     }
   }
+}
+
+// Play victory fanfare based on performance
+export async function playVictorySound(
+  guessCount: number,
+  isStreak: boolean
+): Promise<void> {
+  if (!soundConfig.enabled) return;
+
+  await playSound('win');
+
+  // Play additional streak sound for streaks
+  if (isStreak) {
+    setTimeout(() => playSound('streak'), 800);
+  }
+
+  // Extra fanfare for first-try wins
+  if (guessCount === 1) {
+    setTimeout(() => playSound('achievement'), 1200);
+  }
+}
+
+// Play new day celebration
+export async function playNewDaySound(): Promise<void> {
+  if (!soundConfig.enabled) return;
+  await playSound('newDay');
+}
+
+// Play achievement unlock sound
+export async function playAchievementSound(): Promise<void> {
+  if (!soundConfig.enabled) return;
+  await playSound('achievement');
 }
 
 // Cleanup sounds on app unmount
@@ -203,4 +385,9 @@ export async function cleanupSounds(): Promise<void> {
     }
   }
   soundCache.clear();
+
+  if (audioContext) {
+    audioContext.close();
+    audioContext = null;
+  }
 }
