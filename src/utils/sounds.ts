@@ -180,8 +180,8 @@ export async function initializeAudio(): Promise<void> {
       staysActiveInBackground: false,
       shouldDuckAndroid: true,
     });
-  } catch (error) {
-    console.log('Audio initialization error:', error);
+  } catch (_error) {
+    console.log('Audio initialization error:', _error);
   }
 }
 
@@ -292,9 +292,9 @@ export async function playSound(type: SoundType): Promise<void> {
     }
 
     await playNativeSound(type);
-  } catch (error) {
+  } catch (_error) {
     // Silently fail - sounds are non-critical
-    console.log('Sound playback error:', error);
+    console.log('Sound playback error:', _error);
   }
 }
 
@@ -316,7 +316,7 @@ async function playNativeSound(_type: SoundType): Promise<void> {
         sound.unloadAsync();
       }
     });
-  } catch (error) {
+  } catch (_error) {
     // Silently fail - use haptics as fallback
   }
 }
@@ -380,7 +380,7 @@ export async function cleanupSounds(): Promise<void> {
   for (const sound of soundCache.values()) {
     try {
       await sound.unloadAsync();
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   }

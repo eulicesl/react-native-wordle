@@ -81,9 +81,9 @@ export async function playHaptic(type: HapticType): Promise<void> {
       default:
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-  } catch (error) {
+  } catch (_error) {
     // Silently fail - haptics are non-critical
-    console.log('Haptic feedback error:', error);
+    console.log('Haptic feedback error:', _error);
   }
 }
 
@@ -101,7 +101,7 @@ export async function playFlipHaptics(
       setTimeout(async () => {
         try {
           await playHaptic(hapticType);
-        } catch (error) {
+        } catch (_error) {
           // Silently fail
         }
       }, i * 250); // Match the flip animation timing
@@ -121,7 +121,7 @@ export async function playSelectionHaptic(): Promise<void> {
 
   try {
     await Haptics.selectionAsync();
-  } catch (error) {
+  } catch (_error) {
     // Silently fail
   }
 }

@@ -11,9 +11,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#121213"
     },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
+    "newArchEnabled": true,
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -117,15 +115,6 @@
           "icon": "./assets/notification-icon.png",
           "color": "#6aaa64",
           "sounds": []
-        }
-      ],
-      [
-        "expo-haptics"
-      ],
-      [
-        "expo-av",
-        {
-          "microphonePermission": false
         }
       ]
     ],

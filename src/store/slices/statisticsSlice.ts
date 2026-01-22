@@ -44,7 +44,10 @@ export const statisticsSlice = createSlice({
       const { guessCount, date } = action.payload;
       state.statistics.gamesPlayed += 1;
       state.statistics.gamesWon += 1;
-      state.statistics.guessDistribution[guessCount - 1] += 1;
+      const distIndex = guessCount - 1;
+      if (state.statistics.guessDistribution[distIndex] !== undefined) {
+        state.statistics.guessDistribution[distIndex] += 1;
+      }
 
       // Update streak
       const lastDate = state.statistics.lastCompletedDate;

@@ -295,7 +295,10 @@ export default function Game() {
           newStats.gamesPlayed += 1;
           newStats.gamesWon += 1;
           newStats.guessDistribution = [...newStats.guessDistribution];
-          newStats.guessDistribution[guessCount - 1] += 1;
+          const distIndex = guessCount - 1;
+          if (newStats.guessDistribution[distIndex] !== undefined) {
+            newStats.guessDistribution[distIndex] += 1;
+          }
           newStats.currentStreak += 1;
           if (newStats.currentStreak > newStats.maxStreak) {
             newStats.maxStreak = newStats.currentStreak;

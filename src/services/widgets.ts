@@ -107,8 +107,8 @@ export async function updateWidgetData(data: {
     await reloadWidgets();
 
     console.log('Widget data updated');
-  } catch (error) {
-    console.log('Error updating widget data:', error);
+  } catch (_error) {
+    console.log('Error updating widget data:', _error);
   }
 }
 
@@ -117,8 +117,8 @@ export async function getWidgetData(): Promise<WidgetData | null> {
   try {
     const stored = await getStoreData(WIDGET_DATA_KEY);
     return stored ? JSON.parse(stored) : null;
-  } catch (error) {
-    console.log('Error reading widget data:', error);
+  } catch (_error) {
+    console.log('Error reading widget data:', _error);
     return null;
   }
 }
@@ -131,8 +131,8 @@ export async function reloadWidgets(): Promise<void> {
     // In production, use native module to call:
     // WidgetCenter.shared.reloadAllTimelines()
     console.log('Widgets reloaded');
-  } catch (error) {
-    console.log('Error reloading widgets:', error);
+  } catch (_error) {
+    console.log('Error reloading widgets:', _error);
   }
 }
 
@@ -144,8 +144,8 @@ export async function reloadWidget(kind: string): Promise<void> {
     // In production, use native module to call:
     // WidgetCenter.shared.reloadTimelines(ofKind: kind)
     console.log(`Widget ${kind} reloaded`);
-  } catch (error) {
-    console.log('Error reloading widget:', error);
+  } catch (_error) {
+    console.log('Error reloading widget:', _error);
   }
 }
 
@@ -154,7 +154,7 @@ export async function getWidgetConfig(): Promise<WidgetConfig> {
   try {
     const stored = await getStoreData('wordle_widget_config');
     return stored ? { ...DEFAULT_WIDGET_CONFIG, ...JSON.parse(stored) } : DEFAULT_WIDGET_CONFIG;
-  } catch (error) {
+  } catch (_error) {
     return DEFAULT_WIDGET_CONFIG;
   }
 }
@@ -165,8 +165,8 @@ export async function saveWidgetConfig(config: Partial<WidgetConfig>): Promise<v
     const current = await getWidgetConfig();
     await setStoreData('wordle_widget_config', JSON.stringify({ ...current, ...config }));
     await reloadWidgets();
-  } catch (error) {
-    console.log('Error saving widget config:', error);
+  } catch (_error) {
+    console.log('Error saving widget config:', _error);
   }
 }
 

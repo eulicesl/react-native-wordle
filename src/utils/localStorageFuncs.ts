@@ -16,8 +16,8 @@ const STORAGE_KEYS = {
 export const setStoreData = async (key: string, value: string) => {
   try {
     await AsyncStorage.setItem(key, value);
-  } catch (e) {
-    console.log(e);
+  } catch (_e) {
+    console.log(_e);
   }
 };
 
@@ -25,7 +25,7 @@ export const getStoreData = async (key: string): Promise<string | null> => {
   try {
     const value = await AsyncStorage.getItem(key);
     return value;
-  } catch (e) {
+  } catch (_e) {
     return null;
   }
 };
@@ -34,8 +34,8 @@ export const getStoreData = async (key: string): Promise<string | null> => {
 export const setJsonData = async <T>(key: string, value: T): Promise<void> => {
   try {
     await AsyncStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
-    console.log('Error saving JSON data:', e);
+  } catch (_e) {
+    console.log('Error saving JSON data:', _e);
   }
 };
 
@@ -46,8 +46,8 @@ export const getJsonData = async <T>(key: string): Promise<T | null> => {
       return JSON.parse(value) as T;
     }
     return null;
-  } catch (e) {
-    console.log('Error reading JSON data:', e);
+  } catch (_e) {
+    console.log('Error reading JSON data:', _e);
     return null;
   }
 };
@@ -96,8 +96,8 @@ export const loadGameState = async (): Promise<PersistedGameState | null> => {
 export const clearGameState = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(STORAGE_KEYS.GAME_STATE);
-  } catch (e) {
-    console.log('Error clearing game state:', e);
+  } catch (_e) {
+    console.log('Error clearing game state:', _e);
   }
 };
 
@@ -119,7 +119,7 @@ export const clearAllData = async (): Promise<void> => {
   try {
     const keys = Object.values(STORAGE_KEYS);
     await AsyncStorage.multiRemove(keys);
-  } catch (e) {
-    console.log('Error clearing all data:', e);
+  } catch (_e) {
+    console.log('Error clearing all data:', _e);
   }
 };

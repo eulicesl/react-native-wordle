@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
+import { View } from 'react-native';
 
 import {
   useFonts,
@@ -6,13 +7,16 @@ import {
   Montserrat_700Bold,
   Montserrat_800ExtraBold,
 } from '@expo-google-fonts/montserrat';
-import AppLoading from 'expo-app-loading';
+import * as SplashScreen from 'expo-splash-screen';
 import { Provider } from 'react-redux';
 
 import ErrorBoundary from './src/components/ErrorBoundary';
 import MainScreen from './src/screens/main';
 import { store } from './src/store';
 import { initializeAudio } from './src/utils/sounds';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -26,13 +30,24 @@ export default function App() {
     initializeAudio();
   }, []);
 
-  if (!fontsLoaded) return <AppLoading />;
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) {
+      // This tells the splash screen to hide immediately
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
-    <ErrorBoundary>
-      <Provider store={store}>
-        <MainScreen />
-      </Provider>
-    </ErrorBoundary>
+    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <ErrorBoundary>
+        <Provider store={store}>
+          <MainScreen />
+        </Provider>
+      </ErrorBoundary>
+    </View>
   );
 }
