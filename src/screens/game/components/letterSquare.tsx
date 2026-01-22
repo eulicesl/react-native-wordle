@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { StyleSheet, Text, Vibration } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -12,9 +12,12 @@ import Animated, {
 
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { guess } from '../../../types';
+import { getTileAccessibilityLabel } from '../../../utils/accessibility';
 import { adjustLetterDisplay } from '../../../utils/adjustLetterDisplay';
 import { colors, SIZE } from '../../../utils/constants';
+import { playHaptic } from '../../../utils/haptics';
 import interpolateColorBugFix from '../../../utils/interpolateColorFix';
+import { playSound } from '../../../utils/sounds';
 
 // High contrast color palette
 const highContrastColors = {
@@ -94,12 +97,9 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         duration: 50,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
-      if (hapticFeedback) {
-        Vibration.vibrate(1);
-      }
       scale.value = withDelay(50, withTiming(1));
     }
-    if (matchStatus !== '') {
+    if (matchStatus !== '' && matchStatus !== undefined) {
       rotateDegree.value = withDelay(
         250 * idx,
         withTiming(90, {
@@ -112,11 +112,25 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
           duration: 250,
         })
       );
+
+      // Play sound and haptic when tile flips
+      setTimeout(() => {
+        const soundType = matchStatus === 'correct' ? 'flipCorrect' : matchStatus === 'present' ? 'flipPresent' : 'flipAbsent';
+        playSound(soundType);
+        if (hapticFeedback) {
+          playHaptic(matchStatus);
+        }
+      }, 250 * idx);
     }
-  }, [letter, matchStatus, hapticFeedback]);
+  }, [letter, matchStatus, hapticFeedback, idx]);
 
   useEffect(() => {
     if (wrongGuessShake && currentGuessIndex === guess.id) {
+      playSound('error');
+      if (hapticFeedback) {
+        playHaptic('error');
+      }
+
       for (let i = 1; i < 6; i++) {
         shakeX.value = withDelay(
           10 * i,
@@ -148,7 +162,10 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         );
       }
     }
-  }, [wrongGuessShake]);
+  }, [wrongGuessShake, hapticFeedback]);
+
+  const rowNumber = guess.id + 1;
+  const accessibilityLabel = getTileAccessibilityLabel(letter, idx, matchStatus, rowNumber);
 
   return (
     <Animated.View
@@ -163,12 +180,16 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         animatedStyles,
         bgStyle,
       ]}
+      accessible={true}
+      accessibilityRole="text"
+      accessibilityLabel={accessibilityLabel}
     >
       <Text
         style={{
           ...styles.letter,
           color: colors.white,
         }}
+        importantForAccessibility="no"
       >
         {adjustLetterDisplay(letter, gameLanguage)}
       </Text>

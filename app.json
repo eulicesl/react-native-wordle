@@ -1,14 +1,15 @@
 {
   "expo": {
-    "name": "react-native-wordle",
-    "slug": "react-native-wordle",
+    "name": "Wordle",
+    "slug": "wordle-game",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#121213"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -17,16 +18,34 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wordle.game",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized content.",
+        "UIBackgroundModes": []
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      }
+        "backgroundColor": "#121213"
+      },
+      "package": "com.wordle.game",
+      "versionCode": 1
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "name": "Wordle",
+      "shortName": "Wordle",
+      "description": "Guess the hidden word in 6 tries. A new puzzle is available each day!",
+      "backgroundColor": "#121213",
+      "themeColor": "#6aaa64"
+    },
+    "description": "Guess the hidden 5-letter word in 6 tries. Each guess reveals clues: green means correct letter and position, yellow means correct letter but wrong position, gray means the letter is not in the word. A new puzzle is available each day!",
+    "primaryColor": "#6aaa64"
   }
 }

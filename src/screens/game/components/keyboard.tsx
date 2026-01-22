@@ -4,8 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { useAppSelector } from '../../../hooks/storeHooks';
+import { getKeyAccessibilityLabel } from '../../../utils/accessibility';
 import { adjustLetterDisplay } from '../../../utils/adjustLetterDisplay';
 import { colors, SIZE } from '../../../utils/constants';
+import { playHaptic } from '../../../utils/haptics';
+import { playSound } from '../../../utils/sounds';
 
 const keysEN: string[][] = [
   ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
@@ -33,7 +36,7 @@ interface KeyboardProps {
 
 export default function Keyboard({ handleGuess }: KeyboardProps) {
   const { usedKeys, gameLanguage } = useAppSelector((state) => state.gameState);
-  const { highContrastMode } = useAppSelector((state) => state.settings);
+  const { highContrastMode, hapticFeedback } = useAppSelector((state) => state.settings);
 
   const keyboard = gameLanguage === 'en' ? keysEN : keysTR;
   const colorPalette = highContrastMode ? highContrastColors : colors;
@@ -51,18 +54,40 @@ export default function Keyboard({ handleGuess }: KeyboardProps) {
     } else return colorPalette.keyDefault;
   };
 
+  const handleKeyPress = (key: string) => {
+    // Play sound and haptic feedback
+    if (key === '<') {
+      playSound('keyDelete');
+      if (hapticFeedback) playHaptic('keyDelete');
+    } else if (key === 'Enter') {
+      playSound('submit');
+      if (hapticFeedback) playHaptic('submit');
+    } else {
+      playSound('keyPress');
+      if (hapticFeedback) playHaptic('keyPress');
+    }
+
+    handleGuess(key);
+  };
+
   return (
-    <View style={styles.keyboardContainer}>
-      {keyboard.map((keysRow, idx) => (
+    <View
+      style={styles.keyboardContainer}
+      accessibilityRole="none"
+      accessibilityLabel="Game keyboard"
+    >
+      {keyboard.map((keysRow, rowIdx) => (
         <View
-          key={idx}
+          key={rowIdx}
           style={{
             ...styles.keyboardRow,
-            width: idx === 1 ? SIZE * 0.95 : SIZE,
+            width: rowIdx === 1 ? SIZE * 0.95 : SIZE,
           }}
         >
           {keysRow.map((keyboardKey) => {
             const keyRowCount = keysRow.length + 2;
+            const keyStatus = usedKeys[keyboardKey];
+
             return (
               <TouchableOpacity
                 key={keyboardKey}
@@ -72,8 +97,13 @@ export default function Keyboard({ handleGuess }: KeyboardProps) {
                   height: SIZE / keyRowCount + 2 + 20,
                   flex: keyboardKey === '<' || keyboardKey === 'Enter' ? 2 : 1,
                 }}
-                onPress={() => handleGuess(keyboardKey)}
+                onPress={() => handleKeyPress(keyboardKey)}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={getKeyAccessibilityLabel(keyboardKey, keyStatus)}
+                accessibilityState={{
+                  disabled: false,
+                }}
               >
                 {keyboardKey === '<' ? (
                   <Ionicons
