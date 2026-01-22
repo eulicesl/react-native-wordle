@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { GameStatistics } from '../store/slices/statisticsSlice';
 import { SettingsState } from '../store/slices/settingsSlice';
+import { GameStatistics } from '../store/slices/statisticsSlice';
 import { guess, matchingUsedKey } from '../types';
 
 // Storage keys
@@ -63,7 +63,7 @@ export const loadStatistics = async (): Promise<GameStatistics | null> => {
 
 // Settings storage
 export const saveSettings = async (settings: Partial<SettingsState>): Promise<void> => {
-  const { isLoaded, ...settingsToSave } = settings as SettingsState;
+  const { isLoaded: _isLoaded, ...settingsToSave } = settings as SettingsState;
   await setJsonData(STORAGE_KEYS.SETTINGS, settingsToSave);
 };
 

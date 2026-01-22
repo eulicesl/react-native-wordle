@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 // Achievement definitions

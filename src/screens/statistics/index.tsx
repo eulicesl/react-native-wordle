@@ -10,8 +10,8 @@ import {
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
 import { setStatistics } from '../../store/slices/statisticsSlice';
 import { colors } from '../../utils/constants';
-import { loadStatistics } from '../../utils/localStorageFuncs';
 import { formatTimeUntilNextWord } from '../../utils/dailyWord';
+import { loadStatistics } from '../../utils/localStorageFuncs';
 
 export default function Statistics() {
   const { statistics } = useAppSelector((state) => state.statistics);

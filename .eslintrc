@@ -8,6 +8,7 @@
       "es6": true
     },
     "rules": {
+      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
       "import/order":[
         "error",
         {
@@ -30,7 +31,8 @@
         2,
         {
           "commonjs": true,
-          "amd": true
+          "amd": true,
+          "ignore": ["react-native-reanimated"]
         }
       ],
       "import/named": 2,
@@ -43,6 +45,6 @@
       "import"
     ],
     "settings": {
-      "import/ignore": ["react-native"]
+      "import/ignore": ["react-native", "react-native-reanimated"]
     }
   }

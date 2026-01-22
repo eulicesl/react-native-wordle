@@ -1,4 +1,5 @@
 import { AccessibilityInfo, Platform } from 'react-native';
+
 import { getStoreData, setStoreData } from './localStorageFuncs';
 
 // Accessibility preferences storage
@@ -130,7 +131,7 @@ export function getTileVerboseDescription(
   position: number,
   status: 'correct' | 'present' | 'absent' | '' | undefined,
   rowNumber: number,
-  totalRows: number = 6
+  totalRows = 6
 ): string {
   const ordinals = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth'];
   const ordinal = ordinals[position] || `position ${position + 1}`;
@@ -274,7 +275,7 @@ export function announceGuessResult(
 }
 
 // Announce current input state
-export function announceCurrentInput(letters: string[], maxLength: number = 5): void {
+export function announceCurrentInput(letters: string[], maxLength = 5): void {
   if (letters.length === 0) {
     announceForAccessibility('Input cleared');
     return;
@@ -336,7 +337,7 @@ export async function checkScreenReaderEnabled(): Promise<boolean> {
 // Get animation duration based on reduce motion preference
 export function getAnimationDuration(
   normalDuration: number,
-  reducedDuration: number = 0
+  reducedDuration = 0
 ): number {
   return cachedReduceMotion ? reducedDuration : normalDuration;
 }
@@ -354,8 +355,8 @@ export const HIGH_CONTRAST_COLORS = {
 export function getAccessibleColor(
   baseColor: string,
   status: 'correct' | 'present' | 'absent',
-  useHighContrast: boolean = false,
-  useColorblindMode: boolean = false
+  useHighContrast = false,
+  useColorblindMode = false
 ): string {
   if (useColorblindMode) {
     switch (status) {

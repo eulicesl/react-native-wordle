@@ -26,7 +26,7 @@ function getEmoji(status: matchStatus, highContrast: boolean): string {
 // Generate the emoji grid from guesses
 export function generateEmojiGrid(
   guesses: guess[],
-  highContrast: boolean = false
+  highContrast = false
 ): string {
   const completedGuesses = guesses.filter((g) => g.isComplete);
 
@@ -42,8 +42,8 @@ export function generateShareText(
   guesses: guess[],
   gameWon: boolean,
   isDaily: boolean,
-  hardMode: boolean = false,
-  highContrast: boolean = false
+  hardMode = false,
+  highContrast = false
 ): string {
   const completedGuesses = guesses.filter((g) => g.isComplete);
   const guessCount = gameWon ? completedGuesses.length : 'X';
@@ -64,8 +64,8 @@ export async function shareResults(
   guesses: guess[],
   gameWon: boolean,
   isDaily: boolean,
-  hardMode: boolean = false,
-  highContrast: boolean = false
+  hardMode = false,
+  highContrast = false
 ): Promise<boolean> {
   const shareText = generateShareText(guesses, gameWon, isDaily, hardMode, highContrast);
 
@@ -95,8 +95,8 @@ export function getShareableText(
   guesses: guess[],
   gameWon: boolean,
   isDaily: boolean,
-  hardMode: boolean = false,
-  highContrast: boolean = false
+  hardMode = false,
+  highContrast = false
 ): string {
   return generateShareText(guesses, gameWon, isDaily, hardMode, highContrast);
 }

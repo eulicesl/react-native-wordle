@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 // Notification settings storage
@@ -200,7 +201,7 @@ export async function scheduleDailyReminder(time: string): Promise<string | null
 // Schedule streak warning notification
 export async function scheduleStreakWarning(
   currentStreak: number,
-  hoursBeforeMidnight: number = 4
+  hoursBeforeMidnight = 4
 ): Promise<string | null> {
   if (!notificationPermissionGranted || currentStreak < 2) {
     return null;
