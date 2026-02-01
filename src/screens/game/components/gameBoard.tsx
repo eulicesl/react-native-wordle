@@ -1,34 +1,71 @@
+import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-// eslint-disable-next-line
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-import { useAppSelector } from '../../../hooks/storeHooks';
-import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
-import { colors, HEIGHT, SIZE } from '../../../utils/constants';
 import Keyboard from './keyboard';
 import LetterSquare from './letterSquare';
+import { useAppSelector } from '../../../hooks/storeHooks';
+import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
+import { HEIGHT, SIZE } from '../../../utils/constants';
 
 interface GameBoardProps {
   solution: string;
   handleGuess: (keyPressed: string) => void;
   resetGame: () => void;
+  onShare?: () => void;
+  gameMode?: 'daily' | 'unlimited';
+  errorMessage?: string | null;
 }
 
-const GameBoard = ({ solution, handleGuess, resetGame }: GameBoardProps) => {
-  const { guesses, gameEnded, wrongGuessShake, gameLanguage } = useAppSelector(
+const GameBoard = ({
+  solution,
+  handleGuess,
+  resetGame,
+  onShare,
+  gameMode = 'unlimited',
+  errorMessage,
+}: GameBoardProps) => {
+  const { guesses, gameEnded, gameWon, wrongGuessShake, gameLanguage } = useAppSelector(
     (state) => state.gameState
   );
+  const { theme } = useAppSelector((state) => state.theme);
+  const { hardMode } = useAppSelector((state) => state.settings);
+
+  const themedStyles = {
+    background: { backgroundColor: theme.colors.background },
+    text: { color: theme.colors.text },
+    secondaryText: { color: theme.colors.secondary },
+    card: { backgroundColor: theme.colors.background2 },
+  };
 
   return (
-    <View style={styles.board}>
+    <View style={[styles.board, themedStyles.background]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, themedStyles.text]}>WORDLE</Text>
+        <View style={styles.headerBadges}>
+          {gameMode === 'daily' && (
+            <View style={[styles.badge, styles.dailyBadge]}>
+              <Text style={styles.badgeText}>Daily</Text>
+            </View>
+          )}
+          {hardMode && (
+            <View style={[styles.badge, styles.hardBadge]}>
+              <Text style={styles.badgeText}>Hard</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Game Grid */}
       <View style={styles.blocksContainer}>
         {guesses.map((guess, idx) => (
           <View key={idx} style={styles.squareBlock}>
-            {guess.letters.map((letter, idx) => {
+            {guess.letters.map((letter, letterIdx) => {
               return (
                 <LetterSquare
-                  key={idx}
-                  idx={idx}
+                  key={letterIdx}
+                  idx={letterIdx}
                   letter={letter}
                   guess={guess}
                 />
@@ -37,30 +74,48 @@ const GameBoard = ({ solution, handleGuess, resetGame }: GameBoardProps) => {
           </View>
         ))}
       </View>
-      <View style={styles.gameResult}>
+
+      {/* Message Area */}
+      <View style={styles.messageArea}>
         {gameEnded && (
-          <>
-            <Text style={styles.solutionText}>
-              Solution: {adjustTextDisplay(solution, gameLanguage)}
+          <View style={styles.gameEndContainer}>
+            <Text style={[styles.solutionText, themedStyles.text]}>
+              {gameWon ? 'Congratulations!' : `The word was: ${adjustTextDisplay(solution, gameLanguage)}`}
             </Text>
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={() => resetGame()}
-            >
-              <Text style={styles.resetButtonText}>New Game</Text>
-            </TouchableOpacity>
-          </>
+            <View style={styles.buttonRow}>
+              {onShare && (
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.shareButton]}
+                  onPress={onShare}
+                >
+                  <Ionicons name="share-social" size={18} color="#fff" />
+                  <Text style={styles.actionButtonText}>Share</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.actionButton, styles.newGameButton]}
+                onPress={resetGame}
+              >
+                <Ionicons name="refresh" size={18} color="#fff" />
+                <Text style={styles.actionButtonText}>New Game</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
-        {wrongGuessShake && (
-          <Animated.Text
+        {wrongGuessShake && errorMessage && (
+          <Animated.View
             entering={FadeIn}
             exiting={FadeOut}
-            style={styles.wrongGuessText}
+            style={[styles.errorToast, themedStyles.card]}
           >
-            Not in word list
-          </Animated.Text>
+            <Text style={[styles.errorText, themedStyles.text]}>
+              {errorMessage}
+            </Text>
+          </Animated.View>
         )}
       </View>
+
+      {/* Keyboard */}
       <Keyboard handleGuess={handleGuess} />
     </View>
   );
@@ -72,56 +127,102 @@ const styles = StyleSheet.create({
   board: {
     width: SIZE,
     height: HEIGHT,
-    backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'space-evenly',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    paddingTop: 10,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontFamily: 'Montserrat_800ExtraBold',
+    letterSpacing: 4,
+  },
+  headerBadges: {
+    flexDirection: 'row',
+    marginLeft: 10,
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginLeft: 6,
+  },
+  dailyBadge: {
+    backgroundColor: '#6aaa64',
+  },
+  hardBadge: {
+    backgroundColor: '#c9b458',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontFamily: 'Montserrat_700Bold',
+    textTransform: 'uppercase',
   },
   squareBlock: {
     width: SIZE * 0.9,
-    display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-evenly',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   blocksContainer: {
     width: SIZE * 0.9,
-    display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'space-evenly',
   },
-  gameResult: {
+  messageArea: {
     width: SIZE,
-    height: 50,
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-  },
-  resetButton: {
-    display: 'flex',
+    minHeight: 80,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 170,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#404040',
   },
-  resetButtonText: {
-    fontFamily: 'Montserrat_700Bold',
-    fontSize: 20,
-    color: '#fff',
+  gameEndContainer: {
+    alignItems: 'center',
   },
   solutionText: {
     fontSize: 16,
     fontFamily: 'Montserrat_600SemiBold',
-    color: '#fff',
     textTransform: 'uppercase',
+    marginBottom: 12,
   },
-  wrongGuessText: {
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    gap: 8,
+  },
+  shareButton: {
+    backgroundColor: '#6aaa64',
+  },
+  newGameButton: {
+    backgroundColor: '#404040',
+  },
+  actionButtonText: {
+    fontFamily: 'Montserrat_700Bold',
+    fontSize: 14,
+    color: '#fff',
+  },
+  errorToast: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  errorText: {
     fontFamily: 'Montserrat_600SemiBold',
-    fontSize: 16,
-    color: colors.white,
+    fontSize: 14,
   },
 });
