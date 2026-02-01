@@ -37,6 +37,7 @@ import {
   clearGameState,
   PersistedGameState,
 } from '../../utils/localStorageFuncs';
+import { selectStatisticsLoaded } from '../../store/slices/statisticsSlice';
 import { shareResults } from '../../utils/shareResults';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
@@ -108,7 +109,17 @@ export default function Game() {
     })();
   }, [dispatch]);
 
-  // Save game state when it changes
+  // Central persistence for statistics - saves whenever Redux statistics state changes
+  const statisticsLoaded = useAppSelector(selectStatisticsLoaded);
+  useEffect(() => {
+    // Only save after initial load to avoid overwriting with default state
+    if (statisticsLoaded && statistics) {
+      saveStatistics(statistics);
+    }
+  }, [statistics, statisticsLoaded]);
+
+  // Save game state on guess submit or game end (not on every keystroke)
+  // Using currentGuessIndex as trigger since it only changes after a valid guess
   useEffect(() => {
     if (gameStarted && gameMode === 'daily') {
       const gameState: PersistedGameState = {
@@ -127,9 +138,7 @@ export default function Game() {
     }
   }, [
     solution,
-    guesses,
-    currentGuessIndex,
-    usedKeys,
+    currentGuessIndex, // Only persist when guess index changes (after valid guess)
     gameStarted,
     gameEnded,
     gameWon,
@@ -208,6 +217,9 @@ export default function Game() {
   };
 
   const checkGameEnd = useCallback(() => {
+    // Guard: don't re-run if game already ended
+    if (gameEnded) return;
+
     const attemptsCount = guesses.filter((guess: guess) => guess.isComplete).length;
     if (attemptsCount === 6 && !gameWon) {
       dispatch(setGameEnded(true));
@@ -216,10 +228,9 @@ export default function Game() {
         setDailyCompleted(true);
       }
       const today = getTodayDateString();
-      dispatch(recordGameLoss({ date: today }));
-      saveStatistics({ ...statistics, ...{ gamesPlayed: statistics.gamesPlayed + 1, currentStreak: 0, lastPlayedDate: today, lastCompletedDate: today } });
+      dispatch(recordGameLoss({ date: today, isDaily: gameMode === 'daily' }));
     }
-  }, [guesses, gameWon, dispatch, gameMode, statistics]);
+  }, [guesses, gameWon, gameEnded, dispatch, gameMode]);
 
   useEffect(() => {
     checkGameEnd();
@@ -286,26 +297,10 @@ export default function Game() {
           dispatch(setGameEnded(true));
           handleFoundKeysOnKeyboard(updatedGuess);
 
-          // Record win
+          // Record win - statistics persistence is handled by the central useEffect
           const guessCount = currentGuessIndex + 1;
           const today = getTodayDateString();
-          dispatch(recordGameWin({ guessCount, date: today }));
-
-          const newStats = { ...statistics };
-          newStats.gamesPlayed += 1;
-          newStats.gamesWon += 1;
-          newStats.guessDistribution = [...newStats.guessDistribution];
-          const distIndex = guessCount - 1;
-          if (newStats.guessDistribution[distIndex] !== undefined) {
-            newStats.guessDistribution[distIndex] += 1;
-          }
-          newStats.currentStreak += 1;
-          if (newStats.currentStreak > newStats.maxStreak) {
-            newStats.maxStreak = newStats.currentStreak;
-          }
-          newStats.lastPlayedDate = today;
-          newStats.lastCompletedDate = today;
-          saveStatistics(newStats);
+          dispatch(recordGameWin({ guessCount, date: today, isDaily: gameMode === 'daily' }));
 
           if (gameMode === 'daily') {
             setDailyCompleted(true);
