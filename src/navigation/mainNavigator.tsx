@@ -20,14 +20,19 @@ export default function MainNavigator() {
           let iconName: React.ComponentProps<typeof Ionicons>['name'] =
             'game-controller';
 
-          if (route.name === 'Game') {
-            iconName = focused ? 'game-controller' : 'game-controller-outline';
-          } else if (route.name === 'Stats') {
-            iconName = focused ? 'stats-chart' : 'stats-chart-outline';
-          } else if (route.name === 'Help') {
-            iconName = focused ? 'help-circle' : 'help-circle-outline';
-          } else if (route.name === 'Settings') {
-            iconName = focused ? 'settings' : 'settings-outline';
+          switch (route.name) {
+            case 'Game':
+              iconName = focused ? 'game-controller' : 'game-controller-outline';
+              break;
+            case 'Stats':
+              iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+              break;
+            case 'Help':
+              iconName = focused ? 'help-circle' : 'help-circle-outline';
+              break;
+            case 'Settings':
+              iconName = focused ? 'settings' : 'settings-outline';
+              break;
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;

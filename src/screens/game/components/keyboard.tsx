@@ -43,15 +43,14 @@ export default function Keyboard({ handleGuess }: KeyboardProps) {
 
   const handleKeyboardKeyColor = (key: string) => {
     const keyData = usedKeys[key];
-    if (keyData) {
-      if (keyData === 'correct') {
-        return colorPalette.correct;
-      } else if (keyData === 'present') {
-        return colorPalette.present;
-      } else if (keyData === 'absent') {
-        return colorPalette.absent;
-      } else return colorPalette.keyDefault;
-    } else return colorPalette.keyDefault;
+    switch (keyData) {
+      case 'correct':
+      case 'present':
+      case 'absent':
+        return colorPalette[keyData];
+      default:
+        return colorPalette.keyDefault;
+    }
   };
 
   const handleKeyPress = (key: string) => {
