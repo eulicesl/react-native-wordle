@@ -114,6 +114,15 @@ export const loadTheme = async (): Promise<'dark' | 'light' | null> => {
   return null;
 };
 
+// Clear only statistics data
+export const clearStatistics = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEYS.STATISTICS);
+  } catch (_e) {
+    console.log('Error clearing statistics:', _e);
+  }
+};
+
 // Clear all data (for reset functionality)
 export const clearAllData = async (): Promise<void> => {
   try {

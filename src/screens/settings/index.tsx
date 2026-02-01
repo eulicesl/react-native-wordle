@@ -28,7 +28,7 @@ import {
   setStoreData,
   saveSettings,
   saveTheme,
-  clearAllData,
+  clearStatistics,
   loadSettings,
 } from '../../utils/localStorageFuncs';
 
@@ -122,7 +122,7 @@ export default function Settings() {
           style: 'destructive',
           onPress: () => {
             dispatch(resetStatistics());
-            clearAllData();
+            clearStatistics();
           },
         },
       ]
