@@ -151,7 +151,7 @@ function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps
             },
           ]}
         >
-          <Text style={styles.barCount}>{count}</Text>
+          <Text style={[styles.barCount, count === 0 && theme.text]}>{count}</Text>
         </View>
       </View>
     </View>
