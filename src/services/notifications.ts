@@ -1,10 +1,23 @@
+import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
+// Configure notification handler for foreground notifications
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
 // Notification settings storage
 const NOTIFICATION_SETTINGS_KEY = 'wordle_notification_settings';
 const NOTIFICATION_HISTORY_KEY = 'wordle_notification_history';
+const SCHEDULED_IDS_KEY = 'wordle_scheduled_notification_ids';
 
 // Notification types
 export type NotificationType =
@@ -29,43 +42,37 @@ export interface NotificationSettings {
   weeklyStats: boolean;
 }
 
-// Notification content templates (exported for production use with expo-notifications)
+// Notification content templates
 export const NOTIFICATION_TEMPLATES = {
   dailyReminder: {
     title: "Today's Wordle is ready!",
     messages: [
-      "A new word awaits. Can you guess it in 6 tries?",
-      "Your daily brain exercise is here. Good luck!",
-      "Time to flex those vocabulary muscles!",
-      "The daily puzzle is live. How fast can you solve it?",
+      'A new word awaits. Can you guess it in 6 tries?',
+      'Your daily brain exercise is here. Good luck!',
+      'Time to flex those vocabulary muscles!',
+      'The daily puzzle is live. How fast can you solve it?',
       "New day, new word. Let's see what you've got!",
     ],
   },
   streakWarning: {
     title: "Don't lose your streak!",
     messages: [
-      "Your {streak}-day streak is at risk! Play now to keep it going.",
-      "Only a few hours left to maintain your {streak}-day streak!",
-      "Hey word master! Your {streak}-day streak needs you.",
+      'Your {streak}-day streak is at risk! Play now to keep it going.',
+      'Only a few hours left to maintain your {streak}-day streak!',
+      'Hey word master! Your {streak}-day streak needs you.',
     ],
   },
   achievementUnlocked: {
-    title: "Achievement Unlocked! 🏆",
-    messages: [
-      "You've earned '{achievement}'! Keep up the great work.",
-    ],
+    title: 'Achievement Unlocked! 🏆',
+    messages: ["You've earned '{achievement}'! Keep up the great work."],
   },
   weeklyStats: {
-    title: "Your Weekly Wordle Recap",
-    messages: [
-      "You played {games} games this week with a {winRate}% win rate!",
-    ],
+    title: 'Your Weekly Wordle Recap',
+    messages: ['You played {games} games this week with a {winRate}% win rate!'],
   },
   newFeature: {
-    title: "New in Wordle",
-    messages: [
-      "Check out what's new in the latest update!",
-    ],
+    title: 'New in Wordle',
+    messages: ["Check out what's new in the latest update!"],
   },
 };
 
@@ -87,12 +94,53 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 // Permission state
 let notificationPermissionGranted = false;
 
+// Store scheduled notification IDs
+async function storeScheduledId(key: string, id: string): Promise<void> {
+  try {
+    const stored = await getStoreData(SCHEDULED_IDS_KEY);
+    const ids = stored ? JSON.parse(stored) : {};
+    ids[key] = id;
+    await setStoreData(SCHEDULED_IDS_KEY, JSON.stringify(ids));
+  } catch (error) {
+    console.log('Error storing scheduled ID:', error);
+  }
+}
+
+async function getScheduledId(key: string): Promise<string | null> {
+  try {
+    const stored = await getStoreData(SCHEDULED_IDS_KEY);
+    if (stored) {
+      const ids = JSON.parse(stored);
+      return ids[key] || null;
+    }
+  } catch (error) {
+    console.log('Error getting scheduled ID:', error);
+  }
+  return null;
+}
+
+async function removeScheduledId(key: string): Promise<void> {
+  try {
+    const stored = await getStoreData(SCHEDULED_IDS_KEY);
+    if (stored) {
+      const ids = JSON.parse(stored);
+      delete ids[key];
+      await setStoreData(SCHEDULED_IDS_KEY, JSON.stringify(ids));
+    }
+  } catch (error) {
+    console.log('Error removing scheduled ID:', error);
+  }
+}
+
 // Initialize notifications
 export async function initializeNotifications(): Promise<boolean> {
   try {
-    // In production, use expo-notifications to request permissions
-    // For now, simulate permission request
-    notificationPermissionGranted = true;
+    // Request permissions
+    const permissionGranted = await requestNotificationPermission();
+    if (!permissionGranted) {
+      console.log('Notification permission not granted');
+      return false;
+    }
 
     // Load settings
     const settings = await getNotificationSettings();
@@ -102,7 +150,11 @@ export async function initializeNotifications(): Promise<boolean> {
       await scheduleDailyReminder(settings.dailyReminder.time);
     }
 
-    console.log('Notifications initialized');
+    if (settings.enabled && settings.weeklyStats) {
+      await scheduleWeeklyStats();
+    }
+
+    console.log('Notifications initialized successfully');
     return true;
   } catch (error) {
     console.log('Notification initialization failed:', error);
@@ -113,11 +165,44 @@ export async function initializeNotifications(): Promise<boolean> {
 // Request notification permissions
 export async function requestNotificationPermission(): Promise<boolean> {
   try {
-    // In production, use expo-notifications:
-    // const { status } = await Notifications.requestPermissionsAsync();
-    // notificationPermissionGranted = status === 'granted';
+    // First check existing permissions
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
 
-    notificationPermissionGranted = true;
+    let finalStatus = existingStatus;
+
+    // Request if not already granted
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    notificationPermissionGranted = finalStatus === 'granted';
+
+    // For Android, we need to set up the notification channel
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Wordle Notifications',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#6aaa64',
+        sound: 'default',
+      });
+
+      await Notifications.setNotificationChannelAsync('reminders', {
+        name: 'Daily Reminders',
+        description: 'Daily Wordle puzzle reminders',
+        importance: Notifications.AndroidImportance.DEFAULT,
+        sound: 'default',
+      });
+
+      await Notifications.setNotificationChannelAsync('achievements', {
+        name: 'Achievements',
+        description: 'Achievement unlock notifications',
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: 'default',
+      });
+    }
+
     return notificationPermissionGranted;
   } catch (error) {
     console.log('Permission request failed:', error);
@@ -159,7 +244,7 @@ export async function saveNotificationSettings(
   }
 }
 
-// Get random message from template (exported for production use)
+// Get random message from template
 export function getRandomMessage(messages: string[]): string {
   return messages[Math.floor(Math.random() * messages.length)] ?? messages[0] ?? '';
 }
@@ -171,26 +256,40 @@ export async function scheduleDailyReminder(time: string): Promise<string | null
   }
 
   try {
+    // Cancel existing daily reminder if any
+    const existingId = await getScheduledId('dailyReminder');
+    if (existingId) {
+      await Notifications.cancelScheduledNotificationAsync(existingId);
+      await removeScheduledId('dailyReminder');
+    }
+
     // Parse time
     const [hours, minutes] = time.split(':').map(Number);
 
-    // In production, use expo-notifications:
-    // const identifier = await Notifications.scheduleNotificationAsync({
-    //   content: {
-    //     title: NOTIFICATION_TEMPLATES.dailyReminder.title,
-    //     body: getRandomMessage(NOTIFICATION_TEMPLATES.dailyReminder.messages),
-    //     sound: true,
-    //     badge: 1,
-    //   },
-    //   trigger: {
-    //     hour: hours,
-    //     minute: minutes,
-    //     repeats: true,
-    //   },
-    // });
+    if (hours === undefined || minutes === undefined) {
+      console.log('Invalid time format');
+      return null;
+    }
 
-    const identifier = `daily_reminder_${hours}_${minutes}`;
-    console.log(`Scheduled daily reminder at ${time}`);
+    // Schedule the notification
+    const identifier = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: NOTIFICATION_TEMPLATES.dailyReminder.title,
+        body: getRandomMessage(NOTIFICATION_TEMPLATES.dailyReminder.messages),
+        sound: true,
+        badge: 1,
+        data: { type: 'dailyReminder' },
+        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: hours,
+        minute: minutes,
+      },
+    });
+
+    await storeScheduledId('dailyReminder', identifier);
+    console.log(`Scheduled daily reminder at ${time} with ID: ${identifier}`);
     return identifier;
   } catch (error) {
     console.log('Error scheduling daily reminder:', error);
@@ -208,6 +307,13 @@ export async function scheduleStreakWarning(
   }
 
   try {
+    // Cancel existing streak warning if any
+    const existingId = await getScheduledId('streakWarning');
+    if (existingId) {
+      await Notifications.cancelScheduledNotificationAsync(existingId);
+      await removeScheduledId('streakWarning');
+    }
+
     // Calculate trigger time (hours before midnight)
     const now = new Date();
     const midnight = new Date(now);
@@ -220,10 +326,30 @@ export async function scheduleStreakWarning(
       return null;
     }
 
-    // In production, schedule with expo-notifications using message template
-    // const message = getRandomMessage(NOTIFICATION_TEMPLATES.streakWarning.messages).replace('{streak}', String(currentStreak));
-    const identifier = `streak_warning_${now.toISOString().split('T')[0]}`;
-    console.log(`Scheduled streak warning for ${warningTime.toISOString()} (streak: ${currentStreak})`);
+    const message = getRandomMessage(NOTIFICATION_TEMPLATES.streakWarning.messages).replace(
+      '{streak}',
+      String(currentStreak)
+    );
+
+    const identifier = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: NOTIFICATION_TEMPLATES.streakWarning.title,
+        body: message,
+        sound: true,
+        badge: 1,
+        data: { type: 'streakWarning', streak: currentStreak },
+        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: warningTime,
+      },
+    });
+
+    await storeScheduledId('streakWarning', identifier);
+    console.log(
+      `Scheduled streak warning for ${warningTime.toISOString()} (streak: ${currentStreak})`
+    );
     return identifier;
   } catch (error) {
     console.log('Error scheduling streak warning:', error);
@@ -240,17 +366,24 @@ export async function notifyAchievementUnlocked(achievementTitle: string): Promi
   }
 
   try {
-    // In production, use expo-notifications:
-    // await Notifications.scheduleNotificationAsync({
-    //   content: {
-    //     title: NOTIFICATION_TEMPLATES.achievementUnlocked.title,
-    //     body: NOTIFICATION_TEMPLATES.achievementUnlocked.messages[0]?.replace('{achievement}', achievementTitle),
-    //     sound: true,
-    //   },
-    //   trigger: null, // Immediate
-    // });
+    const body =
+      NOTIFICATION_TEMPLATES.achievementUnlocked.messages[0]?.replace(
+        '{achievement}',
+        achievementTitle
+      ) ?? '';
 
-    console.log(`Achievement notification: ${achievementTitle}`);
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: NOTIFICATION_TEMPLATES.achievementUnlocked.title,
+        body,
+        sound: true,
+        data: { type: 'achievementUnlocked', achievement: achievementTitle },
+        ...(Platform.OS === 'android' && { channelId: 'achievements' }),
+      },
+      trigger: null, // Immediate
+    });
+
+    console.log(`Achievement notification sent: ${achievementTitle}`);
     await logNotification('achievementUnlocked', achievementTitle);
   } catch (error) {
     console.log('Error sending achievement notification:', error);
@@ -264,9 +397,31 @@ export async function scheduleWeeklyStats(): Promise<string | null> {
   }
 
   try {
+    // Cancel existing weekly stats notification if any
+    const existingId = await getScheduledId('weeklyStats');
+    if (existingId) {
+      await Notifications.cancelScheduledNotificationAsync(existingId);
+      await removeScheduledId('weeklyStats');
+    }
+
     // Schedule for Sunday at 6 PM
-    // In production, use expo-notifications with weekly trigger
-    const identifier = 'weekly_stats';
+    const identifier = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: NOTIFICATION_TEMPLATES.weeklyStats.title,
+        body: 'Check your weekly Wordle statistics!',
+        sound: true,
+        data: { type: 'weeklyStats' },
+        ...(Platform.OS === 'android' && { channelId: 'default' }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday: 1, // Sunday (1-7, where 1 is Sunday in expo-notifications)
+        hour: 18,
+        minute: 0,
+      },
+    });
+
+    await storeScheduledId('weeklyStats', identifier);
     console.log('Scheduled weekly stats notification');
     return identifier;
   } catch (error) {
@@ -275,7 +430,7 @@ export async function scheduleWeeklyStats(): Promise<string | null> {
   }
 }
 
-// Send weekly stats notification
+// Send weekly stats notification (immediate)
 export async function sendWeeklyStatsNotification(
   gamesPlayed: number,
   winRate: number
@@ -287,8 +442,22 @@ export async function sendWeeklyStatsNotification(
   }
 
   try {
-    // In production, use expo-notifications
-    console.log(`Weekly stats: ${gamesPlayed} games, ${winRate}% win rate`);
+    const body = NOTIFICATION_TEMPLATES.weeklyStats.messages[0]
+      ?.replace('{games}', String(gamesPlayed))
+      .replace('{winRate}', String(Math.round(winRate)));
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: NOTIFICATION_TEMPLATES.weeklyStats.title,
+        body: body ?? '',
+        sound: true,
+        data: { type: 'weeklyStats', gamesPlayed, winRate },
+        ...(Platform.OS === 'android' && { channelId: 'default' }),
+      },
+      trigger: null, // Immediate
+    });
+
+    console.log(`Weekly stats notification sent: ${gamesPlayed} games, ${winRate}% win rate`);
     await logNotification('weeklyStats', `${gamesPlayed} games, ${winRate}% win rate`);
   } catch (error) {
     console.log('Error sending weekly stats notification:', error);
@@ -298,8 +467,9 @@ export async function sendWeeklyStatsNotification(
 // Cancel all scheduled notifications
 export async function cancelAllNotifications(): Promise<void> {
   try {
-    // In production, use expo-notifications:
-    // await Notifications.cancelAllScheduledNotificationsAsync();
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    // Clear stored IDs
+    await setStoreData(SCHEDULED_IDS_KEY, JSON.stringify({}));
     console.log('All notifications cancelled');
   } catch (error) {
     console.log('Error cancelling notifications:', error);
@@ -309,8 +479,7 @@ export async function cancelAllNotifications(): Promise<void> {
 // Cancel specific notification
 export async function cancelNotification(identifier: string): Promise<void> {
   try {
-    // In production, use expo-notifications:
-    // await Notifications.cancelScheduledNotificationAsync(identifier);
+    await Notifications.cancelScheduledNotificationAsync(identifier);
     console.log(`Notification ${identifier} cancelled`);
   } catch (error) {
     console.log('Error cancelling notification:', error);
@@ -322,7 +491,7 @@ async function rescheduleAllNotifications(settings: NotificationSettings): Promi
   // Cancel existing notifications
   await cancelAllNotifications();
 
-  if (!settings.enabled) {
+  if (!settings.enabled || !notificationPermissionGranted) {
     return;
   }
 
@@ -369,16 +538,6 @@ export async function getNotificationHistory(): Promise<
   }
 }
 
-// Handle notification received while app is in foreground
-export function handleForegroundNotification(notification: {
-  title: string;
-  body: string;
-  data?: Record<string, unknown>;
-}): void {
-  // In production, show an in-app notification toast
-  console.log('Foreground notification:', notification.title);
-}
-
 // Handle notification tap (app opened from notification)
 export function handleNotificationTap(notification: {
   type?: NotificationType;
@@ -400,11 +559,8 @@ export function handleNotificationTap(notification: {
 
 // Set app badge count (iOS)
 export async function setBadgeCount(count: number): Promise<void> {
-  if (Platform.OS !== 'ios') return;
-
   try {
-    // In production, use expo-notifications:
-    // await Notifications.setBadgeCountAsync(count);
+    await Notifications.setBadgeCountAsync(count);
     console.log(`Badge count set to ${count}`);
   } catch (error) {
     console.log('Error setting badge count:', error);
@@ -414,4 +570,35 @@ export async function setBadgeCount(count: number): Promise<void> {
 // Clear app badge
 export async function clearBadge(): Promise<void> {
   await setBadgeCount(0);
+}
+
+// Get all scheduled notifications (for debugging)
+export async function getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
+  try {
+    return await Notifications.getAllScheduledNotificationsAsync();
+  } catch (error) {
+    console.log('Error getting scheduled notifications:', error);
+    return [];
+  }
+}
+
+// Add notification listeners
+export function addNotificationListeners(
+  onReceived?: (notification: Notifications.Notification) => void,
+  onResponse?: (response: Notifications.NotificationResponse) => void
+): { remove: () => void } {
+  const receivedSubscription = onReceived
+    ? Notifications.addNotificationReceivedListener(onReceived)
+    : null;
+
+  const responseSubscription = onResponse
+    ? Notifications.addNotificationResponseReceivedListener(onResponse)
+    : null;
+
+  return {
+    remove: () => {
+      receivedSubscription?.remove();
+      responseSubscription?.remove();
+    },
+  };
 }
