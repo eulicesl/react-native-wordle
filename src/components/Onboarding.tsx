@@ -13,7 +13,7 @@ import {
 
 import { useAppSelector } from '../hooks/storeHooks';
 import { colors } from '../utils/constants';
-import { triggerHaptic } from '../utils/haptics';
+import { playHaptic } from '../utils/haptics';
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -185,7 +185,7 @@ export default function Onboarding({ onComplete, forceShow = false }: Onboarding
   };
 
   const handleNext = () => {
-    triggerHaptic('light');
+    playHaptic('keyPress');
     if (currentStep < STEPS.length - 1) {
       animateOut(() => setCurrentStep(currentStep + 1));
     } else {
@@ -194,14 +194,14 @@ export default function Onboarding({ onComplete, forceShow = false }: Onboarding
   };
 
   const handlePrevious = () => {
-    triggerHaptic('light');
+    playHaptic('keyPress');
     if (currentStep > 0) {
       animateOut(() => setCurrentStep(currentStep - 1));
     }
   };
 
   const handleSkip = () => {
-    triggerHaptic('light');
+    playHaptic('keyPress');
     handleComplete();
   };
 
@@ -209,7 +209,7 @@ export default function Onboarding({ onComplete, forceShow = false }: Onboarding
     if (!forceShow) {
       await setStoreData(ONBOARDING_COMPLETE_KEY, 'true');
     }
-    triggerHaptic('success');
+    playHaptic('correct');
     setVisible(false);
     onComplete();
   };

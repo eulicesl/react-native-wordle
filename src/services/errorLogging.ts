@@ -14,6 +14,14 @@
 
 import { Platform } from 'react-native';
 
+// React Native global error handler type
+interface ErrorUtilsType {
+  getGlobalHandler: () => ((error: Error, isFatal?: boolean) => void) | undefined;
+  setGlobalHandler: (handler: (error: Error, isFatal?: boolean) => void) => void;
+}
+
+declare const ErrorUtils: ErrorUtilsType | undefined;
+
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 // Error severity levels
@@ -89,10 +97,10 @@ export function initializeErrorLogging(): void {
   });
 
   // Set up global error handler for unhandled promises
-  if (typeof global !== 'undefined') {
-    const originalHandler = global.ErrorUtils?.getGlobalHandler?.();
+  if (typeof ErrorUtils !== 'undefined' && ErrorUtils) {
+    const originalHandler = ErrorUtils.getGlobalHandler?.();
 
-    global.ErrorUtils?.setGlobalHandler?.((error: Error, isFatal?: boolean) => {
+    ErrorUtils.setGlobalHandler?.((error: Error, isFatal?: boolean) => {
       logError(
         'general',
         isFatal ? 'Unhandled fatal error' : 'Unhandled error',
