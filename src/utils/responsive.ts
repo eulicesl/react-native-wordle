@@ -239,15 +239,29 @@ export const DYNAMIC_TYPE_SCALES = {
   accessibility5: 2.76,
 } as const;
 
-// Get user's preferred text size multiplier
-export function getTextSizeMultiplier(): number {
-  // In a full implementation, this would read from AccessibilityInfo
-  // For now, return default
-  return 1.0;
+// Cache the font scale from system settings
+let cachedFontScale = PixelRatio.getFontScale();
+
+// Initialize font scale listener for dynamic updates
+export function initializeFontScaleListener(): () => void {
+  // Update cached value immediately
+  cachedFontScale = PixelRatio.getFontScale();
+
+  // Listen for dimension changes which may indicate font scale changes
+  const subscription = Dimensions.addEventListener('change', () => {
+    cachedFontScale = PixelRatio.getFontScale();
+  });
+
+  return () => subscription?.remove();
 }
 
-// Apply Dynamic Type scaling to font size
-export function dynamicFontSize(baseFontSize: number): number {
-  const multiplier = getTextSizeMultiplier();
+// Get user's preferred text size multiplier from system accessibility settings
+export function getTextSizeMultiplier(): number {
+  return cachedFontScale;
+}
+
+// Apply Dynamic Type scaling to font size with optional max scale
+export function dynamicFontSize(baseFontSize: number, maxScale = 1.5): number {
+  const multiplier = Math.min(getTextSizeMultiplier(), maxScale);
   return Math.round(baseFontSize * multiplier);
 }

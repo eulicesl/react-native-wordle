@@ -196,7 +196,7 @@ export default function Settings() {
         <SettingRow
           icon="contrast"
           title="High Contrast Mode"
-          description="Improve color accessibility"
+          description="Use orange/blue for colorblind accessibility"
           value={highContrastMode}
           onToggle={handleHighContrastToggle}
           themedStyles={themedStyles}

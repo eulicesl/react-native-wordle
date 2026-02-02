@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
-import AnimatedLottieView from 'lottie-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { ConfettiExplosion } from '../../components/ParticleEffect';
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
 import {
@@ -21,7 +22,7 @@ import {
   recordGameLoss,
 } from '../../store/slices/statisticsSlice';
 import { guess, matchStatus } from '../../types';
-import { HEIGHT, initialGuesses, SIZE } from '../../utils/constants';
+import { initialGuesses } from '../../utils/constants';
 import {
   getTodaysDailyWord,
   getRandomWord,
@@ -63,7 +64,7 @@ export default function Game() {
   const [gameMode, setGameMode] = useState<GameMode>('daily');
   const [dailyCompleted, setDailyCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const lottieRef = useRef<AnimatedLottieView>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Load language preference on mount
   useEffect(() => {
@@ -292,7 +293,7 @@ export default function Game() {
         });
         dispatch(setGuesses(updatedGuesses));
         setTimeout(() => {
-          lottieRef.current?.play();
+          setShowConfetti(true);
           dispatch(setGameWon(true));
           dispatch(setGameEnded(true));
           handleFoundKeysOnKeyboard(updatedGuess);
@@ -373,7 +374,7 @@ export default function Game() {
   };
 
   const startGame = (mode: GameMode) => {
-    lottieRef.current?.reset();
+    setShowConfetti(false);
     setGameMode(mode);
     setErrorMessage(null);
     dispatch(setGameStarted(true));
@@ -461,10 +462,11 @@ export default function Game() {
         gameMode={gameMode}
         errorMessage={errorMessage}
       />
-      <AnimatedLottieView
-        ref={lottieRef}
-        style={styles.lottieContainer}
-        source={require('../../lottie/confetti.json')}
+      <ConfettiExplosion
+        active={showConfetti}
+        particleCount={60}
+        duration={2500}
+        onComplete={() => setShowConfetti(false)}
       />
     </View>
   );
@@ -474,15 +476,6 @@ const styles = StyleSheet.create({
   gameContainer: {
     flex: 1,
     position: 'relative',
-  },
-  lottieContainer: {
-    width: SIZE,
-    height: HEIGHT * 0.5,
-    backgroundColor: 'transparent',
-    position: 'absolute',
-    zIndex: 10,
-    top: 20,
-    pointerEvents: 'none',
   },
   newGameScreen: {
     flex: 1,
