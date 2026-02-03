@@ -179,13 +179,11 @@ export default function Statistics() {
         </View>
       )}
 
-      {/* Achievement Categories */}
+      {/* Achievement Categories - dynamically grouped by category property */}
       <Text style={[styles.sectionTitle, themedStyles.text]}>Game Achievements</Text>
       <View style={styles.achievementsGrid}>
         {achievements
-          .filter((a) =>
-            ['firstWin', 'tenWins', 'fiftyWins', 'hundredWins'].includes(a.key)
-          )
+          .filter((a) => a.achievement.category === 'game')
           .map((achievement) => (
             <AchievementCard
               key={achievement.key}
@@ -198,9 +196,7 @@ export default function Statistics() {
       <Text style={[styles.sectionTitle, themedStyles.text]}>Streak Achievements</Text>
       <View style={styles.achievementsGrid}>
         {achievements
-          .filter((a) =>
-            ['streak3', 'streak7', 'streak30', 'streak100'].includes(a.key)
-          )
+          .filter((a) => a.achievement.category === 'streak')
           .map((achievement) => (
             <AchievementCard
               key={achievement.key}
@@ -213,15 +209,7 @@ export default function Statistics() {
       <Text style={[styles.sectionTitle, themedStyles.text]}>Skill Achievements</Text>
       <View style={styles.achievementsGrid}>
         {achievements
-          .filter((a) =>
-            [
-              'firstTryWin',
-              'secondTryWin',
-              'hardModeWin',
-              'hardModeMaster',
-              'speedDemon',
-            ].includes(a.key)
-          )
+          .filter((a) => a.achievement.category === 'skill')
           .map((achievement) => (
             <AchievementCard
               key={achievement.key}
@@ -234,9 +222,7 @@ export default function Statistics() {
       <Text style={[styles.sectionTitle, themedStyles.text]}>Daily Challenge</Text>
       <View style={styles.achievementsGrid}>
         {achievements
-          .filter((a) =>
-            ['dailyPlayer', 'dailyExpert', 'perfectMonth'].includes(a.key)
-          )
+          .filter((a) => a.achievement.category === 'daily')
           .map((achievement) => (
             <AchievementCard
               key={achievement.key}

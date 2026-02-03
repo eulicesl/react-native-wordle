@@ -204,7 +204,7 @@ async function createLogEntry(
     category,
     message,
     error: error instanceof Error ? error.message : error ? String(error) : undefined,
-    stack: error instanceof Error ? error.stack : undefined,
+    stack: error instanceof Error ? error.stack : (error as { stack?: string })?.stack,
     context: {
       ...userContext,
       ...context,

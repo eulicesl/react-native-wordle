@@ -2,6 +2,9 @@ import { Platform } from 'react-native';
 
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
+// Achievement category types
+export type AchievementCategory = 'game' | 'streak' | 'skill' | 'daily';
+
 // Achievement definitions
 export const ACHIEVEMENTS = {
   // Game completion achievements
@@ -10,24 +13,28 @@ export const ACHIEVEMENTS = {
     title: 'First Victory',
     description: 'Win your first game of Wordle',
     points: 10,
+    category: 'game' as AchievementCategory,
   },
   tenWins: {
     id: 'com.wordle.achievement.ten_wins',
     title: 'Getting Started',
     description: 'Win 10 games',
     points: 25,
+    category: 'game' as AchievementCategory,
   },
   fiftyWins: {
     id: 'com.wordle.achievement.fifty_wins',
     title: 'Word Master',
     description: 'Win 50 games',
     points: 50,
+    category: 'game' as AchievementCategory,
   },
   hundredWins: {
     id: 'com.wordle.achievement.hundred_wins',
     title: 'Lexicon Legend',
     description: 'Win 100 games',
     points: 100,
+    category: 'game' as AchievementCategory,
   },
 
   // Streak achievements
@@ -36,24 +43,28 @@ export const ACHIEVEMENTS = {
     title: 'On a Roll',
     description: 'Achieve a 3-day win streak',
     points: 15,
+    category: 'streak' as AchievementCategory,
   },
   streak7: {
     id: 'com.wordle.achievement.streak_7',
     title: 'Week Warrior',
     description: 'Achieve a 7-day win streak',
     points: 30,
+    category: 'streak' as AchievementCategory,
   },
   streak30: {
     id: 'com.wordle.achievement.streak_30',
     title: 'Monthly Master',
     description: 'Achieve a 30-day win streak',
     points: 75,
+    category: 'streak' as AchievementCategory,
   },
   streak100: {
     id: 'com.wordle.achievement.streak_100',
     title: 'Unstoppable',
     description: 'Achieve a 100-day win streak',
     points: 150,
+    category: 'streak' as AchievementCategory,
   },
 
   // Skill achievements
@@ -62,24 +73,35 @@ export const ACHIEVEMENTS = {
     title: 'Perfect Guess',
     description: 'Win a game on your first try',
     points: 50,
+    category: 'skill' as AchievementCategory,
   },
   secondTryWin: {
     id: 'com.wordle.achievement.second_try',
     title: 'Quick Thinker',
     description: 'Win a game in 2 tries',
     points: 25,
+    category: 'skill' as AchievementCategory,
   },
   hardModeWin: {
     id: 'com.wordle.achievement.hard_mode',
     title: 'Hard Mode Hero',
     description: 'Win a game in Hard Mode',
     points: 20,
+    category: 'skill' as AchievementCategory,
   },
   hardModeMaster: {
     id: 'com.wordle.achievement.hard_mode_master',
     title: 'Hard Mode Master',
     description: 'Win 25 games in Hard Mode',
     points: 75,
+    category: 'skill' as AchievementCategory,
+  },
+  speedDemon: {
+    id: 'com.wordle.achievement.speed_demon',
+    title: 'Speed Demon',
+    description: 'Win a game in under 30 seconds',
+    points: 40,
+    category: 'skill' as AchievementCategory,
   },
 
   // Daily challenge achievements
@@ -88,26 +110,21 @@ export const ACHIEVEMENTS = {
     title: 'Daily Devotee',
     description: 'Complete 7 daily challenges',
     points: 20,
+    category: 'daily' as AchievementCategory,
   },
   dailyExpert: {
     id: 'com.wordle.achievement.daily_expert',
     title: 'Daily Expert',
     description: 'Complete 30 daily challenges',
     points: 50,
+    category: 'daily' as AchievementCategory,
   },
-
-  // Special achievements
   perfectMonth: {
     id: 'com.wordle.achievement.perfect_month',
     title: 'Perfect Month',
     description: 'Win every daily challenge in a calendar month',
     points: 200,
-  },
-  speedDemon: {
-    id: 'com.wordle.achievement.speed_demon',
-    title: 'Speed Demon',
-    description: 'Win a game in under 30 seconds',
-    points: 40,
+    category: 'daily' as AchievementCategory,
   },
 } as const;
 

@@ -7,28 +7,37 @@ import { guess, matchStatus } from '../types';
  * - Present matches only count if there are remaining unmatched letters in solution
  */
 export function calculateMatches(guessWord: string, solution: string): matchStatus[] {
-  const matches: matchStatus[] = [];
+  const matches: matchStatus[] = new Array(5).fill('absent');
+  const solutionLetters = solution.split('');
+  const guessLetters = guessWord.split('');
 
-  guessWord.split('').forEach((letter, index) => {
-    const leftSlice = guessWord.slice(0, index + 1);
-    const countInLeft = leftSlice.split('').filter((item) => item === letter).length;
-    const totalCount = solution.split('').filter((item) => item === letter).length;
-    const nonMatchingPairs = solution
-      .split('')
-      .filter((item, idx) => guessWord[idx] !== item);
+  // Track remaining letter counts from solution (for handling duplicates)
+  const letterCounts: Record<string, number> = {};
+  for (const letter of solutionLetters) {
+    letterCounts[letter] = (letterCounts[letter] || 0) + 1;
+  }
 
-    if (letter === solution[index]) {
-      matches.push('correct');
-    } else if (solution.includes(letter)) {
-      if (countInLeft <= totalCount && nonMatchingPairs.includes(letter)) {
-        matches.push('present');
-      } else {
-        matches.push('absent');
-      }
-    } else {
-      matches.push('absent');
+  // First pass: identify correct matches (green)
+  for (let i = 0; i < 5; i++) {
+    const guessLetter = guessLetters[i]!;
+    const solutionLetter = solutionLetters[i]!;
+    if (guessLetter === solutionLetter) {
+      matches[i] = 'correct';
+      // guessLetter === solutionLetter guarantees letterCounts[guessLetter] exists
+      letterCounts[guessLetter] = letterCounts[guessLetter]! - 1;
     }
-  });
+  }
+
+  // Second pass: identify present matches (yellow) using remaining letter counts
+  for (let i = 0; i < 5; i++) {
+    if (matches[i] === 'correct') continue;
+
+    const letter = guessLetters[i]!;
+    if (letterCounts[letter] && letterCounts[letter] > 0) {
+      matches[i] = 'present';
+      letterCounts[letter]--;
+    }
+  }
 
   return matches;
 }

@@ -43,9 +43,6 @@ jest.mock('react-native-reanimated', () => {
   return Reanimated;
 });
 
-// Silence console warnings during tests
-global.console = {
-  ...console,
-  warn: jest.fn(),
-  error: jest.fn(),
-};
+// Note: Avoid globally silencing console.warn and console.error as it hides
+// valuable debugging information. If specific tests need to suppress console
+// output, use jest.spyOn() within those tests and assert the expected calls.
