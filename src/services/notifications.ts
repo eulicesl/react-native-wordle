@@ -4,13 +4,12 @@ import { Platform } from 'react-native';
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 // Configure notification handler for foreground notifications
+// Note: Only shouldShowAlert, shouldPlaySound, and shouldSetBadge are valid expo-notifications API properties
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
   }),
 });
 
@@ -405,6 +404,9 @@ export async function scheduleWeeklyStats(): Promise<string | null> {
     }
 
     // Schedule for Sunday at 6 PM
+    // Note: expo-notifications uses weekday 1-7 where 1 is Sunday on both iOS and Android.
+    // This is consistent with JavaScript's Date.getDay() on iOS (via NSCalendar)
+    // and Android's Calendar.SUNDAY constant.
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: NOTIFICATION_TEMPLATES.weeklyStats.title,
@@ -415,7 +417,7 @@ export async function scheduleWeeklyStats(): Promise<string | null> {
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-        weekday: 1, // Sunday (1-7, where 1 is Sunday in expo-notifications)
+        weekday: 1, // Sunday (1=Sunday, 2=Monday, ..., 7=Saturday)
         hour: 18,
         minute: 0,
       },

@@ -27,10 +27,26 @@ jest.mock('expo-notifications', () => ({
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('mock-id')),
   cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
   cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
+  getAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve([])),
   setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
   setBadgeCountAsync: jest.fn(() => Promise.resolve()),
   addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  AndroidImportance: {
+    DEFAULT: 3,
+    HIGH: 4,
+    LOW: 2,
+    MAX: 5,
+    MIN: 1,
+    NONE: 0,
+  },
+  SchedulableTriggerInputTypes: {
+    DATE: 'date',
+    DAILY: 'daily',
+    WEEKLY: 'weekly',
+    TIME_INTERVAL: 'timeInterval',
+  },
 }));
 
 // Mock lottie-react-native

@@ -189,6 +189,12 @@ export function logFatal(
 
 /**
  * Create and store a log entry
+ *
+ * This function is intentionally designed as fire-and-forget for performance reasons.
+ * Callers (logDebug, logInfo, logWarning, logError, logFatal) do not await this function
+ * to avoid blocking the main execution flow. Log entries may not be persisted if the app
+ * terminates immediately after logging. For critical errors, the console output provides
+ * immediate visibility while storage happens asynchronously.
  */
 async function createLogEntry(
   severity: ErrorSeverity,

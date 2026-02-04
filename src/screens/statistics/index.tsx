@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -23,6 +23,26 @@ import { formatTimeUntilNextWord } from '../../utils/dailyWord';
 import { loadStatistics } from '../../utils/localStorageFuncs';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Icon mapping for achievements - using constant object for better maintainability
+const ACHIEVEMENT_ICON_MAP: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
+  firstWin: 'ribbon',
+  tenWins: 'medal',
+  fiftyWins: 'medal',
+  hundredWins: 'medal',
+  streak3: 'flame',
+  streak7: 'flame',
+  streak30: 'flame',
+  streak100: 'flame',
+  firstTryWin: 'flash',
+  secondTryWin: 'speedometer',
+  hardModeWin: 'skull',
+  hardModeMaster: 'skull',
+  dailyPlayer: 'calendar',
+  dailyExpert: 'calendar',
+  perfectMonth: 'star',
+  speedDemon: 'timer',
+};
 
 type TabType = 'stats' | 'achievements';
 
@@ -58,6 +78,23 @@ export default function Statistics() {
     setAchievements(allAchievements);
     setAchievementProgress(progress);
   }, []);
+
+  // Memoize achievements grouped by category to avoid repeated filtering on every render
+  const achievementsByCategory = useMemo(() => {
+    const grouped: Record<string, AchievementData[]> = {
+      game: [],
+      streak: [],
+      skill: [],
+      daily: [],
+    };
+    achievements.forEach((a) => {
+      const category = a.achievement.category;
+      if (category in grouped) {
+        grouped[category].push(a);
+      }
+    });
+    return grouped;
+  }, [achievements]);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -179,57 +216,49 @@ export default function Statistics() {
         </View>
       )}
 
-      {/* Achievement Categories - dynamically grouped by category property */}
+      {/* Achievement Categories - using memoized grouped achievements */}
       <Text style={[styles.sectionTitle, themedStyles.text]}>Game Achievements</Text>
       <View style={styles.achievementsGrid}>
-        {achievements
-          .filter((a) => a.achievement.category === 'game')
-          .map((achievement) => (
-            <AchievementCard
-              key={achievement.key}
-              achievement={achievement}
-              theme={themedStyles}
-            />
-          ))}
+        {achievementsByCategory.game.map((achievement) => (
+          <AchievementCard
+            key={achievement.key}
+            achievement={achievement}
+            theme={themedStyles}
+          />
+        ))}
       </View>
 
       <Text style={[styles.sectionTitle, themedStyles.text]}>Streak Achievements</Text>
       <View style={styles.achievementsGrid}>
-        {achievements
-          .filter((a) => a.achievement.category === 'streak')
-          .map((achievement) => (
-            <AchievementCard
-              key={achievement.key}
-              achievement={achievement}
-              theme={themedStyles}
-            />
-          ))}
+        {achievementsByCategory.streak.map((achievement) => (
+          <AchievementCard
+            key={achievement.key}
+            achievement={achievement}
+            theme={themedStyles}
+          />
+        ))}
       </View>
 
       <Text style={[styles.sectionTitle, themedStyles.text]}>Skill Achievements</Text>
       <View style={styles.achievementsGrid}>
-        {achievements
-          .filter((a) => a.achievement.category === 'skill')
-          .map((achievement) => (
-            <AchievementCard
-              key={achievement.key}
-              achievement={achievement}
-              theme={themedStyles}
-            />
-          ))}
+        {achievementsByCategory.skill.map((achievement) => (
+          <AchievementCard
+            key={achievement.key}
+            achievement={achievement}
+            theme={themedStyles}
+          />
+        ))}
       </View>
 
       <Text style={[styles.sectionTitle, themedStyles.text]}>Daily Challenge</Text>
       <View style={styles.achievementsGrid}>
-        {achievements
-          .filter((a) => a.achievement.category === 'daily')
-          .map((achievement) => (
-            <AchievementCard
-              key={achievement.key}
-              achievement={achievement}
-              theme={themedStyles}
-            />
-          ))}
+        {achievementsByCategory.daily.map((achievement) => (
+          <AchievementCard
+            key={achievement.key}
+            achievement={achievement}
+            theme={themedStyles}
+          />
+        ))}
       </View>
     </>
   );
@@ -363,35 +392,7 @@ function AchievementCard({ achievement, theme }: AchievementCardProps) {
   const { unlocked, achievement: achievementData } = achievement;
 
   const getAchievementIcon = (key: string): React.ComponentProps<typeof Ionicons>['name'] => {
-    switch (key) {
-      case 'firstWin':
-        return 'ribbon';
-      case 'tenWins':
-      case 'fiftyWins':
-      case 'hundredWins':
-        return 'medal';
-      case 'streak3':
-      case 'streak7':
-      case 'streak30':
-      case 'streak100':
-        return 'flame';
-      case 'firstTryWin':
-        return 'flash';
-      case 'secondTryWin':
-        return 'speedometer';
-      case 'hardModeWin':
-      case 'hardModeMaster':
-        return 'skull';
-      case 'dailyPlayer':
-      case 'dailyExpert':
-        return 'calendar';
-      case 'perfectMonth':
-        return 'star';
-      case 'speedDemon':
-        return 'timer';
-      default:
-        return 'trophy';
-    }
+    return ACHIEVEMENT_ICON_MAP[key] ?? 'trophy';
   };
 
   const formatDate = (dateString: string | null) => {

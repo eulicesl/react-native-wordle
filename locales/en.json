@@ -1,5 +1,4 @@
 {
   "CFBundleDisplayName": "Wordle",
-  "CFBundleName": "Wordle",
-  "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized content."
+  "CFBundleName": "Wordle"
 }

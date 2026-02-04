@@ -125,12 +125,18 @@ describe('getDayNumber', () => {
   });
 
   it('should return number of days since Jan 1, 2022', () => {
+    // Mock Date to a fixed point in time for deterministic testing
+    const mockDate = new Date(Date.UTC(2024, 5, 15, 12, 0, 0)); // June 15, 2024 12:00 UTC
+    jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
+
     const dayNum = getDayNumber();
-    // Should be at least the number of days from Jan 1, 2022 to now
+
+    // Calculate expected days from Jan 1, 2022 to June 15, 2024
     const start = new Date(Date.UTC(2022, 0, 1));
-    const now = new Date();
-    const expectedMin = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    expect(dayNum).toBeGreaterThanOrEqual(expectedMin - 1); // Allow for timezone edge cases
+    const expectedDays = Math.floor((mockDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    expect(dayNum).toBe(expectedDays);
+
+    jest.restoreAllMocks();
   });
 
   it('should be consistent when called multiple times', () => {
