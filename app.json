@@ -11,14 +11,14 @@
       "resizeMode": "contain",
       "backgroundColor": "#121213"
     },
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wordle.game",
-      "buildNumber": "2",
+      "bundleIdentifier": "com.eulices.wordle",
+      "buildNumber": "3",
       "infoPlist": {
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized content.",
         "UIBackgroundModes": [
@@ -36,32 +36,13 @@
           "UIInterfaceOrientationLandscapeRight"
         ],
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUbiquitousContainers": {
-          "iCloud.com.wordle.game": {
-            "NSUbiquitousContainerIsDocumentScopePublic": false,
-            "NSUbiquitousContainerSupportedFolderLevels": "One",
-            "NSUbiquitousContainerName": "Wordle"
-          }
-        },
         "UIUserInterfaceStyle": "Automatic",
-        "UIViewControllerBasedStatusBarAppearance": true,
-        "LSApplicationQueriesSchemes": [
-          "gamecenter"
-        ]
+        "UIViewControllerBasedStatusBarAppearance": true
       },
       "config": {
         "usesNonExemptEncryption": false
       },
       "entitlements": {
-        "com.apple.developer.game-center": true,
-        "com.apple.developer.icloud-container-identifiers": [
-          "iCloud.com.wordle.game"
-        ],
-        "com.apple.developer.icloud-services": [
-          "CloudKit",
-          "CloudDocuments"
-        ],
-        "com.apple.developer.ubiquity-kvstore-identifier": "$(TeamIdentifierPrefix)com.wordle.game",
         "aps-environment": "production"
       },
       "associatedDomains": [
@@ -73,7 +54,9 @@
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
           }
         ]
       }
@@ -83,7 +66,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#121213"
       },
-      "package": "com.wordle.game",
+      "package": "com.eulices.wordle",
       "versionCode": 2,
       "permissions": [
         "VIBRATE",
@@ -120,135 +103,11 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "wordle-game-project-id"
-      },
-      "gameCenter": {
-        "leaderboards": [
-          {
-            "id": "com.wordle.leaderboard.total_wins",
-            "name": "Total Wins"
-          },
-          {
-            "id": "com.wordle.leaderboard.current_streak",
-            "name": "Current Streak"
-          },
-          {
-            "id": "com.wordle.leaderboard.max_streak",
-            "name": "Best Streak"
-          },
-          {
-            "id": "com.wordle.leaderboard.avg_guesses",
-            "name": "Average Guesses"
-          },
-          {
-            "id": "com.wordle.leaderboard.win_percentage",
-            "name": "Win Rate"
-          }
-        ],
-        "achievements": [
-          {
-            "id": "com.wordle.achievement.first_win",
-            "name": "First Victory"
-          },
-          {
-            "id": "com.wordle.achievement.ten_wins",
-            "name": "Getting Started"
-          },
-          {
-            "id": "com.wordle.achievement.fifty_wins",
-            "name": "Word Master"
-          },
-          {
-            "id": "com.wordle.achievement.hundred_wins",
-            "name": "Lexicon Legend"
-          },
-          {
-            "id": "com.wordle.achievement.streak_3",
-            "name": "On a Roll"
-          },
-          {
-            "id": "com.wordle.achievement.streak_7",
-            "name": "Week Warrior"
-          },
-          {
-            "id": "com.wordle.achievement.streak_30",
-            "name": "Monthly Master"
-          },
-          {
-            "id": "com.wordle.achievement.streak_100",
-            "name": "Unstoppable"
-          },
-          {
-            "id": "com.wordle.achievement.first_try",
-            "name": "Perfect Guess"
-          },
-          {
-            "id": "com.wordle.achievement.second_try",
-            "name": "Quick Thinker"
-          },
-          {
-            "id": "com.wordle.achievement.hard_mode",
-            "name": "Hard Mode Hero"
-          },
-          {
-            "id": "com.wordle.achievement.hard_mode_master",
-            "name": "Hard Mode Master"
-          },
-          {
-            "id": "com.wordle.achievement.daily_player",
-            "name": "Daily Devotee"
-          },
-          {
-            "id": "com.wordle.achievement.daily_expert",
-            "name": "Daily Expert"
-          },
-          {
-            "id": "com.wordle.achievement.perfect_month",
-            "name": "Perfect Month"
-          },
-          {
-            "id": "com.wordle.achievement.speed_demon",
-            "name": "Speed Demon"
-          }
-        ]
-      },
-      "widgets": {
-        "ios": {
-          "supportsLiveActivities": false,
-          "widgetBundleIdentifier": "com.wordle.game.widgets",
-          "widgetKinds": [
-            {
-              "kind": "WordleStatsWidget",
-              "displayName": "Wordle Stats",
-              "description": "View your Wordle statistics at a glance",
-              "supportedFamilies": ["systemSmall", "systemMedium"]
-            },
-            {
-              "kind": "WordleStreakWidget",
-              "displayName": "Streak Counter",
-              "description": "Track your current winning streak",
-              "supportedFamilies": ["systemSmall", "accessoryCircular", "accessoryRectangular"]
-            },
-            {
-              "kind": "WordleCountdownWidget",
-              "displayName": "Next Puzzle",
-              "description": "Countdown to the next daily puzzle",
-              "supportedFamilies": ["systemSmall", "accessoryCircular", "accessoryInline"]
-            },
-            {
-              "kind": "WordleLastGameWidget",
-              "displayName": "Last Game",
-              "description": "See your most recent game result",
-              "supportedFamilies": ["systemMedium", "systemLarge"]
-            }
-          ]
-        }
+        "projectId": "9ea851a1-e8a9-4232-80a9-73170f303a1a"
       }
     },
-    "owner": "wordle-games",
+    "owner": "eulices",
     "scheme": "wordle",
-    "githubUrl": "https://github.com/wordle-games/wordle-app",
-    "originalFullName": "@wordle-games/wordle",
     "locales": {
       "en": "./locales/en.json"
     }

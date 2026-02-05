@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 
 import { View, StyleSheet, Dimensions } from 'react-native';
+
+import { isReduceMotionEnabled } from '../utils/accessibility';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -162,9 +164,16 @@ export const ConfettiExplosion: React.FC<{
 }) => {
   const [particles, setParticles] = React.useState<ParticleConfig[]>([]);
   const completedCount = useRef(0);
+  const reduceMotion = isReduceMotionEnabled();
 
   useEffect(() => {
-    if (active) {
+    // If reduce motion is enabled, skip animation and call onComplete immediately
+    if (reduceMotion && active && onComplete) {
+      const timer = setTimeout(onComplete, 100);
+      return () => clearTimeout(timer);
+    }
+
+    if (active && !reduceMotion) {
       completedCount.current = 0;
       const newParticles: ParticleConfig[] = [];
 
@@ -192,7 +201,8 @@ export const ConfettiExplosion: React.FC<{
     } else {
       setParticles([]);
     }
-  }, [active, particleCount, origin.x, origin.y, spread]);
+    return undefined;
+  }, [active, particleCount, origin.x, origin.y, spread, reduceMotion, onComplete]);
 
   const handleParticleComplete = () => {
     completedCount.current++;
@@ -201,7 +211,8 @@ export const ConfettiExplosion: React.FC<{
     }
   };
 
-  if (!active || particles.length === 0) return null;
+  // Skip rendering particles if reduce motion is enabled
+  if (reduceMotion || !active || particles.length === 0) return null;
 
   return (
     <View style={styles.container} pointerEvents="none">
@@ -226,28 +237,39 @@ export const SparkleEffect: React.FC<{
   const scale = useSharedValue(0);
   const rotation = useSharedValue(0);
   const opacity = useSharedValue(0);
+  const reduceMotion = isReduceMotionEnabled();
 
   useEffect(() => {
     if (active) {
-      scale.value = withSequence(
-        withSpring(1.2, { damping: 5 }),
-        withSpring(1, { damping: 10 })
-      );
-      rotation.value = withRepeat(
-        withTiming(360, { duration: 3000, easing: Easing.linear }),
-        -1,
-        false
-      );
-      opacity.value = withTiming(1, { duration: 200 });
+      if (reduceMotion) {
+        // Instant appearance without animation
+        scale.value = 1;
+        rotation.value = 0;
+        opacity.value = 1;
+      } else {
+        scale.value = withSequence(
+          withSpring(1.2, { damping: 5 }),
+          withSpring(1, { damping: 10 })
+        );
+        rotation.value = withRepeat(
+          withTiming(360, { duration: 3000, easing: Easing.linear }),
+          -1,
+          false
+        );
+        opacity.value = withTiming(1, { duration: 200 });
+      }
     } else {
-      opacity.value = withTiming(0, { duration: 200 });
+      opacity.value = reduceMotion ? 0 : withTiming(0, { duration: 200 });
     }
-  }, [active]);
+  }, [active, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }, { rotate: `${rotation.value}deg` }],
     opacity: opacity.value,
   }));
+
+  // Skip rendering if not active when reduce motion is enabled
+  if (reduceMotion && !active) return null;
 
   return (
     <Animated.View style={[styles.sparkle, { width: size, height: size }, animatedStyle]}>
@@ -268,8 +290,16 @@ export const PulseGlow: React.FC<{
 }> = ({ active, color = '#6aaa64', size = 100, children }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
+  const reduceMotion = isReduceMotionEnabled();
 
   useEffect(() => {
+    if (reduceMotion) {
+      // Skip pulsing animation, just show static glow when active
+      scale.value = 1;
+      opacity.value = active ? 0.2 : 0;
+      return;
+    }
+
     if (active) {
       scale.value = withRepeat(
         withSequence(
@@ -291,7 +321,7 @@ export const PulseGlow: React.FC<{
       scale.value = withTiming(1);
       opacity.value = withTiming(0);
     }
-  }, [active]);
+  }, [active, reduceMotion]);
 
   const glowStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -371,8 +401,15 @@ export const FloatingView: React.FC<{
   duration?: number;
 }> = ({ children, amplitude = 5, duration = 2000 }) => {
   const translateY = useSharedValue(0);
+  const reduceMotion = isReduceMotionEnabled();
 
   useEffect(() => {
+    // Skip floating animation if reduce motion is enabled
+    if (reduceMotion) {
+      translateY.value = 0;
+      return;
+    }
+
     translateY.value = withRepeat(
       withSequence(
         withTiming(-amplitude, { duration: duration / 2, easing: Easing.inOut(Easing.sin) }),
@@ -381,11 +418,16 @@ export const FloatingView: React.FC<{
       -1,
       true
     );
-  }, [amplitude, duration]);
+  }, [amplitude, duration, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
   }));
+
+  // Just render children without animation wrapper if reduce motion
+  if (reduceMotion) {
+    return <View>{children}</View>;
+  }
 
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 };
@@ -398,9 +440,18 @@ export const ShakeView: React.FC<{
   onComplete?: () => void;
 }> = ({ active, children, intensity = 10, onComplete }) => {
   const translateX = useSharedValue(0);
+  const reduceMotion = isReduceMotionEnabled();
 
   useEffect(() => {
     if (active) {
+      if (reduceMotion) {
+        // Skip shake animation, call onComplete immediately
+        if (onComplete) {
+          onComplete();
+        }
+        return;
+      }
+
       translateX.value = withSequence(
         withTiming(-intensity, { duration: 50 }),
         withTiming(intensity, { duration: 50 }),
@@ -413,11 +464,16 @@ export const ShakeView: React.FC<{
         })
       );
     }
-  }, [active, intensity]);
+  }, [active, intensity, reduceMotion, onComplete]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
+
+  // Just render children without animation wrapper if reduce motion
+  if (reduceMotion) {
+    return <View>{children}</View>;
+  }
 
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 };
@@ -429,9 +485,18 @@ export const BounceView: React.FC<{
   onComplete?: () => void;
 }> = ({ active, children, onComplete }) => {
   const scale = useSharedValue(1);
+  const reduceMotion = isReduceMotionEnabled();
 
   useEffect(() => {
     if (active) {
+      if (reduceMotion) {
+        // Skip bounce animation, call onComplete immediately
+        if (onComplete) {
+          onComplete();
+        }
+        return;
+      }
+
       scale.value = withSequence(
         withSpring(1.2, { damping: 5 }),
         withSpring(0.9, { damping: 5 }),
@@ -443,11 +508,16 @@ export const BounceView: React.FC<{
         })
       );
     }
-  }, [active]);
+  }, [active, reduceMotion, onComplete]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
+
+  // Just render children without animation wrapper if reduce motion
+  if (reduceMotion) {
+    return <View>{children}</View>;
+  }
 
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 };

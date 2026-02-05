@@ -13,6 +13,8 @@ import { Provider } from 'react-redux';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import MainScreen from './src/screens/main';
 import { store } from './src/store';
+import { initializeAccessibility } from './src/utils/accessibility';
+import { initializeFontScaleListener } from './src/utils/responsive';
 import { initializeAudio } from './src/utils/sounds';
 
 // Keep the splash screen visible while we fetch resources
@@ -28,6 +30,17 @@ export default function App() {
   // Initialize audio system
   useEffect(() => {
     initializeAudio();
+  }, []);
+
+  // Initialize accessibility listeners for reduce motion and font scale
+  useEffect(() => {
+    const cleanupAccessibility = initializeAccessibility();
+    const cleanupFontScale = initializeFontScaleListener();
+
+    return () => {
+      cleanupAccessibility();
+      cleanupFontScale();
+    };
   }, []);
 
   const onLayoutRootView = useCallback(async () => {
