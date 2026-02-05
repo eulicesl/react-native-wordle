@@ -29,7 +29,7 @@ const mockAsyncStorage = require('@react-native-async-storage/async-storage');
 jest.mock('react-native', () => ({
   Platform: {
     OS: 'ios',
-    select: jest.fn((obj) => obj.ios),
+    select: jest.fn((obj: { ios?: unknown }) => obj.ios),
   },
 }));
 
