@@ -1,5 +1,12 @@
+const jestExpoPreset = require('jest-expo/jest-preset');
+
 module.exports = {
-  preset: 'jest-expo',
+  ...jestExpoPreset,
+  // Prepend our polyfills before jest-expo's setup files
+  setupFiles: [
+    '<rootDir>/jest.polyfills.js',
+    ...(jestExpoPreset.setupFiles || []),
+  ],
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|lottie-react-native|@reduxjs/toolkit|immer)',
   ],

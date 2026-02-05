@@ -98,7 +98,8 @@ export function getOrdinalSuffix(n: number): string {
 }
 
 /**
- * Update used keys state after a guess
+ * Update used keys state after a guess.
+ * Key status precedence: correct > present > absent > '' (unset).
  */
 export function updateUsedKeys(
   currentUsedKeys: Record<string, matchStatus>,
@@ -106,19 +107,18 @@ export function updateUsedKeys(
 ): Record<string, matchStatus> {
   const tempUsedKeys = { ...currentUsedKeys };
 
+  // Priority mapping: higher value = higher precedence
+  const priority: Record<matchStatus, number> = { correct: 3, present: 2, absent: 1, '': 0 };
+
   guessResult.letters.forEach((letter: string, idx: number) => {
     const keyValue = tempUsedKeys[letter];
     const matchValue = guessResult.matches[idx];
     if (!matchValue) return;
 
-    if (!keyValue) {
+    // Only update if new status has higher priority than current
+    const currentPriority = keyValue ? priority[keyValue] : 0;
+    if (priority[matchValue] > currentPriority) {
       tempUsedKeys[letter] = matchValue;
-    } else {
-      if (keyValue === 'correct') return;
-      else if (keyValue && matchValue === 'correct') {
-        tempUsedKeys[letter] = 'correct';
-      } else if (keyValue === 'present' && matchValue !== 'correct') return;
-      else tempUsedKeys[letter] = matchValue;
     }
   });
 

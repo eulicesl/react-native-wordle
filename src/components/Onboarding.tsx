@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import {
   View,
@@ -365,8 +366,7 @@ export default function Onboarding({ onComplete, forceShow = false }: Onboarding
 // Reset onboarding (for testing or re-viewing)
 export async function resetOnboarding(): Promise<void> {
   try {
-    const AsyncStorage = await import('@react-native-async-storage/async-storage');
-    await AsyncStorage.default.removeItem(ONBOARDING_COMPLETE_KEY);
+    await AsyncStorage.removeItem(ONBOARDING_COMPLETE_KEY);
   } catch (error) {
     console.log('Error resetting onboarding:', error);
   }

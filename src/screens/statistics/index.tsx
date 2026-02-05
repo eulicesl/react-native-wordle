@@ -24,7 +24,8 @@ import { loadStatistics } from '../../utils/localStorageFuncs';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Icon mapping for achievements - using constant object for better maintainability
+// Icon mapping for achievements.
+// If you add new achievements, either add an entry here or they will fall back to the default icon (see getAchievementIcon).
 const ACHIEVEMENT_ICON_MAP: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
   firstWin: 'ribbon',
   tenWins: 'medal',
@@ -43,6 +44,17 @@ const ACHIEVEMENT_ICON_MAP: Record<string, React.ComponentProps<typeof Ionicons>
   perfectMonth: 'star',
   speedDemon: 'timer',
 };
+
+
+function formatAchievementDate(dateString: string | null): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
 type TabType = 'stats' | 'achievements';
 
@@ -69,6 +81,9 @@ export default function Statistics() {
   const [achievements, setAchievements] = useState<AchievementData[]>([]);
   const [achievementProgress, setAchievementProgress] = useState<AchievementProgress | null>(null);
 
+  // Measured width of the tab container for accurate indicator positioning
+  const [tabContainerWidth, setTabContainerWidth] = useState(0);
+
   // Animation for tab indicator
   const [tabIndicatorAnim] = useState(new Animated.Value(0));
 
@@ -79,18 +94,18 @@ export default function Statistics() {
     setAchievementProgress(progress);
   }, []);
 
-  // Memoize achievements grouped by category to avoid repeated filtering on every render
+    // Memoize achievements grouped by category to avoid repeated filtering on every render
   const achievementsByCategory = useMemo(() => {
-    const grouped: Record<string, AchievementData[]> = {
-      game: [],
-      streak: [],
-      skill: [],
-      daily: [],
+    const grouped = {
+      game: [] as AchievementData[],
+      streak: [] as AchievementData[],
+      skill: [] as AchievementData[],
+      daily: [] as AchievementData[],
     };
     achievements.forEach((a) => {
       const category = a.achievement.category;
       if (category in grouped) {
-        grouped[category].push(a);
+        grouped[category as keyof typeof grouped].push(a);
       }
     });
     return grouped;
@@ -146,9 +161,17 @@ export default function Statistics() {
     },
   };
 
+  const TAB_CONTAINER_PADDING = 4;
+  const SCREEN_HORIZONTAL_PADDING = 20;
+
+  const tabIndicatorTravel =
+    tabContainerWidth > 0
+      ? (tabContainerWidth - TAB_CONTAINER_PADDING * 2) / 2
+      : (SCREEN_WIDTH - SCREEN_HORIZONTAL_PADDING * 2 - TAB_CONTAINER_PADDING * 2) / 2;
+
   const tabIndicatorTranslate = tabIndicatorAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, (SCREEN_WIDTH - 40) / 2],
+    outputRange: [0, tabIndicatorTravel],
   });
 
   const renderStats = () => (
@@ -208,7 +231,7 @@ export default function Statistics() {
               style={[
                 styles.progressBar,
                 {
-                  width: `${(achievementProgress.unlockedCount / achievementProgress.totalAchievements) * 100}%`,
+                  width: `${achievementProgress.totalAchievements > 0 ? (achievementProgress.unlockedCount / achievementProgress.totalAchievements) * 100 : 0}%`,
                 },
               ]}
             />
@@ -271,12 +294,17 @@ export default function Statistics() {
       <Text style={[styles.title, themedStyles.text]}>Statistics</Text>
 
       {/* Tab Switcher */}
-      <View style={[styles.tabContainer, themedStyles.card]}>
+      <View
+        style={[styles.tabContainer, themedStyles.card]}
+        onLayout={(e) => setTabContainerWidth(e.nativeEvent.layout.width)}
+      >
         <Animated.View
           style={[
             styles.tabIndicator,
             {
               transform: [{ translateX: tabIndicatorTranslate }],
+              width: tabIndicatorTravel, // half the inner tabContainer width
+
             },
           ]}
         />
@@ -395,16 +423,6 @@ function AchievementCard({ achievement, theme }: AchievementCardProps) {
     return ACHIEVEMENT_ICON_MAP[key] ?? 'trophy';
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
   return (
     <View
       style={[
@@ -451,7 +469,7 @@ function AchievementCard({ achievement, theme }: AchievementCardProps) {
           </View>
           {unlocked && achievement.unlockedAt && (
             <Text style={[styles.achievementDate, theme.secondaryText]}>
-              {formatDate(achievement.unlockedAt)}
+              {formatAchievementDate(achievement.unlockedAt)}
             </Text>
           )}
         </View>
@@ -491,8 +509,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     left: 4,
-    width: '50%',
-    height: '100%',
+    bottom: 4,
     backgroundColor: colors.correct,
     borderRadius: 10,
   },

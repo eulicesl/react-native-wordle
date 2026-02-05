@@ -1,10 +1,13 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { logError, logInfo, logWarning } from './errorLogging';
+
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 // Configure notification handler for foreground notifications
-// Note: Only shouldShowAlert, shouldPlaySound, and shouldSetBadge are valid expo-notifications API properties
+// Note: expo-notifications supports additional platform/version-specific flags in some releases (e.g. iOS banner/list).
+// We intentionally stick to the cross-platform baseline fields here for broad compatibility.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -101,7 +104,7 @@ async function storeScheduledId(key: string, id: string): Promise<void> {
     ids[key] = id;
     await setStoreData(SCHEDULED_IDS_KEY, JSON.stringify(ids));
   } catch (error) {
-    console.log('Error storing scheduled ID:', error);
+    logError('notification', 'Error storing scheduled ID', error);
   }
 }
 
@@ -113,7 +116,7 @@ async function getScheduledId(key: string): Promise<string | null> {
       return ids[key] || null;
     }
   } catch (error) {
-    console.log('Error getting scheduled ID:', error);
+    logError('notification', 'Error getting scheduled ID', error);
   }
   return null;
 }
@@ -127,7 +130,7 @@ async function removeScheduledId(key: string): Promise<void> {
       await setStoreData(SCHEDULED_IDS_KEY, JSON.stringify(ids));
     }
   } catch (error) {
-    console.log('Error removing scheduled ID:', error);
+    logError('notification', 'Error removing scheduled ID', error);
   }
 }
 
@@ -137,7 +140,7 @@ export async function initializeNotifications(): Promise<boolean> {
     // Request permissions
     const permissionGranted = await requestNotificationPermission();
     if (!permissionGranted) {
-      console.log('Notification permission not granted');
+      logWarning('notification', 'Notification permission not granted');
       return false;
     }
 
@@ -153,10 +156,10 @@ export async function initializeNotifications(): Promise<boolean> {
       await scheduleWeeklyStats();
     }
 
-    console.log('Notifications initialized successfully');
+    logInfo('notification', 'Notifications initialized successfully');
     return true;
   } catch (error) {
-    console.log('Notification initialization failed:', error);
+    logError('notification', 'Notification initialization failed', error);
     return false;
   }
 }
@@ -204,7 +207,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
 
     return notificationPermissionGranted;
   } catch (error) {
-    console.log('Permission request failed:', error);
+    logError('notification', 'Permission request failed', error);
     return false;
   }
 }
@@ -222,7 +225,7 @@ export async function getNotificationSettings(): Promise<NotificationSettings> {
       return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
     }
   } catch (error) {
-    console.log('Error reading notification settings:', error);
+    logError('notification', 'Error reading notification settings', error);
   }
   return DEFAULT_SETTINGS;
 }
@@ -239,13 +242,26 @@ export async function saveNotificationSettings(
     // Reschedule notifications based on new settings
     await rescheduleAllNotifications(updated);
   } catch (error) {
-    console.log('Error saving notification settings:', error);
+    logError('notification', 'Error saving notification settings', error);
   }
 }
 
 // Get random message from template
 export function getRandomMessage(messages: string[]): string {
   return messages[Math.floor(Math.random() * messages.length)] ?? messages[0] ?? '';
+}
+
+// Parse a time string in "HH:MM" 24-hour format.
+// Returns null for invalid values (NaN, missing parts, or out-of-range).
+export function parseTimeString(time: string): { hour: number; minute: number } | null {
+  const parts = time.split(':');
+  if (parts.length !== 2) return null;
+  const hour = Number(parts[0]);
+  const minute = Number(parts[1]);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+  if (hour < 0 || hour > 23) return null;
+  if (minute < 0 || minute > 59) return null;
+  return { hour, minute };
 }
 
 // Schedule daily reminder notification
@@ -261,14 +277,14 @@ export async function scheduleDailyReminder(time: string): Promise<string | null
       await Notifications.cancelScheduledNotificationAsync(existingId);
       await removeScheduledId('dailyReminder');
     }
+    const parsed = parseTimeString(time);
 
-    // Parse time
-    const [hours, minutes] = time.split(':').map(Number);
-
-    if (hours === undefined || minutes === undefined) {
-      console.log('Invalid time format');
+    if (!parsed) {
+      logWarning('notification', 'Invalid time format for daily reminder', { time });
       return null;
     }
+
+    const { hour, minute } = parsed;
 
     // Schedule the notification
     const identifier = await Notifications.scheduleNotificationAsync({
@@ -282,16 +298,16 @@ export async function scheduleDailyReminder(time: string): Promise<string | null
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour: hours,
-        minute: minutes,
+        hour: hour,
+        minute: minute,
       },
     });
 
     await storeScheduledId('dailyReminder', identifier);
-    console.log(`Scheduled daily reminder at ${time} with ID: ${identifier}`);
+    logInfo('notification', 'Scheduled daily reminder', { time, identifier });
     return identifier;
   } catch (error) {
-    console.log('Error scheduling daily reminder:', error);
+    logError('notification', 'Error scheduling daily reminder', error, { time });
     return null;
   }
 }
@@ -351,7 +367,7 @@ export async function scheduleStreakWarning(
     );
     return identifier;
   } catch (error) {
-    console.log('Error scheduling streak warning:', error);
+    logError('notification', 'Error scheduling streak warning', error, { hoursBeforeMidnight, currentStreak });
     return null;
   }
 }
@@ -382,10 +398,10 @@ export async function notifyAchievementUnlocked(achievementTitle: string): Promi
       trigger: null, // Immediate
     });
 
-    console.log(`Achievement notification sent: ${achievementTitle}`);
+    logInfo('notification', 'Achievement notification sent', { achievementTitle });
     await logNotification('achievementUnlocked', achievementTitle);
   } catch (error) {
-    console.log('Error sending achievement notification:', error);
+    logError('notification', 'Error sending achievement notification', error);
   }
 }
 
@@ -404,9 +420,8 @@ export async function scheduleWeeklyStats(): Promise<string | null> {
     }
 
     // Schedule for Sunday at 6 PM
-    // Note: expo-notifications uses weekday 1-7 where 1 is Sunday on both iOS and Android.
-    // This is consistent with JavaScript's Date.getDay() on iOS (via NSCalendar)
-    // and Android's Calendar.SUNDAY constant.
+    // Note: expo-notifications normalizes weekdays to 1-7 where 1 is Sunday across both iOS and Android.
+    // Use these values as defined by expo-notifications documentation.
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: NOTIFICATION_TEMPLATES.weeklyStats.title,
@@ -424,10 +439,10 @@ export async function scheduleWeeklyStats(): Promise<string | null> {
     });
 
     await storeScheduledId('weeklyStats', identifier);
-    console.log('Scheduled weekly stats notification');
+    logInfo('notification', 'Scheduled weekly stats notification');
     return identifier;
   } catch (error) {
-    console.log('Error scheduling weekly stats:', error);
+    logError('notification', 'Error scheduling weekly stats', error);
     return null;
   }
 }
@@ -459,10 +474,10 @@ export async function sendWeeklyStatsNotification(
       trigger: null, // Immediate
     });
 
-    console.log(`Weekly stats notification sent: ${gamesPlayed} games, ${winRate}% win rate`);
+    logInfo('notification', 'Weekly stats notification sent', { gamesPlayed, winRate });
     await logNotification('weeklyStats', `${gamesPlayed} games, ${winRate}% win rate`);
   } catch (error) {
-    console.log('Error sending weekly stats notification:', error);
+    logError('notification', 'Error sending weekly stats notification', error);
   }
 }
 
@@ -472,9 +487,9 @@ export async function cancelAllNotifications(): Promise<void> {
     await Notifications.cancelAllScheduledNotificationsAsync();
     // Clear stored IDs
     await setStoreData(SCHEDULED_IDS_KEY, JSON.stringify({}));
-    console.log('All notifications cancelled');
+    logInfo('notification', 'All notifications cancelled');
   } catch (error) {
-    console.log('Error cancelling notifications:', error);
+    logError('notification', 'Error cancelling notifications', error);
   }
 }
 
@@ -482,9 +497,9 @@ export async function cancelAllNotifications(): Promise<void> {
 export async function cancelNotification(identifier: string): Promise<void> {
   try {
     await Notifications.cancelScheduledNotificationAsync(identifier);
-    console.log(`Notification ${identifier} cancelled`);
+    logInfo('notification', 'Notification cancelled', { identifier });
   } catch (error) {
-    console.log('Error cancelling notification:', error);
+    logError('notification', 'Error cancelling notification', error);
   }
 }
 
@@ -523,7 +538,7 @@ async function logNotification(type: NotificationType, details: string): Promise
     const trimmed = history.slice(0, 50);
     await setStoreData(NOTIFICATION_HISTORY_KEY, JSON.stringify(trimmed));
   } catch (error) {
-    console.log('Error logging notification:', error);
+    logError('notification', 'Error logging notification', error);
   }
 }
 
@@ -535,7 +550,7 @@ export async function getNotificationHistory(): Promise<
     const historyStr = await getStoreData(NOTIFICATION_HISTORY_KEY);
     return historyStr ? JSON.parse(historyStr) : [];
   } catch (error) {
-    console.log('Error reading notification history:', error);
+    logError('notification', 'Error reading notification history', error);
     return [];
   }
 }
@@ -561,11 +576,16 @@ export function handleNotificationTap(notification: {
 
 // Set app badge count (iOS)
 export async function setBadgeCount(count: number): Promise<void> {
+  // iOS supports badges reliably. Android badge behavior depends on launcher/OEM support.
+  if (Platform.OS !== 'ios') {
+    return;
+  }
+
   try {
     await Notifications.setBadgeCountAsync(count);
-    console.log(`Badge count set to ${count}`);
+    logInfo('notification', 'Badge count set', { count });
   } catch (error) {
-    console.log('Error setting badge count:', error);
+    logError('notification', 'Error setting badge count', error);
   }
 }
 
@@ -579,7 +599,7 @@ export async function getScheduledNotifications(): Promise<Notifications.Notific
   try {
     return await Notifications.getAllScheduledNotificationsAsync();
   } catch (error) {
-    console.log('Error getting scheduled notifications:', error);
+    logError('notification', 'Error getting scheduled notifications', error);
     return [];
   }
 }

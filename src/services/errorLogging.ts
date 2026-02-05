@@ -178,23 +178,26 @@ export function logError(
 /**
  * Log a fatal error
  */
-export function logFatal(
+export async function logFatal(
   category: ErrorCategory,
   message: string,
   error?: Error | unknown,
   context?: Record<string, unknown>
-): void {
-  createLogEntry('fatal', category, message, error, context);
+): Promise<void> {
+  // Await storage for fatal errors to reduce the risk of losing critical logs
+  await createLogEntry('fatal', category, message, error, context);
 }
 
 /**
  * Create and store a log entry
  *
  * This function is intentionally designed as fire-and-forget for performance reasons.
- * Callers (logDebug, logInfo, logWarning, logError, logFatal) do not await this function
- * to avoid blocking the main execution flow. Log entries may not be persisted if the app
- * terminates immediately after logging. For critical errors, the console output provides
- * immediate visibility while storage happens asynchronously.
+ * Callers (logDebug, logInfo, logWarning, logError) do not await this function to avoid
+ * blocking the main execution flow. Log entries may not be persisted if the app
+ * terminates immediately after logging.
+ *
+ * Exception: logFatal explicitly awaits this function to reduce the risk of losing
+ * the log entry. Console output still provides immediate visibility.
  */
 async function createLogEntry(
   severity: ErrorSeverity,
