@@ -37,6 +37,9 @@ jobs:
     name: Build iOS
     needs: quality-checks
     runs-on: ubuntu-latest
+    # Avoid consuming EAS Build quota on pull requests.
+    # Build artifacts are produced on push to main or via manual workflow_dispatch.
+    if: github.event_name != 'pull_request'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
