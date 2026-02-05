@@ -125,18 +125,24 @@ describe('getDayNumber', () => {
   });
 
   it('should return number of days since Jan 1, 2022', () => {
-    // Mock Date to a fixed point in time for deterministic testing
+    // Use fake timers to freeze time without replacing the global Date constructor
     const mockDate = new Date(Date.UTC(2024, 5, 15, 12, 0, 0)); // June 15, 2024 12:00 UTC
-    jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
 
-    const dayNum = getDayNumber();
+    jest.useFakeTimers();
+    jest.setSystemTime(mockDate);
 
-    // Calculate expected days from Jan 1, 2022 to June 15, 2024
-    const start = new Date(Date.UTC(2022, 0, 1));
-    const expectedDays = Math.floor((mockDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    expect(dayNum).toBe(expectedDays);
+    try {
+      const dayNum = getDayNumber();
 
-    jest.restoreAllMocks();
+      // Calculate expected days from Jan 1, 2022 to June 15, 2024
+      const start = new Date(Date.UTC(2022, 0, 1));
+      const expectedDays = Math.floor(
+        (mockDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      expect(dayNum).toBe(expectedDays);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('should be consistent when called multiple times', () => {

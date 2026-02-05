@@ -50,7 +50,8 @@ jest.mock('expo-notifications', () => ({
 }));
 
 // Mock lottie-react-native
-jest.mock('lottie-react-native', () => 'LottieView');
+// Use a virtual mock so tests don't depend on native module installation in CI.
+jest.mock('lottie-react-native', () => 'LottieView', { virtual: true });
 
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
