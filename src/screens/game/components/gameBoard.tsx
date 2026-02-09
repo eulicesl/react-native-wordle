@@ -6,7 +6,7 @@ import Keyboard from './keyboard';
 import LetterSquare from './letterSquare';
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
-import { SIZE } from '../../../utils/constants';
+import { APP_NAME, SIZE } from '../../../utils/constants';
 
 interface GameBoardProps {
   solution: string;
@@ -43,7 +43,7 @@ const GameBoard = ({
       <View style={styles.contentArea}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, themedStyles.text]}>WORDVIBE</Text>
+          <Text style={[styles.headerTitle, themedStyles.text]}>{APP_NAME.toUpperCase()}</Text>
           <View style={styles.headerBadges}>
             {gameMode === 'daily' && (
               <View style={[styles.badge, styles.dailyBadge]}>

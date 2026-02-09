@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 
+import { APP_NAME } from '../utils/constants';
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 // Widget data storage key (shared with widget extension via App Groups)
@@ -281,8 +282,8 @@ export function formatLockScreenData(data: WidgetData): {
       line2: data.todayCompleted ? '✓ Completed' : 'Play today!',
     },
     inline: data.todayCompleted
-      ? `Wordle ✓ | ${data.currentStreak}🔥`
-      : `Wordle | ${data.currentStreak}🔥`,
+      ? `${APP_NAME} ✓ | ${data.currentStreak}🔥`
+      : `${APP_NAME} | ${data.currentStreak}🔥`,
   };
 }
 

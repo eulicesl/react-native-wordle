@@ -4,6 +4,8 @@ import { guess } from '../types';
 
 export const { width: SIZE, height: HEIGHT } = Dimensions.get('window');
 
+export const APP_NAME = 'Wordle';
+
 export const colors = {
   correct: '#6aaa64',
   present: '#c9b458',

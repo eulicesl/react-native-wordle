@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 
+import { APP_NAME } from '../utils/constants';
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 // Notification settings storage
@@ -32,7 +33,7 @@ export interface NotificationSettings {
 // Notification content templates (exported for production use with expo-notifications)
 export const NOTIFICATION_TEMPLATES = {
   dailyReminder: {
-    title: "Today's Wordle is ready!",
+    title: `Today's ${APP_NAME} is ready!`,
     messages: [
       "A new word awaits. Can you guess it in 6 tries?",
       "Your daily brain exercise is here. Good luck!",
@@ -56,13 +57,13 @@ export const NOTIFICATION_TEMPLATES = {
     ],
   },
   weeklyStats: {
-    title: "Your Weekly Wordle Recap",
+    title: `Your Weekly ${APP_NAME} Recap`,
     messages: [
       "You played {games} games this week with a {winRate}% win rate!",
     ],
   },
   newFeature: {
-    title: "New in Wordle",
+    title: `New in ${APP_NAME}`,
     messages: [
       "Check out what's new in the latest update!",
     ],

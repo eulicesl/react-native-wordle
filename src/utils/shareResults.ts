@@ -1,6 +1,7 @@
 import { Share, Platform } from 'react-native';
 
 import { guess, matchStatus } from '../types';
+import { APP_NAME } from './constants';
 import { getDayNumber } from './dailyWord';
 
 // Emoji mappings
@@ -51,8 +52,8 @@ export function generateShareText(
   const dayNumber = getDayNumber();
   const modeIndicator = hardMode ? '*' : '';
   const title = isDaily
-    ? `Wordle ${dayNumber} ${guessCount}/6${modeIndicator}`
-    : `Wordle (Unlimited) ${guessCount}/6${modeIndicator}`;
+    ? `${APP_NAME} ${dayNumber} ${guessCount}/6${modeIndicator}`
+    : `${APP_NAME} (Unlimited) ${guessCount}/6${modeIndicator}`;
 
   const emojiGrid = generateEmojiGrid(guesses, highContrast);
 
@@ -73,10 +74,10 @@ export async function shareResults(
     const result = await Share.share(
       {
         message: shareText,
-        ...(Platform.OS === 'ios' && { title: 'Wordle Results' }),
+        ...(Platform.OS === 'ios' && { title: `${APP_NAME} Results` }),
       },
       {
-        ...(Platform.OS === 'android' && { dialogTitle: 'Share your Wordle results' }),
+        ...(Platform.OS === 'android' && { dialogTitle: `Share your ${APP_NAME} results` }),
       }
     );
 

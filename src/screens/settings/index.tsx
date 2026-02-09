@@ -24,6 +24,7 @@ import {
 } from '../../store/slices/settingsSlice';
 import { resetStatistics } from '../../store/slices/statisticsSlice';
 import { setLightTheme, setDarkTheme } from '../../store/slices/themeSlice';
+import { APP_NAME } from '../../utils/constants';
 import {
   setStoreData,
   saveSettings,
@@ -244,7 +245,7 @@ export default function Settings() {
       {/* About */}
       <View style={styles.aboutSection}>
         <Text style={[styles.aboutText, themedStyles.secondaryText]}>
-          Wordle Clone v1.0.0
+          {APP_NAME} Clone v1.0.0
         </Text>
         <Text style={[styles.aboutText, themedStyles.secondaryText]}>
           Made with React Native

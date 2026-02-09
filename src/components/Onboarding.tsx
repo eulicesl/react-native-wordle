@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import { useAppSelector } from '../hooks/storeHooks';
-import { colors, SIZE } from '../utils/constants';
+import { APP_NAME, colors, SIZE } from '../utils/constants';
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 const ONBOARDING_COMPLETE_KEY = 'onboarding_complete';
@@ -31,7 +31,7 @@ interface OnboardingStep {
 
 const STEPS: OnboardingStep[] = [
   {
-    title: 'Welcome to Wordle!',
+    title: `Welcome to ${APP_NAME}!`,
     description: 'Guess the hidden word in 6 tries.\nEach guess must be a valid 5-letter word.',
     example: null,
   },

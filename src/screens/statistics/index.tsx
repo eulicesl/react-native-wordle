@@ -9,7 +9,7 @@ import {
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
 import { setStatistics } from '../../store/slices/statisticsSlice';
-import { colors } from '../../utils/constants';
+import { APP_NAME, colors } from '../../utils/constants';
 import { formatTimeUntilNextWord } from '../../utils/dailyWord';
 import { loadStatistics } from '../../utils/localStorageFuncs';
 
@@ -95,10 +95,10 @@ export default function Statistics() {
         ))}
       </View>
 
-      {/* Next Wordle Countdown */}
+      {/* Next Daily Countdown */}
       <View style={[styles.countdownCard, themedStyles.card]}>
         <Text style={[styles.countdownLabel, themedStyles.secondaryText]}>
-          Next Wordle
+          Next {APP_NAME}
         </Text>
         <Text style={[styles.countdown, themedStyles.text]}>{countdown}</Text>
       </View>

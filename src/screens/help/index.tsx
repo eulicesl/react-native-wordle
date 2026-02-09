@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 import { useAppSelector } from '../../hooks/storeHooks';
-import { colors, SIZE } from '../../utils/constants';
+import { APP_NAME, colors, SIZE } from '../../utils/constants';
 
 export default function Help() {
   const { theme } = useAppSelector((state) => state.theme);
@@ -33,7 +33,7 @@ export default function Help() {
     >
       <Text style={[styles.title, themedStyles.text]}>How To Play</Text>
       <Text style={[styles.subtitle, themedStyles.secondaryText]}>
-        Guess the Wordle in 6 tries.
+        Guess the {APP_NAME} in 6 tries.
       </Text>
 
       <View style={[styles.section, themedStyles.border]}>
@@ -149,7 +149,7 @@ export default function Help() {
 
       <View style={styles.footer}>
         <Text style={[styles.footerText, themedStyles.secondaryText]}>
-          A new Wordle will be available each day!
+          A new {APP_NAME} will be available each day!
         </Text>
       </View>
     </ScrollView>

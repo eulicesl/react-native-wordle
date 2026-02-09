@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 
+import { APP_NAME } from '../utils/constants';
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 // Achievement definitions
@@ -8,7 +9,7 @@ export const ACHIEVEMENTS = {
   firstWin: {
     id: 'com.wordle.achievement.first_win',
     title: 'First Victory',
-    description: 'Win your first game of Wordle',
+    description: `Win your first game of ${APP_NAME}`,
     points: 10,
   },
   tenWins: {

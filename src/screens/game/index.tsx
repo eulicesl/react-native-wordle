@@ -22,7 +22,7 @@ import {
   recordGameLoss,
 } from '../../store/slices/statisticsSlice';
 import { guess, matchStatus } from '../../types';
-import { initialGuesses } from '../../utils/constants';
+import { APP_NAME, initialGuesses } from '../../utils/constants';
 import {
   getTodaysDailyWord,
   getRandomWord,
@@ -415,7 +415,7 @@ export default function Game() {
   if (!gameStarted) {
     return (
       <View style={[styles.newGameScreen, themedStyles.background]}>
-        <Text style={[styles.title, themedStyles.text]}>WORDLE</Text>
+        <Text style={[styles.title, themedStyles.text]}>{APP_NAME.toUpperCase()}</Text>
         <Text style={[styles.subtitle, themedStyles.secondaryText]}>
           Get 6 chances to guess a 5-letter word.
         </Text>
