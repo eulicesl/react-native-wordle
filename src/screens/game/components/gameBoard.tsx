@@ -43,7 +43,7 @@ const GameBoard = ({
       <View style={styles.contentArea}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, themedStyles.text]}>WORDVIBE</Text>
+          <Text style={[styles.headerTitle, themedStyles.text]}>WORDLE</Text>
           <View style={styles.headerBadges}>
             {gameMode === 'daily' && (
               <View style={[styles.badge, styles.dailyBadge]}>
