@@ -39,14 +39,14 @@ function randomRange(min: number, max: number): number {
 
 // Victory confetti colors
 const CONFETTI_COLORS = [
-  '#6aaa64', // Green (correct)
-  '#c9b458', // Yellow (present)
-  '#FFD700', // Gold
-  '#FF6B6B', // Coral
-  '#4ECDC4', // Teal
-  '#9B59B6', // Purple
-  '#3498DB', // Blue
-  '#E74C3C', // Red
+  '#7C4DFF', // Purple (correct / brand primary)
+  '#FF6B9D', // Pink (present)
+  '#00BFA5', // Teal (brand secondary)
+  '#B39DFF', // Light purple
+  '#FF8A80', // Soft coral
+  '#64FFDA', // Mint teal
+  '#448AFF', // Blue
+  '#E040FB', // Magenta
 ];
 
 // Single particle component
@@ -185,7 +185,7 @@ export const ConfettiExplosion: React.FC<{
           x: origin.x,
           y: origin.y,
           size: randomRange(6, 14),
-          color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)] ?? '#6aaa64',
+          color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)] ?? '#7C4DFF',
           velocity: {
             x: Math.cos(angle) * velocity,
             y: Math.sin(angle) * velocity - randomRange(100, 200), // Initial upward velocity
@@ -287,7 +287,7 @@ export const PulseGlow: React.FC<{
   color?: string;
   size?: number;
   children?: React.ReactNode;
-}> = ({ active, color = '#6aaa64', size = 100, children }) => {
+}> = ({ active, color = '#7C4DFF', size = 100, children }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const reduceMotion = isReduceMotionEnabled();
