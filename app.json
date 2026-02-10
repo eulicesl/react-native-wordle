@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Wordle",
-    "slug": "wordle-game",
+    "name": "WordVibe",
+    "slug": "wordvibe-game",
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#121213"
+      "backgroundColor": "#1A1A2E"
     },
     "newArchEnabled": false,
     "assetBundlePatterns": [
@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.eulices.wordle",
+      "bundleIdentifier": "com.eulices.wordvibe",
       "buildNumber": "3",
       "infoPlist": {
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized content.",
@@ -46,7 +46,7 @@
         "aps-environment": "production"
       },
       "associatedDomains": [
-        "applinks:wordle.game"
+        "applinks:wordvibe.app"
       ],
       "usesAppleSignIn": false,
       "requireFullScreen": false,
@@ -64,9 +64,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#121213"
+        "backgroundColor": "#1A1A2E"
       },
-      "package": "com.eulices.wordle",
+      "package": "com.eulices.wordvibe",
       "versionCode": 2,
       "permissions": [
         "VIBRATE",
@@ -76,27 +76,27 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "name": "Wordle",
-      "shortName": "Wordle",
-      "description": "Guess the hidden word in 6 tries. A new puzzle is available each day!",
-      "backgroundColor": "#121213",
-      "themeColor": "#6aaa64"
+      "name": "WordVibe",
+      "shortName": "WordVibe",
+      "description": "Feel the vibe. Guess the hidden word in 6 tries. Purple means locked in, pink means close vibe, slate means no vibe. A new puzzle drops every day!",
+      "backgroundColor": "#1A1A2E",
+      "themeColor": "#7C4DFF"
     },
-    "description": "Guess the hidden 5-letter word in 6 tries. Each guess reveals clues: green means correct letter and position, yellow means correct letter but wrong position, gray means the letter is not in the word. A new puzzle is available each day!",
-    "primaryColor": "#6aaa64",
+    "description": "WordVibe — feel the vibe as you guess the hidden 5-letter word in 6 tries. Each guess reveals clues: purple means correct letter and position, pink means correct letter but wrong position, slate means the letter is not in the word. Watch your Vibe Meter rise as you get closer!",
+    "primaryColor": "#7C4DFF",
     "notification": {
       "icon": "./assets/notification-icon.png",
-      "color": "#6aaa64",
+      "color": "#7C4DFF",
       "iosDisplayInForeground": true,
       "androidMode": "default",
-      "androidCollapsedTitle": "Wordle"
+      "androidCollapsedTitle": "WordVibe"
     },
     "plugins": [
       [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#6aaa64",
+          "color": "#7C4DFF",
           "sounds": []
         }
       ]
@@ -107,7 +107,7 @@
       }
     },
     "owner": "eulices",
-    "scheme": "wordle",
+    "scheme": "wordvibe",
     "locales": {
       "en": "./locales/en.json"
     }
