@@ -15,6 +15,7 @@ import MainScreen from './src/screens/main';
 import { store } from './src/store';
 import { initializeAccessibility } from './src/utils/accessibility';
 import { initializeFontScaleListener } from './src/utils/responsive';
+import { runMigrationIfNeeded } from './src/utils/migration';
 import { initializeAudio } from './src/utils/sounds';
 
 // Keep the splash screen visible while we fetch resources
@@ -26,6 +27,11 @@ export default function App() {
     Montserrat_700Bold,
     Montserrat_800ExtraBold,
   });
+
+  // Run data migration from old Wordle keys to WordVibe keys
+  useEffect(() => {
+    runMigrationIfNeeded();
+  }, []);
 
   // Initialize audio system
   useEffect(() => {
