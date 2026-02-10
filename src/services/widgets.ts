@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 // Widget data storage key (shared with widget extension via App Groups)
-const WIDGET_DATA_KEY = 'wordle_widget_data';
+const WIDGET_DATA_KEY = 'wordvibe_widget_data';
 
 // Widget types
 export type WidgetSize = 'small' | 'medium' | 'large';
@@ -152,7 +152,7 @@ export async function reloadWidget(kind: string): Promise<void> {
 // Get widget configuration
 export async function getWidgetConfig(): Promise<WidgetConfig> {
   try {
-    const stored = await getStoreData('wordle_widget_config');
+    const stored = await getStoreData('wordvibe_widget_config');
     return stored ? { ...DEFAULT_WIDGET_CONFIG, ...JSON.parse(stored) } : DEFAULT_WIDGET_CONFIG;
   } catch (_error) {
     return DEFAULT_WIDGET_CONFIG;
@@ -163,7 +163,7 @@ export async function getWidgetConfig(): Promise<WidgetConfig> {
 export async function saveWidgetConfig(config: Partial<WidgetConfig>): Promise<void> {
   try {
     const current = await getWidgetConfig();
-    await setStoreData('wordle_widget_config', JSON.stringify({ ...current, ...config }));
+    await setStoreData('wordvibe_widget_config', JSON.stringify({ ...current, ...config }));
     await reloadWidgets();
   } catch (_error) {
     console.log('Error saving widget config:', _error);
@@ -196,10 +196,10 @@ export function generatePreviewData(): WidgetData {
 
 // Widget kind identifiers (must match native widget extension)
 export const WIDGET_KINDS = {
-  stats: 'WordleStatsWidget',
-  streak: 'WordleStreakWidget',
-  countdown: 'WordleCountdownWidget',
-  lastGame: 'WordleLastGameWidget',
+  stats: 'WordVibeStatsWidget',
+  streak: 'WordVibeStreakWidget',
+  countdown: 'WordVibeCountdownWidget',
+  lastGame: 'WordVibeLastGameWidget',
 } as const;
 
 // Get available widget sizes for each kind
@@ -220,31 +220,31 @@ export function getAvailableSizes(kind: keyof typeof WIDGET_KINDS): WidgetFamily
 
 // Widget Swift code template (for reference/documentation)
 export const WIDGET_SWIFT_TEMPLATE = `
-// WordleWidget.swift - iOS Widget Extension
+// WordVibeWidget.swift - iOS Widget Extension
 
 import WidgetKit
 import SwiftUI
 
-struct WordleEntry: TimelineEntry {
+struct WordVibeEntry: TimelineEntry {
     let date: Date
     let data: WidgetData
 }
 
-struct WordleStatsWidget: Widget {
-    let kind: String = "WordleStatsWidget"
+struct WordVibeStatsWidget: Widget {
+    let kind: String = "WordVibeStatsWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: WordleProvider()) { entry in
-            WordleStatsView(entry: entry)
+        StaticConfiguration(kind: kind, provider: WordVibeProvider()) { entry in
+            WordVibeStatsView(entry: entry)
         }
-        .configurationDisplayName("Wordle Stats")
-        .description("View your Wordle statistics")
+        .configurationDisplayName("WordVibe Stats")
+        .description("View your WordVibe statistics")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
-struct WordleStatsView: View {
-    var entry: WordleEntry
+struct WordVibeStatsView: View {
+    var entry: WordVibeEntry
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -281,8 +281,8 @@ export function formatLockScreenData(data: WidgetData): {
       line2: data.todayCompleted ? '✓ Completed' : 'Play today!',
     },
     inline: data.todayCompleted
-      ? `Wordle ✓ | ${data.currentStreak}🔥`
-      : `Wordle | ${data.currentStreak}🔥`,
+      ? `WordVibe ✓ | ${data.currentStreak}🔥`
+      : `WordVibe | ${data.currentStreak}🔥`,
   };
 }
 

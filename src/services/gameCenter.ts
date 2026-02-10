@@ -9,28 +9,28 @@ export type AchievementCategory = 'game' | 'streak' | 'skill' | 'daily';
 export const ACHIEVEMENTS = {
   // Game completion achievements
   firstWin: {
-    id: 'com.wordle.achievement.first_win',
+    id: 'com.wordvibe.achievement.first_win',
     title: 'First Victory',
-    description: 'Win your first game of Wordle',
+    description: 'Win your first game of WordVibe',
     points: 10,
     category: 'game' as AchievementCategory,
   },
   tenWins: {
-    id: 'com.wordle.achievement.ten_wins',
+    id: 'com.wordvibe.achievement.ten_wins',
     title: 'Getting Started',
     description: 'Win 10 games',
     points: 25,
     category: 'game' as AchievementCategory,
   },
   fiftyWins: {
-    id: 'com.wordle.achievement.fifty_wins',
+    id: 'com.wordvibe.achievement.fifty_wins',
     title: 'Word Master',
     description: 'Win 50 games',
     points: 50,
     category: 'game' as AchievementCategory,
   },
   hundredWins: {
-    id: 'com.wordle.achievement.hundred_wins',
+    id: 'com.wordvibe.achievement.hundred_wins',
     title: 'Lexicon Legend',
     description: 'Win 100 games',
     points: 100,
@@ -39,28 +39,28 @@ export const ACHIEVEMENTS = {
 
   // Streak achievements
   streak3: {
-    id: 'com.wordle.achievement.streak_3',
+    id: 'com.wordvibe.achievement.streak_3',
     title: 'On a Roll',
     description: 'Achieve a 3-day win streak',
     points: 15,
     category: 'streak' as AchievementCategory,
   },
   streak7: {
-    id: 'com.wordle.achievement.streak_7',
+    id: 'com.wordvibe.achievement.streak_7',
     title: 'Week Warrior',
     description: 'Achieve a 7-day win streak',
     points: 30,
     category: 'streak' as AchievementCategory,
   },
   streak30: {
-    id: 'com.wordle.achievement.streak_30',
+    id: 'com.wordvibe.achievement.streak_30',
     title: 'Monthly Master',
     description: 'Achieve a 30-day win streak',
     points: 75,
     category: 'streak' as AchievementCategory,
   },
   streak100: {
-    id: 'com.wordle.achievement.streak_100',
+    id: 'com.wordvibe.achievement.streak_100',
     title: 'Unstoppable',
     description: 'Achieve a 100-day win streak',
     points: 150,
@@ -69,28 +69,28 @@ export const ACHIEVEMENTS = {
 
   // Skill achievements
   firstTryWin: {
-    id: 'com.wordle.achievement.first_try',
+    id: 'com.wordvibe.achievement.first_try',
     title: 'Perfect Guess',
     description: 'Win a game on your first try',
     points: 50,
     category: 'skill' as AchievementCategory,
   },
   secondTryWin: {
-    id: 'com.wordle.achievement.second_try',
+    id: 'com.wordvibe.achievement.second_try',
     title: 'Quick Thinker',
     description: 'Win a game in 2 tries',
     points: 25,
     category: 'skill' as AchievementCategory,
   },
   hardModeWin: {
-    id: 'com.wordle.achievement.hard_mode',
+    id: 'com.wordvibe.achievement.hard_mode',
     title: 'Hard Mode Hero',
     description: 'Win a game in Hard Mode',
     points: 20,
     category: 'skill' as AchievementCategory,
   },
   hardModeMaster: {
-    id: 'com.wordle.achievement.hard_mode_master',
+    id: 'com.wordvibe.achievement.hard_mode_master',
     title: 'Hard Mode Master',
     description: 'Win 25 games in Hard Mode',
     points: 75,
@@ -106,55 +106,62 @@ export const ACHIEVEMENTS = {
 
   // Daily challenge achievements
   dailyPlayer: {
-    id: 'com.wordle.achievement.daily_player',
+    id: 'com.wordvibe.achievement.daily_player',
     title: 'Daily Devotee',
     description: 'Complete 7 daily challenges',
     points: 20,
     category: 'daily' as AchievementCategory,
   },
   dailyExpert: {
-    id: 'com.wordle.achievement.daily_expert',
+    id: 'com.wordvibe.achievement.daily_expert',
     title: 'Daily Expert',
     description: 'Complete 30 daily challenges',
     points: 50,
     category: 'daily' as AchievementCategory,
   },
   perfectMonth: {
-    id: 'com.wordle.achievement.perfect_month',
+    id: 'com.wordvibe.achievement.perfect_month',
     title: 'Perfect Month',
     description: 'Win every daily challenge in a calendar month',
     points: 200,
     category: 'daily' as AchievementCategory,
+  },
+  speedDemon: {
+    id: 'com.wordvibe.achievement.speed_demon',
+    title: 'Speed Demon',
+    description: 'Win a game in under 30 seconds',
+    points: 40,
+    category: 'skill' as AchievementCategory,
   },
 } as const;
 
 // Leaderboard definitions
 export const LEADERBOARDS = {
   totalWins: {
-    id: 'com.wordle.leaderboard.total_wins',
+    id: 'com.wordvibe.leaderboard.total_wins',
     title: 'Total Wins',
   },
   currentStreak: {
-    id: 'com.wordle.leaderboard.current_streak',
+    id: 'com.wordvibe.leaderboard.current_streak',
     title: 'Current Streak',
   },
   maxStreak: {
-    id: 'com.wordle.leaderboard.max_streak',
+    id: 'com.wordvibe.leaderboard.max_streak',
     title: 'Best Streak',
   },
   averageGuesses: {
-    id: 'com.wordle.leaderboard.avg_guesses',
+    id: 'com.wordvibe.leaderboard.avg_guesses',
     title: 'Average Guesses',
   },
   winPercentage: {
-    id: 'com.wordle.leaderboard.win_percentage',
+    id: 'com.wordvibe.leaderboard.win_percentage',
     title: 'Win Rate',
   },
 } as const;
 
 // Local achievement tracking (for non-Game Center tracking)
-const ACHIEVEMENT_STORAGE_KEY = 'wordle_achievements';
-const ACHIEVEMENT_PROGRESS_KEY = 'wordle_achievement_progress';
+const ACHIEVEMENT_STORAGE_KEY = 'wordvibe_achievements';
+const ACHIEVEMENT_PROGRESS_KEY = 'wordvibe_achievement_progress';
 
 interface AchievementProgress {
   totalWins: number;
