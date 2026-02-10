@@ -244,10 +244,10 @@ export default function Settings() {
       {/* About */}
       <View style={styles.aboutSection}>
         <Text style={[styles.aboutText, themedStyles.secondaryText]}>
-          Wordle Clone v1.0.0
+          WordVibe v2.0.0
         </Text>
         <Text style={[styles.aboutText, themedStyles.secondaryText]}>
-          Made with React Native
+          Created with ♥ by Eulices Lopez
         </Text>
       </View>
     </ScrollView>
@@ -293,7 +293,7 @@ function SettingRow({
       <Switch
         value={value}
         onValueChange={onToggle}
-        trackColor={{ false: '#767577', true: '#6aaa64' }}
+        trackColor={{ false: '#767577', true: '#7C4DFF' }}
         thumbColor={value ? '#fff' : '#f4f3f4'}
       />
     </View>
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   languageButtonActive: {
-    backgroundColor: '#6aaa64',
+    backgroundColor: '#7C4DFF',
   },
   languageButtonText: {
     fontSize: 16,

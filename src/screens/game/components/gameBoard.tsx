@@ -4,9 +4,11 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import Keyboard from './keyboard';
 import LetterSquare from './letterSquare';
+import VibeMeter from '../../../components/VibeMeter';
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
-import { SIZE } from '../../../utils/constants';
+import { APP_TITLE, SIZE } from '../../../utils/constants';
+import { calculateVibeScore } from '../../../utils/vibeMeter';
 
 interface GameBoardProps {
   solution: string;
@@ -43,7 +45,7 @@ const GameBoard = ({
       <View style={styles.contentArea}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, themedStyles.text]}>WORDLE</Text>
+          <Text style={[styles.headerTitle, themedStyles.text]}>{APP_TITLE}</Text>
           <View style={styles.headerBadges}>
             {gameMode === 'daily' && (
               <View style={[styles.badge, styles.dailyBadge]}>
@@ -75,6 +77,9 @@ const GameBoard = ({
             </View>
           ))}
         </View>
+
+        {/* Vibe Meter */}
+        <VibeMeter vibeScore={calculateVibeScore(guesses, solution)} />
 
         {/* Message Area */}
         <View style={styles.messageArea}>
@@ -166,10 +171,10 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   dailyBadge: {
-    backgroundColor: '#6aaa64',
+    backgroundColor: '#7C4DFF',
   },
   hardBadge: {
-    backgroundColor: '#c9b458',
+    backgroundColor: '#FF6B9D',
   },
   badgeText: {
     color: '#fff',
@@ -220,7 +225,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   shareButton: {
-    backgroundColor: '#6aaa64',
+    backgroundColor: '#7C4DFF',
   },
   newGameButton: {
     backgroundColor: '#404040',
