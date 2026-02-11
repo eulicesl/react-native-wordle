@@ -26,7 +26,7 @@ interface GameBoardProps {
   handleGuess: (keyPressed: string) => void;
   resetGame: () => void;
   onShare?: () => void;
-  gameMode?: 'daily' | 'unlimited';
+  gameMode?: 'daily' | 'unlimited' | 'speed';
   errorMessage?: string | null;
 }
 
@@ -135,6 +135,11 @@ const GameBoard = ({
             {gameMode === 'daily' && (
               <View style={[styles.badge, styles.dailyBadge]}>
                 <Text style={styles.badgeText}>{GAME_BOARD.daily}</Text>
+              </View>
+            )}
+            {gameMode === 'speed' && (
+              <View style={[styles.badge, styles.speedBadge]}>
+                <Text style={styles.badgeText}>Speed</Text>
               </View>
             )}
             {hardMode && (
@@ -346,6 +351,9 @@ const styles = StyleSheet.create({
   },
   dailyBadge: {
     backgroundColor: '#7C4DFF',
+  },
+  speedBadge: {
+    backgroundColor: '#FF9500',
   },
   hardBadge: {
     backgroundColor: '#FF6B9D',

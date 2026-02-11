@@ -4,6 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ReAnimated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import AchievementToast from '../../components/AchievementToast';
+import GameTimer from '../../components/GameTimer';
 import { ConfettiExplosion } from '../../components/ParticleEffect';
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
@@ -50,7 +51,10 @@ import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
 
-type GameMode = 'daily' | 'unlimited';
+type GameMode = 'daily' | 'unlimited' | 'speed';
+
+const SPEED_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+const SPEED_HARD_DURATION_MS = 2 * 60 * 1000; // 2 minutes in hard mode
 
 export default function Game() {
   const {
@@ -72,6 +76,7 @@ export default function Game() {
   const [dailyCompleted, setDailyCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [gameStartTime, setGameStartTime] = useState<number | null>(null);
   const [pendingAchievement, setPendingAchievement] = useState<{
     title: string;
     description: string;
@@ -346,7 +351,8 @@ export default function Game() {
           dispatch(recordGameWin({ guessCount, date: today, isDaily: gameMode === 'daily' }));
 
           // Check achievements and show toast for new unlocks
-          checkAchievements(true, guessCount, hardMode, gameMode === 'daily', null).then(
+          const timeTaken = gameStartTime ? Date.now() - gameStartTime : null;
+          checkAchievements(true, guessCount, hardMode, gameMode === 'daily', timeTaken).then(
             (newAchievements) => {
               if (newAchievements.length > 0) {
                 const first = newAchievements[0];
@@ -454,6 +460,7 @@ export default function Game() {
     setPendingAchievement(null);
     setGameMode(mode);
     setErrorMessage(null);
+    setGameStartTime(Date.now());
     dispatch(setGameStarted(true));
     resetGameState();
     dispatch(setCurrentGuessIndex(0));
@@ -469,15 +476,32 @@ export default function Game() {
     }
   };
 
+  const handleTimerExpire = useCallback(() => {
+    if (gameEnded) return;
+    dispatch(setGameEnded(true));
+    const today = getTodayDateString();
+    dispatch(recordGameLoss({ date: today, isDaily: false }));
+    checkAchievements(false, 0, hardMode, false, null);
+    announceGameResult(false, solution, 0);
+    saveGameToHistory({
+      date: new Date().toISOString(),
+      solution,
+      won: false,
+      guessCount: guesses.filter((g) => g.isComplete).length,
+      matches: guesses.filter((g) => g.isComplete).map((g) => g.matches),
+      gameMode: 'speed',
+      hardMode,
+    });
+  }, [gameEnded, dispatch, hardMode, solution, guesses]);
+
   const handleShare = async () => {
     const vibeScore = calculateVibeScore(guesses, solution);
     await shareResults(guesses, gameWon, gameMode === 'daily', hardMode, highContrastMode, vibeScore.score);
   };
 
   const resetGame = () => {
-    if (gameMode === 'daily') {
-      // For daily mode, start a new unlimited game
-      startGame('unlimited');
+    if (gameMode === 'speed') {
+      startGame('speed');
     } else {
       startGame('unlimited');
     }
@@ -540,11 +564,23 @@ export default function Game() {
               <Text style={styles.modeButtonSubtext}>{PRE_GAME.practiceWithRandomWords}</Text>
             </TouchableOpacity>
           </ReAnimated.View>
+
+          <ReAnimated.View entering={FadeInUp.delay(600).duration(500)}>
+            <TouchableOpacity
+              style={[styles.modeButton, styles.speedButton]}
+              onPress={() => startGame('speed')}
+            >
+              <Text style={styles.modeButtonText}>Speed Challenge</Text>
+              <Text style={styles.modeButtonSubtext}>
+                {hardMode ? '2 minutes' : '5 minutes'} to solve it
+              </Text>
+            </TouchableOpacity>
+          </ReAnimated.View>
         </View>
 
         {/* Streak Display */}
         {statistics.currentStreak > 0 && (
-          <ReAnimated.View entering={FadeInUp.delay(600).duration(500)} style={[styles.streakBadge, themedStyles.card]}>
+          <ReAnimated.View entering={FadeInUp.delay(700).duration(500)} style={[styles.streakBadge, themedStyles.card]}>
             <Text style={[styles.streakValue, { color: colors.correct }]}>
               {statistics.currentStreak}
             </Text>
@@ -553,7 +589,7 @@ export default function Game() {
         )}
 
         {hardMode && (
-          <ReAnimated.View entering={FadeInUp.delay(700).duration(400)} style={[styles.hardModeBadge, themedStyles.card]}>
+          <ReAnimated.View entering={FadeInUp.delay(800).duration(400)} style={[styles.hardModeBadge, themedStyles.card]}>
             <Text style={[styles.hardModeText, themedStyles.text]}>{PRE_GAME.hardModeEnabled}</Text>
           </ReAnimated.View>
         )}
@@ -561,8 +597,19 @@ export default function Game() {
     );
   }
 
+  const speedDuration = hardMode ? SPEED_HARD_DURATION_MS : SPEED_DURATION_MS;
+
   return (
     <View style={[styles.gameContainer, themedStyles.background]}>
+      {gameMode === 'speed' && (
+        <View style={styles.timerContainer}>
+          <GameTimer
+            durationMs={speedDuration}
+            active={gameStarted && !gameEnded}
+            onExpire={handleTimerExpire}
+          />
+        </View>
+      )}
       <GameBoard
         solution={solution}
         handleGuess={handleGuess}
@@ -629,6 +676,9 @@ const styles = StyleSheet.create({
   unlimitedButton: {
     backgroundColor: '#FF6B9D',
   },
+  speedButton: {
+    backgroundColor: '#FF9500',
+  },
   disabledButton: {
     backgroundColor: '#606060',
     opacity: 0.7,
@@ -680,5 +730,11 @@ const styles = StyleSheet.create({
   hardModeText: {
     fontSize: 12,
     fontFamily: 'Montserrat_600SemiBold',
+  },
+  timerContainer: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    zIndex: 10,
   },
 });
