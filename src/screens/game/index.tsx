@@ -43,6 +43,7 @@ import {
 import { selectStatisticsLoaded } from '../../store/slices/statisticsSlice';
 import { announceGuessResult, announceGameResult } from '../../utils/accessibility';
 import { checkAchievements, AchievementCategory } from '../../services/gameCenter';
+import { saveGameToHistory } from '../../utils/gameHistory';
 import { shareResults } from '../../utils/shareResults';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
@@ -259,6 +260,17 @@ export default function Game() {
 
       // Announce for screen readers
       announceGameResult(false, solution, 0);
+
+      // Save to game history
+      saveGameToHistory({
+        date: new Date().toISOString(),
+        solution,
+        won: false,
+        guessCount: 6,
+        matches: guesses.filter((g) => g.isComplete).map((g) => g.matches),
+        gameMode,
+        hardMode,
+      });
     }
   }, [guesses, gameWon, gameEnded, dispatch, gameMode, hardMode]);
 
@@ -349,6 +361,19 @@ export default function Game() {
 
           // Announce for screen readers
           announceGameResult(true, solution, guessCount);
+
+          // Save to game history
+          saveGameToHistory({
+            date: new Date().toISOString(),
+            solution,
+            won: true,
+            guessCount,
+            matches: updatedGuesses
+              .filter((g) => g.isComplete)
+              .map((g) => g.matches),
+            gameMode,
+            hardMode,
+          });
 
           if (gameMode === 'daily') {
             setDailyCompleted(true);
