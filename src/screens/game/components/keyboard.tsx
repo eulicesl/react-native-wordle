@@ -96,6 +96,7 @@ function AnimatedKey({
               ...styles.keyboardKey,
               fontSize: keyboardKey === 'Enter' ? 12 : 18,
             }}
+            maxFontSizeMultiplier={1}
           >
             {adjustLetterDisplay(keyboardKey, gameLanguage)}
           </Text>

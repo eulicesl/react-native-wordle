@@ -225,6 +225,7 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
           ...styles.letter,
           color: colors.white,
         }}
+        maxFontSizeMultiplier={1}
         importantForAccessibility="no"
       >
         {adjustLetterDisplay(letter, gameLanguage)}

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
+import { dynamicFontSize } from '../../utils/responsive';
 import {
   ACHIEVEMENTS,
   getAllAchievements,
@@ -201,7 +202,7 @@ export default function Statistics() {
       </View>
 
       {/* Guess Distribution */}
-      <Text style={[styles.sectionTitle, themedStyles.text]}>Guess Distribution</Text>
+      <Text style={[styles.sectionTitle, themedStyles.text, { fontSize: dynamicFontSize(14) }]} allowFontScaling={false}>Guess Distribution</Text>
       <View style={styles.distributionContainer}>
         {guessDistribution.map((count, index) => (
           <DistributionBar
@@ -216,10 +217,10 @@ export default function Statistics() {
 
       {/* Next WordVibe Countdown */}
       <View style={[styles.countdownCard, themedStyles.card]}>
-        <Text style={[styles.countdownLabel, themedStyles.secondaryText]}>
+        <Text style={[styles.countdownLabel, themedStyles.secondaryText, { fontSize: dynamicFontSize(12) }]} allowFontScaling={false}>
           Next WordVibe
         </Text>
-        <Text style={[styles.countdown, themedStyles.text]}>{countdown}</Text>
+        <Text style={[styles.countdown, themedStyles.text, { fontSize: dynamicFontSize(36, 1.3) }]} allowFontScaling={false}>{countdown}</Text>
       </View>
     </>
   );
@@ -326,7 +327,7 @@ export default function Statistics() {
       style={[styles.container, themedStyles.container]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.title, themedStyles.text]}>Statistics</Text>
+      <Text style={[styles.title, themedStyles.text, { fontSize: dynamicFontSize(24, 1.3) }]} allowFontScaling={false}>Statistics</Text>
 
       {/* Tab Switcher */}
       <View
@@ -424,8 +425,8 @@ function StatBox({ value, label, theme }: StatBoxProps) {
   if (value === '' && label === '') return <View style={styles.statBox} />;
   return (
     <View style={styles.statBox}>
-      <Text style={[styles.statValue, theme.text]}>{value}</Text>
-      <Text style={[styles.statLabel, theme.secondaryText]}>{label}</Text>
+      <Text style={[styles.statValue, theme.text, { fontSize: dynamicFontSize(32, 1.3) }]} allowFontScaling={false}>{value}</Text>
+      <Text style={[styles.statLabel, theme.secondaryText, { fontSize: dynamicFontSize(11) }]} allowFontScaling={false}>{label}</Text>
     </View>
   );
 }
@@ -517,14 +518,17 @@ function AchievementCard({ achievement, theme }: AchievementCardProps) {
             styles.achievementTitle,
             theme.text,
             !unlocked && styles.achievementTitleLocked,
+            { fontSize: dynamicFontSize(14) },
           ]}
           numberOfLines={1}
+          allowFontScaling={false}
         >
           {achievementData.title}
         </Text>
         <Text
-          style={[styles.achievementDescription, theme.secondaryText]}
+          style={[styles.achievementDescription, theme.secondaryText, { fontSize: dynamicFontSize(12) }]}
           numberOfLines={2}
+          allowFontScaling={false}
         >
           {achievementData.description}
         </Text>

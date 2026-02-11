@@ -34,6 +34,7 @@ import {
   clearStatistics,
   loadSettings,
 } from '../../utils/localStorageFuncs';
+import { dynamicFontSize } from '../../utils/responsive';
 import { toggleSounds } from '../../utils/sounds';
 import { SETTINGS as SETTINGS_STRINGS } from '../../utils/strings';
 import Onboarding, { resetOnboarding } from '../../components/Onboarding';
@@ -152,7 +153,7 @@ export default function Settings() {
       style={[styles.container, themedStyles.container]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.title, themedStyles.text]}>{SETTINGS_STRINGS.title}</Text>
+      <Text style={[styles.title, themedStyles.text, { fontSize: dynamicFontSize(24, 1.3) }]} allowFontScaling={false}>{SETTINGS_STRINGS.title}</Text>
 
       {/* Language Section */}
       <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
@@ -286,10 +287,10 @@ export default function Settings() {
 
       {/* About */}
       <View style={styles.aboutSection}>
-        <Text style={[styles.aboutText, themedStyles.secondaryText]}>
+        <Text style={[styles.aboutText, themedStyles.secondaryText, { fontSize: dynamicFontSize(12) }]} allowFontScaling={false}>
           WordVibe v{Constants.expoConfig?.version ?? 'unknown'}
         </Text>
-        <Text style={[styles.aboutText, themedStyles.secondaryText]}>
+        <Text style={[styles.aboutText, themedStyles.secondaryText, { fontSize: dynamicFontSize(12) }]} allowFontScaling={false}>
           {SETTINGS_STRINGS.createdBy}
         </Text>
       </View>
@@ -327,9 +328,9 @@ function SettingRow({
             color={themedStyles.text.color}
             style={styles.settingIcon}
           />
-          <Text style={[styles.settingTitle, themedStyles.text]}>{title}</Text>
+          <Text style={[styles.settingTitle, themedStyles.text, { fontSize: dynamicFontSize(16) }]} allowFontScaling={false}>{title}</Text>
         </View>
-        <Text style={[styles.settingDescription, themedStyles.secondaryText]}>
+        <Text style={[styles.settingDescription, themedStyles.secondaryText, { fontSize: dynamicFontSize(12) }]} allowFontScaling={false}>
           {description}
         </Text>
       </View>
