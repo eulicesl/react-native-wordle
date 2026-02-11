@@ -159,33 +159,6 @@ const GameBoard = ({
 
         {/* Message Area */}
         <View style={styles.messageArea}>
-          {gameEnded && (
-            <View style={styles.gameEndContainer}>
-              <Text style={[styles.solutionText, themedStyles.text]}>
-                {gameWon
-                  ? 'Congratulations!'
-                  : `The word was: ${adjustTextDisplay(solution, gameLanguage)}`}
-              </Text>
-              <View style={styles.buttonRow}>
-                {onShare && (
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.shareButton]}
-                    onPress={onShare}
-                  >
-                    <Ionicons name="share-social" size={18} color="#fff" />
-                    <Text style={styles.actionButtonText}>Share</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.newGameButton]}
-                  onPress={resetGame}
-                >
-                  <Ionicons name="refresh" size={18} color="#fff" />
-                  <Text style={styles.actionButtonText}>New Game</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
           {wrongGuessShake && errorMessage && (
             <Animated.View
               entering={FadeIn}
@@ -366,33 +339,6 @@ const styles = StyleSheet.create({
     minHeight: 56,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  gameEndContainer: {
-    alignItems: 'center',
-  },
-  solutionText: {
-    fontSize: 16,
-    fontFamily: 'Montserrat_600SemiBold',
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    gap: 8,
-  },
-  actionButtonText: {
-    fontFamily: 'Montserrat_700Bold',
-    fontSize: 14,
-    color: '#fff',
   },
   errorToast: {
     paddingHorizontal: 16,
