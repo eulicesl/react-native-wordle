@@ -5,6 +5,7 @@ import ReAnimated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import AchievementToast from '../../components/AchievementToast';
 import GameTimer from '../../components/GameTimer';
+import HintButton from '../../components/HintButton';
 import { ConfettiExplosion } from '../../components/ParticleEffect';
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
@@ -18,6 +19,8 @@ import {
   setWrongGuessShake,
   setGameStarted,
   setGameLanguage,
+  setHintsUsed,
+  setHintedPositions,
 } from '../../store/slices/gameStateSlice';
 import {
   setStatistics,
@@ -66,6 +69,8 @@ export default function Game() {
     gameWon,
     solution,
     gameLanguage,
+    hintsUsed,
+    hintedPositions,
   } = useAppSelector((state) => state.gameState);
   const { hardMode, highContrastMode } = useAppSelector((state) => state.settings);
   const { theme } = useAppSelector((state) => state.theme);
@@ -467,6 +472,8 @@ export default function Game() {
     dispatch(setUsedKeys({}));
     dispatch(setGameWon(false));
     dispatch(setGameEnded(false));
+    dispatch(setHintsUsed(0));
+    dispatch(setHintedPositions([]));
 
     const language = gameLanguage === 'tr' ? 'tr' : 'en';
     if (mode === 'daily') {
@@ -493,6 +500,55 @@ export default function Game() {
       hardMode,
     });
   }, [gameEnded, dispatch, hardMode, solution, guesses]);
+
+  const MAX_HINTS = 2;
+  const hintsDisabled = hardMode || gameMode === 'daily' || gameEnded || hintsUsed >= MAX_HINTS;
+
+  const handleHint = useCallback(() => {
+    if (hintsDisabled || !solution) return;
+
+    if (hintsUsed === 0) {
+      // Hint 1: reveal one correct letter position (not already hinted)
+      const unhinted = [0, 1, 2, 3, 4].filter((i) => !hintedPositions.includes(i));
+      if (unhinted.length === 0) return;
+      const pos = unhinted[Math.floor(Math.random() * unhinted.length)];
+      const letter = solution[pos];
+
+      // Place the letter in the current guess at the correct position
+      const currentGuess = guesses[currentGuessIndex];
+      if (currentGuess) {
+        const updatedLetters = [...currentGuess.letters];
+        updatedLetters[pos] = letter;
+        const updatedGuess = { ...currentGuess, letters: updatedLetters };
+        const updatedGuesses = guesses.map((g, idx) =>
+          idx === currentGuessIndex ? updatedGuess : g
+        );
+        dispatch(setGuesses(updatedGuesses));
+      }
+
+      dispatch(setHintsUsed(1));
+      dispatch(setHintedPositions([...hintedPositions, pos]));
+    } else if (hintsUsed === 1) {
+      // Hint 2: reveal that a letter is present in the word (show it as error message)
+      const currentGuess = guesses[currentGuessIndex];
+      const usedLetters = currentGuess ? currentGuess.letters.filter((l) => l !== '') : [];
+      const solutionLetters = solution.split('');
+      const unusedSolutionLetters = solutionLetters.filter(
+        (l) => !usedLetters.includes(l) && !hintedPositions.some((p) => solution[p] === l)
+      );
+
+      if (unusedSolutionLetters.length > 0) {
+        const hintLetter = unusedSolutionLetters[Math.floor(Math.random() * unusedSolutionLetters.length)];
+        setErrorMessage(`The word contains "${hintLetter.toUpperCase()}"`);
+        setTimeout(() => setErrorMessage(null), 3000);
+      } else {
+        setErrorMessage('No more hints available');
+        setTimeout(() => setErrorMessage(null), 2000);
+      }
+
+      dispatch(setHintsUsed(2));
+    }
+  }, [hintsDisabled, solution, hintsUsed, hintedPositions, guesses, currentGuessIndex, dispatch]);
 
   const handleShare = async () => {
     const vibeScore = calculateVibeScore(guesses, solution);
@@ -607,6 +663,16 @@ export default function Game() {
             durationMs={speedDuration}
             active={gameStarted && !gameEnded}
             onExpire={handleTimerExpire}
+          />
+        </View>
+      )}
+      {gameMode !== 'daily' && !hardMode && (
+        <View style={styles.hintContainer}>
+          <HintButton
+            hintsUsed={hintsUsed}
+            maxHints={MAX_HINTS}
+            disabled={hintsDisabled}
+            onPress={handleHint}
           />
         </View>
       )}
@@ -735,6 +801,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 16,
+    zIndex: 10,
+  },
+  hintContainer: {
+    position: 'absolute',
+    top: 12,
+    left: 16,
     zIndex: 10,
   },
 });
