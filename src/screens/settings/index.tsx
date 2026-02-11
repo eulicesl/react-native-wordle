@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -11,6 +11,8 @@ import {
   Alert,
 } from 'react-native';
 
+import Constants from 'expo-constants';
+
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
 import {
   setGameLanguage,
@@ -20,6 +22,7 @@ import {
   setHardMode,
   setHighContrastMode,
   setHapticFeedback,
+  setSoundEnabled,
   setSettings,
 } from '../../store/slices/settingsSlice';
 import { resetStatistics } from '../../store/slices/statisticsSlice';
@@ -31,12 +34,15 @@ import {
   clearStatistics,
   loadSettings,
 } from '../../utils/localStorageFuncs';
+import { toggleSounds } from '../../utils/sounds';
+import Onboarding, { resetOnboarding } from '../../components/Onboarding';
 
 export default function Settings() {
+  const [showTutorial, setShowTutorial] = useState(false);
   const dispatch = useAppDispatch();
   const { theme } = useAppSelector((state) => state.theme);
   const { gameLanguage, gameStarted } = useAppSelector((state) => state.gameState);
-  const { hardMode, highContrastMode, hapticFeedback } = useAppSelector(
+  const { hardMode, highContrastMode, hapticFeedback, soundEnabled } = useAppSelector(
     (state) => state.settings
   );
 
@@ -98,17 +104,28 @@ export default function Settings() {
       return;
     }
     dispatch(setHardMode(value));
-    saveSettings({ hardMode: value, highContrastMode, hapticFeedback });
+    saveSettings({ hardMode: value, highContrastMode, hapticFeedback, soundEnabled });
   };
 
   const handleHighContrastToggle = (value: boolean) => {
     dispatch(setHighContrastMode(value));
-    saveSettings({ hardMode, highContrastMode: value, hapticFeedback });
+    saveSettings({ hardMode, highContrastMode: value, hapticFeedback, soundEnabled });
   };
 
   const handleHapticToggle = (value: boolean) => {
     dispatch(setHapticFeedback(value));
-    saveSettings({ hardMode, highContrastMode, hapticFeedback: value });
+    saveSettings({ hardMode, highContrastMode, hapticFeedback: value, soundEnabled });
+  };
+
+  const handleSoundToggle = (value: boolean) => {
+    dispatch(setSoundEnabled(value));
+    toggleSounds(value);
+    saveSettings({ hardMode, highContrastMode, hapticFeedback, soundEnabled: value });
+  };
+
+  const handleReplayTutorial = async () => {
+    await resetOnboarding();
+    setShowTutorial(true);
   };
 
   const handleResetStatistics = () => {
@@ -225,6 +242,15 @@ export default function Settings() {
           onToggle={handleHapticToggle}
           themedStyles={themedStyles}
         />
+        <View style={[styles.divider, themedStyles.border]} />
+        <SettingRow
+          icon="volume-high"
+          title="Sound Effects"
+          description="Play sounds on actions"
+          value={soundEnabled}
+          onToggle={handleSoundToggle}
+          themedStyles={themedStyles}
+        />
       </View>
 
       {/* Data Section */}
@@ -232,6 +258,14 @@ export default function Settings() {
         Data
       </Text>
       <View style={[styles.card, themedStyles.card]}>
+        <TouchableOpacity
+          style={styles.dataButton}
+          onPress={handleReplayTutorial}
+        >
+          <Ionicons name="book-outline" size={20} color={themedStyles.text.color} />
+          <Text style={[styles.dataButtonText, themedStyles.text]}>Replay Tutorial</Text>
+        </TouchableOpacity>
+        <View style={[styles.divider, themedStyles.border]} />
         <TouchableOpacity
           style={styles.dangerButton}
           onPress={handleResetStatistics}
@@ -241,10 +275,18 @@ export default function Settings() {
         </TouchableOpacity>
       </View>
 
+      {/* Tutorial overlay */}
+      {showTutorial && (
+        <Onboarding
+          onComplete={() => setShowTutorial(false)}
+          forceShow={true}
+        />
+      )}
+
       {/* About */}
       <View style={styles.aboutSection}>
         <Text style={[styles.aboutText, themedStyles.secondaryText]}>
-          Wordle Clone v1.0.0
+          Wordle v{Constants.expoConfig?.version ?? '2.0.0'}
         </Text>
         <Text style={[styles.aboutText, themedStyles.secondaryText]}>
           Made with React Native
@@ -374,6 +416,17 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     marginHorizontal: 12,
+  },
+  dataButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  dataButtonText: {
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
+    marginLeft: 8,
   },
   dangerButton: {
     flexDirection: 'row',

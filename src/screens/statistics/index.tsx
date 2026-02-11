@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -144,6 +144,10 @@ export default function Statistics() {
 
   const winPercentage = gamesPlayed > 0 ? Math.round((gamesWon / gamesPlayed) * 100) : 0;
 
+  const averageGuesses = gamesWon > 0
+    ? (guessDistribution.reduce((sum, count, i) => sum + count * (i + 1), 0) / gamesWon).toFixed(1)
+    : '-';
+
   const maxGuesses = Math.max(...guessDistribution, 1);
 
   const themedStyles = {
@@ -176,12 +180,18 @@ export default function Statistics() {
 
   const renderStats = () => (
     <>
-      {/* Stats Row */}
-      <View style={styles.statsRow}>
-        <StatBox value={gamesPlayed} label="Played" theme={themedStyles} />
-        <StatBox value={winPercentage} label="Win %" theme={themedStyles} />
-        <StatBox value={currentStreak} label="Current Streak" theme={themedStyles} />
-        <StatBox value={maxStreak} label="Max Streak" theme={themedStyles} />
+      {/* Stats Grid */}
+      <View style={styles.statsGrid}>
+        <View style={styles.statsRow}>
+          <StatBox value={gamesPlayed} label="Played" theme={themedStyles} />
+          <StatBox value={winPercentage} label="Win %" theme={themedStyles} />
+          <StatBox value={averageGuesses} label="Avg. Guesses" theme={themedStyles} />
+        </View>
+        <View style={styles.statsRow}>
+          <StatBox value={currentStreak} label="Current Streak" theme={themedStyles} />
+          <StatBox value={maxStreak} label="Max Streak" theme={themedStyles} />
+          <StatBox value="" label="" theme={themedStyles} />
+        </View>
       </View>
 
       {/* Guess Distribution */}
@@ -356,7 +366,7 @@ export default function Statistics() {
 }
 
 interface StatBoxProps {
-  value: number;
+  value: number | string;
   label: string;
   theme: {
     text: { color: string };
@@ -365,6 +375,7 @@ interface StatBoxProps {
 }
 
 function StatBox({ value, label, theme }: StatBoxProps) {
+  if (value === '' && label === '') return <View style={styles.statBox} />;
   return (
     <View style={styles.statBox}>
       <Text style={[styles.statValue, theme.text]}>{value}</Text>
@@ -386,22 +397,38 @@ interface DistributionBarProps {
 function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps) {
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
   const barWidth = Math.max(percentage, count > 0 ? 15 : 8);
+  const widthAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    widthAnim.setValue(0);
+    Animated.timing(widthAnim, {
+      toValue: barWidth,
+      duration: 500,
+      delay: (guess - 1) * 80,
+      useNativeDriver: false,
+    }).start();
+  }, [barWidth, guess, widthAnim]);
+
+  const animatedWidth = widthAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <View style={styles.distributionRow}>
       <Text style={[styles.guessNumber, theme.text]}>{guess}</Text>
       <View style={styles.barContainer}>
-        <View
+        <Animated.View
           style={[
             styles.bar,
             {
-              width: `${barWidth}%`,
+              width: animatedWidth,
               backgroundColor: count > 0 ? colors.correct : theme.card.backgroundColor,
             },
           ]}
         >
           <Text style={[styles.barCount, count === 0 && theme.text]}>{count}</Text>
-        </View>
+        </Animated.View>
       </View>
     </View>
   );
@@ -529,10 +556,13 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: colors.white,
   },
+  statsGrid: {
+    marginBottom: 24,
+    gap: 12,
+  },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 30,
   },
   statBox: {
     alignItems: 'center',

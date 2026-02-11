@@ -43,6 +43,7 @@ export default function MainNavigator() {
           backgroundColor: theme.colors.background,
           borderTopColor: theme.colors.background2,
         },
+        animation: 'fade',
       })}
     >
       <Tab.Screen name="Game" component={Game} />

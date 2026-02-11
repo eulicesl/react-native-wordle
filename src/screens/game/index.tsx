@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import ReAnimated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import { ConfettiExplosion } from '../../components/ParticleEffect';
 
@@ -39,6 +40,8 @@ import {
   PersistedGameState,
 } from '../../utils/localStorageFuncs';
 import { selectStatisticsLoaded } from '../../store/slices/statisticsSlice';
+import { announceGuessResult, announceGameResult } from '../../utils/accessibility';
+import { checkAchievements } from '../../services/gameCenter';
 import { shareResults } from '../../utils/shareResults';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
@@ -230,8 +233,14 @@ export default function Game() {
       }
       const today = getTodayDateString();
       dispatch(recordGameLoss({ date: today, isDaily: gameMode === 'daily' }));
+
+      // Check achievements on loss too
+      checkAchievements(false, 0, hardMode, gameMode === 'daily', null);
+
+      // Announce for screen readers
+      announceGameResult(false, solution, 0);
     }
-  }, [guesses, gameWon, gameEnded, dispatch, gameMode]);
+  }, [guesses, gameWon, gameEnded, dispatch, gameMode, hardMode]);
 
   useEffect(() => {
     checkGameEnd();
@@ -303,6 +312,12 @@ export default function Game() {
           const today = getTodayDateString();
           dispatch(recordGameWin({ guessCount, date: today, isDaily: gameMode === 'daily' }));
 
+          // Check achievements
+          checkAchievements(true, guessCount, hardMode, gameMode === 'daily', null);
+
+          // Announce for screen readers
+          announceGameResult(true, solution, guessCount);
+
           if (gameMode === 'daily') {
             setDailyCompleted(true);
           }
@@ -345,6 +360,9 @@ export default function Game() {
         dispatch(setGuesses(updatedGuesses));
         dispatch(setCurrentGuessIndex(currentGuessIndex + 1));
         handleFoundKeysOnKeyboard(updatedGuess);
+
+        // Announce guess result for screen readers
+        announceGuessResult(updatedGuess.matches, updatedGuess.letters);
       } else {
         setErrorMessage('Not in word list');
         dispatch(setWrongGuessShake(true));
@@ -415,38 +433,69 @@ export default function Game() {
   if (!gameStarted) {
     return (
       <View style={[styles.newGameScreen, themedStyles.background]}>
-        <Text style={[styles.title, themedStyles.text]}>WORDLE</Text>
-        <Text style={[styles.subtitle, themedStyles.secondaryText]}>
-          Get 6 chances to guess a 5-letter word.
-        </Text>
+        {/* Decorative mini grid */}
+        <ReAnimated.View entering={FadeInDown.delay(100).duration(500)} style={styles.miniGrid}>
+          {[colors.correct, colors.present, colors.absent, colors.correct, colors.present].map(
+            (color, i) => (
+              <ReAnimated.View
+                key={i}
+                entering={FadeInDown.delay(150 + i * 80).duration(400)}
+                style={[styles.miniTile, { backgroundColor: color }]}
+              />
+            )
+          )}
+        </ReAnimated.View>
+
+        <ReAnimated.View entering={FadeInDown.delay(200).duration(500)}>
+          <Text style={[styles.title, themedStyles.text]}>WORDLE</Text>
+        </ReAnimated.View>
+        <ReAnimated.View entering={FadeInDown.delay(300).duration(500)}>
+          <Text style={[styles.subtitle, themedStyles.secondaryText]}>
+            Get 6 chances to guess a 5-letter word.
+          </Text>
+        </ReAnimated.View>
 
         <View style={styles.modeContainer}>
-          <TouchableOpacity
-            style={[styles.modeButton, styles.dailyButton, dailyCompleted && styles.disabledButton]}
-            onPress={() => !dailyCompleted && startGame('daily')}
-            disabled={dailyCompleted}
-          >
-            <Text style={styles.modeButtonText}>
-              {dailyCompleted ? 'Daily Complete' : 'Daily Challenge'}
-            </Text>
-            <Text style={styles.modeButtonSubtext}>
-              {dailyCompleted ? 'Come back tomorrow!' : 'Same word for everyone'}
-            </Text>
-          </TouchableOpacity>
+          <ReAnimated.View entering={FadeInUp.delay(400).duration(500)}>
+            <TouchableOpacity
+              style={[styles.modeButton, styles.dailyButton, dailyCompleted && styles.disabledButton]}
+              onPress={() => !dailyCompleted && startGame('daily')}
+              disabled={dailyCompleted}
+            >
+              <Text style={styles.modeButtonText}>
+                {dailyCompleted ? 'Daily Complete' : 'Daily Challenge'}
+              </Text>
+              <Text style={styles.modeButtonSubtext}>
+                {dailyCompleted ? 'Come back tomorrow!' : 'Same word for everyone'}
+              </Text>
+            </TouchableOpacity>
+          </ReAnimated.View>
 
-          <TouchableOpacity
-            style={[styles.modeButton, styles.unlimitedButton]}
-            onPress={() => startGame('unlimited')}
-          >
-            <Text style={styles.modeButtonText}>Unlimited</Text>
-            <Text style={styles.modeButtonSubtext}>Practice with random words</Text>
-          </TouchableOpacity>
+          <ReAnimated.View entering={FadeInUp.delay(500).duration(500)}>
+            <TouchableOpacity
+              style={[styles.modeButton, styles.unlimitedButton]}
+              onPress={() => startGame('unlimited')}
+            >
+              <Text style={styles.modeButtonText}>Unlimited</Text>
+              <Text style={styles.modeButtonSubtext}>Practice with random words</Text>
+            </TouchableOpacity>
+          </ReAnimated.View>
         </View>
 
+        {/* Streak Display */}
+        {statistics.currentStreak > 0 && (
+          <ReAnimated.View entering={FadeInUp.delay(600).duration(500)} style={[styles.streakBadge, themedStyles.card]}>
+            <Text style={[styles.streakValue, { color: colors.correct }]}>
+              {statistics.currentStreak}
+            </Text>
+            <Text style={[styles.streakLabel, themedStyles.secondaryText]}>Day Streak</Text>
+          </ReAnimated.View>
+        )}
+
         {hardMode && (
-          <View style={[styles.hardModeBadge, themedStyles.card]}>
+          <ReAnimated.View entering={FadeInUp.delay(700).duration(400)} style={[styles.hardModeBadge, themedStyles.card]}>
             <Text style={[styles.hardModeText, themedStyles.text]}>Hard Mode Enabled</Text>
-          </View>
+          </ReAnimated.View>
         )}
       </View>
     );
@@ -526,8 +575,35 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Montserrat_600SemiBold',
   },
-  hardModeBadge: {
+  miniGrid: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 20,
+  },
+  miniTile: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 8,
+  },
+  streakValue: {
+    fontSize: 20,
+    fontFamily: 'Montserrat_800ExtraBold',
+  },
+  streakLabel: {
+    fontSize: 12,
+    fontFamily: 'Montserrat_600SemiBold',
+  },
+  hardModeBadge: {
+    marginTop: 12,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,

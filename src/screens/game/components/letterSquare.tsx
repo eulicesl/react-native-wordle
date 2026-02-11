@@ -5,6 +5,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
+  withSequence,
   Easing,
   withDelay,
   useDerivedValue,
@@ -12,7 +14,7 @@ import Animated, {
 
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { guess } from '../../../types';
-import { getTileAccessibilityLabel } from '../../../utils/accessibility';
+import { getTileAccessibilityLabel, isReduceMotionEnabled } from '../../../utils/accessibility';
 import { adjustLetterDisplay } from '../../../utils/adjustLetterDisplay';
 import { colors, SIZE } from '../../../utils/constants';
 import { playHaptic } from '../../../utils/haptics';
@@ -44,6 +46,7 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
 
   const scale = useSharedValue(1);
   const rotateDegree = useSharedValue(0);
+  const bounceY = useSharedValue(0);
   const progress = useDerivedValue(() => {
     return guess.isComplete
       ? withDelay(250 * idx, withTiming(1))
@@ -87,12 +90,15 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         { scale: scale.value },
         { rotateY: `${rotateDegree.value}deg` },
         { translateX: shakeX.value },
+        { translateY: bounceY.value },
       ],
     };
   });
 
   useEffect(() => {
-    if (letter !== '' && matchStatus === '') {
+    const reduceMotion = isReduceMotionEnabled();
+
+    if (letter !== '' && matchStatus === '' && !reduceMotion) {
       scale.value = withTiming(1.2, {
         duration: 50,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
@@ -100,18 +106,20 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
       scale.value = withDelay(50, withTiming(1));
     }
     if (matchStatus !== '' && matchStatus !== undefined) {
-      rotateDegree.value = withDelay(
-        250 * idx,
-        withTiming(90, {
-          duration: 250,
-        })
-      );
-      rotateDegree.value = withDelay(
-        250 * (idx + 1),
-        withTiming(0, {
-          duration: 250,
-        })
-      );
+      if (!reduceMotion) {
+        rotateDegree.value = withDelay(
+          250 * idx,
+          withTiming(90, {
+            duration: 250,
+          })
+        );
+        rotateDegree.value = withDelay(
+          250 * (idx + 1),
+          withTiming(0, {
+            duration: 250,
+          })
+        );
+      }
 
       // Play sound and haptic when tile flips
       setTimeout(() => {
@@ -121,8 +129,21 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
           playHaptic(matchStatus);
         }
       }, 250 * idx);
+
+      // Winning row bounce: after all flips complete, stagger a bounce on each tile
+      if (guess.isCorrect && !reduceMotion) {
+        const flipDuration = 250 * 5; // Wait for all 5 flips
+        const bounceDelay = flipDuration + 200 + idx * 100;
+        bounceY.value = withDelay(
+          bounceDelay,
+          withSequence(
+            withSpring(-12, { damping: 4, stiffness: 300 }),
+            withSpring(0, { damping: 8, stiffness: 200 })
+          )
+        );
+      }
     }
-  }, [letter, matchStatus, hapticFeedback, idx]);
+  }, [letter, matchStatus, hapticFeedback, idx, guess.isCorrect]);
 
   useEffect(() => {
     if (wrongGuessShake && currentGuessIndex === guess.id) {
@@ -167,6 +188,9 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
   const rowNumber = guess.id + 1;
   const accessibilityLabel = getTileAccessibilityLabel(letter, idx, matchStatus, rowNumber);
 
+  const isActiveRow = currentGuessIndex === guess.id && !guess.isComplete;
+  const hasFill = letter !== '';
+
   return (
     <Animated.View
       key={idx}
@@ -174,8 +198,10 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         {
           ...styles.square,
           backgroundColor: matchColor(),
-          borderWidth: guess.isComplete ? 0 : 1,
-          borderColor: theme.colors.tertiary,
+          borderWidth: guess.isComplete ? 0 : isActiveRow && hasFill ? 2 : 1,
+          borderColor: isActiveRow
+            ? hasFill ? theme.colors.text : theme.colors.secondary
+            : theme.colors.tertiary,
         },
         animatedStyles,
         bgStyle,

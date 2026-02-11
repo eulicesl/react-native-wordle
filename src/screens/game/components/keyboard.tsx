@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { getKeyAccessibilityLabel } from '../../../utils/accessibility';
@@ -30,6 +35,76 @@ const highContrastColors = {
   keyDefault: '#606060',
 };
 
+const SPRING_CONFIG = { damping: 15, stiffness: 300, mass: 0.5 };
+
+interface AnimatedKeyProps {
+  keyboardKey: string;
+  backgroundColor: string;
+  height: number;
+  flex: number;
+  onPress: () => void;
+  accessibilityLabel: string;
+  gameLanguage: string;
+}
+
+function AnimatedKey({
+  keyboardKey,
+  backgroundColor,
+  height,
+  flex,
+  onPress,
+  accessibilityLabel,
+  gameLanguage,
+}: AnimatedKeyProps) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = useCallback(() => {
+    scale.value = withSpring(0.92, SPRING_CONFIG);
+  }, [scale]);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withSpring(1, SPRING_CONFIG);
+  }, [scale]);
+
+  return (
+    <Animated.View style={[{ flex }, animatedStyle]}>
+      <Pressable
+        style={{
+          ...styles.keyContainer,
+          backgroundColor,
+          height,
+        }}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ disabled: false }}
+      >
+        {keyboardKey === '<' ? (
+          <Ionicons
+            name="backspace-outline"
+            style={{ ...styles.keyboardKey, fontSize: 28 }}
+          />
+        ) : (
+          <Text
+            style={{
+              ...styles.keyboardKey,
+              fontSize: keyboardKey === 'Enter' ? 12 : 18,
+            }}
+          >
+            {adjustLetterDisplay(keyboardKey, gameLanguage)}
+          </Text>
+        )}
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 interface KeyboardProps {
   handleGuess: (keyPressed: string) => void;
 }
@@ -53,7 +128,7 @@ export default function Keyboard({ handleGuess }: KeyboardProps) {
     }
   };
 
-  const handleKeyPress = (key: string) => {
+  const handleKeyPress = useCallback((key: string) => {
     // Play sound and haptic feedback
     if (key === '<') {
       playSound('keyDelete');
@@ -67,7 +142,7 @@ export default function Keyboard({ handleGuess }: KeyboardProps) {
     }
 
     handleGuess(key);
-  };
+  }, [hapticFeedback, handleGuess]);
 
   return (
     <View
@@ -88,38 +163,16 @@ export default function Keyboard({ handleGuess }: KeyboardProps) {
             const keyStatus = usedKeys[keyboardKey];
 
             return (
-              <TouchableOpacity
+              <AnimatedKey
                 key={keyboardKey}
-                style={{
-                  ...styles.keyContainer,
-                  backgroundColor: handleKeyboardKeyColor(keyboardKey),
-                  height: SIZE / keyRowCount + 2 + 20,
-                  flex: keyboardKey === '<' || keyboardKey === 'Enter' ? 2 : 1,
-                }}
+                keyboardKey={keyboardKey}
+                backgroundColor={handleKeyboardKeyColor(keyboardKey)}
+                height={SIZE / keyRowCount + 2 + 20}
+                flex={keyboardKey === '<' || keyboardKey === 'Enter' ? 2 : 1}
                 onPress={() => handleKeyPress(keyboardKey)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
                 accessibilityLabel={getKeyAccessibilityLabel(keyboardKey, keyStatus)}
-                accessibilityState={{
-                  disabled: false,
-                }}
-              >
-                {keyboardKey === '<' ? (
-                  <Ionicons
-                    name="backspace-outline"
-                    style={{ ...styles.keyboardKey, fontSize: 28 }}
-                  />
-                ) : (
-                  <Text
-                    style={{
-                      ...styles.keyboardKey,
-                      fontSize: keyboardKey === 'Enter' ? 12 : 18,
-                    }}
-                  >
-                    {adjustLetterDisplay(keyboardKey, gameLanguage)}
-                  </Text>
-                )}
-              </TouchableOpacity>
+                gameLanguage={gameLanguage}
+              />
             );
           })}
         </View>
