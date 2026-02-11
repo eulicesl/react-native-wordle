@@ -3,7 +3,7 @@ import { AccessibilityInfo, Platform } from 'react-native';
 import { getStoreData, setStoreData } from './localStorageFuncs';
 
 // Accessibility preferences storage
-const ACCESSIBILITY_PREFS_KEY = 'wordle_accessibility_prefs';
+const ACCESSIBILITY_PREFS_KEY = 'wordvibe_accessibility_prefs';
 
 // Accessibility preferences
 export interface AccessibilityPreferences {
@@ -143,13 +143,13 @@ export function getTileVerboseDescription(
   let statusDescription = '';
   switch (status) {
     case 'correct':
-      statusDescription = 'Green tile, correct letter in correct position';
+      statusDescription = 'Purple tile, correct letter in correct position';
       break;
     case 'present':
-      statusDescription = 'Yellow tile, letter is in the word but in wrong position';
+      statusDescription = 'Pink tile, letter is in the word but in wrong position';
       break;
     case 'absent':
-      statusDescription = 'Gray tile, letter is not in the word';
+      statusDescription = 'Slate tile, letter is not in the word';
       break;
     default:
       statusDescription = 'Pending evaluation';

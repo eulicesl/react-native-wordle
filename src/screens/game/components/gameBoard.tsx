@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Keyboard from './keyboard';
 import LetterSquare from './letterSquare';
+import VibeMeter from '../../../components/VibeMeter';
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
-import { HEIGHT, SIZE } from '../../../utils/constants';
+import { APP_TITLE, SIZE } from '../../../utils/constants';
+import { calculateVibeScore } from '../../../utils/vibeMeter';
 
 interface GameBoardProps {
   solution: string;
@@ -30,6 +33,7 @@ const GameBoard = ({
   );
   const { theme } = useAppSelector((state) => state.theme);
   const { hardMode } = useAppSelector((state) => state.settings);
+  const insets = useSafeAreaInsets();
 
   const themedStyles = {
     background: { backgroundColor: theme.colors.background },
@@ -40,83 +44,92 @@ const GameBoard = ({
 
   return (
     <View style={[styles.board, themedStyles.background]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, themedStyles.text]}>WORDLE</Text>
-        <View style={styles.headerBadges}>
-          {gameMode === 'daily' && (
-            <View style={[styles.badge, styles.dailyBadge]}>
-              <Text style={styles.badgeText}>Daily</Text>
+      <View style={[styles.contentArea, { paddingTop: insets.top }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, themedStyles.text]}>{APP_TITLE}</Text>
+          <View style={styles.headerBadges}>
+            {gameMode === 'daily' && (
+              <View style={[styles.badge, styles.dailyBadge]}>
+                <Text style={styles.badgeText}>Daily</Text>
+              </View>
+            )}
+            {hardMode && (
+              <View style={[styles.badge, styles.hardBadge]}>
+                <Text style={styles.badgeText}>Hard</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Game Grid */}
+        <View style={styles.blocksContainer}>
+          {guesses.map((guess, idx) => (
+            <View key={idx} style={styles.squareBlock}>
+              {guess.letters.map((letter, letterIdx) => {
+                return (
+                  <LetterSquare
+                    key={letterIdx}
+                    idx={letterIdx}
+                    letter={letter}
+                    guess={guess}
+                  />
+                );
+              })}
+            </View>
+          ))}
+        </View>
+
+        {/* Vibe Meter */}
+        <VibeMeter vibeScore={calculateVibeScore(guesses, solution)} />
+
+        {/* Message Area */}
+        <View style={styles.messageArea}>
+          {gameEnded && (
+            <View style={styles.gameEndContainer}>
+              <Text style={[styles.solutionText, themedStyles.text]}>
+                {gameWon
+                  ? 'Congratulations!'
+                  : `The word was: ${adjustTextDisplay(solution, gameLanguage)}`}
+              </Text>
+              <View style={styles.buttonRow}>
+                {onShare && (
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.shareButton]}
+                    onPress={onShare}
+                  >
+                    <Ionicons name="share-social" size={18} color="#fff" />
+                    <Text style={styles.actionButtonText}>Share</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.newGameButton]}
+                  onPress={resetGame}
+                >
+                  <Ionicons name="refresh" size={18} color="#fff" />
+                  <Text style={styles.actionButtonText}>New Game</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
-          {hardMode && (
-            <View style={[styles.badge, styles.hardBadge]}>
-              <Text style={styles.badgeText}>Hard</Text>
-            </View>
+          {wrongGuessShake && errorMessage && (
+            <Animated.View
+              entering={FadeIn}
+              exiting={FadeOut}
+              style={[styles.errorToast, themedStyles.card]}
+            >
+              <Text style={[styles.errorText, themedStyles.text]}>
+                {errorMessage}
+              </Text>
+            </Animated.View>
           )}
         </View>
       </View>
 
-      {/* Game Grid */}
-      <View style={styles.blocksContainer}>
-        {guesses.map((guess, idx) => (
-          <View key={idx} style={styles.squareBlock}>
-            {guess.letters.map((letter, letterIdx) => {
-              return (
-                <LetterSquare
-                  key={letterIdx}
-                  idx={letterIdx}
-                  letter={letter}
-                  guess={guess}
-                />
-              );
-            })}
-          </View>
-        ))}
+      <View style={styles.keyboardWrapper}>
+        {/* Keyboard */}
+        <Keyboard handleGuess={handleGuess} />
       </View>
-
-      {/* Message Area */}
-      <View style={styles.messageArea}>
-        {gameEnded && (
-          <View style={styles.gameEndContainer}>
-            <Text style={[styles.solutionText, themedStyles.text]}>
-              {gameWon ? 'Congratulations!' : `The word was: ${adjustTextDisplay(solution, gameLanguage)}`}
-            </Text>
-            <View style={styles.buttonRow}>
-              {onShare && (
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.shareButton]}
-                  onPress={onShare}
-                >
-                  <Ionicons name="share-social" size={18} color="#fff" />
-                  <Text style={styles.actionButtonText}>Share</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={[styles.actionButton, styles.newGameButton]}
-                onPress={resetGame}
-              >
-                <Ionicons name="refresh" size={18} color="#fff" />
-                <Text style={styles.actionButtonText}>New Game</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-        {wrongGuessShake && errorMessage && (
-          <Animated.View
-            entering={FadeIn}
-            exiting={FadeOut}
-            style={[styles.errorToast, themedStyles.card]}
-          >
-            <Text style={[styles.errorText, themedStyles.text]}>
-              {errorMessage}
-            </Text>
-          </Animated.View>
-        )}
-      </View>
-
-      {/* Keyboard */}
-      <Keyboard handleGuess={handleGuess} />
     </View>
   );
 };
@@ -125,8 +138,15 @@ export default GameBoard;
 
 const styles = StyleSheet.create({
   board: {
-    width: SIZE,
-    height: HEIGHT,
+    flex: 1,
+    width: '100%',
+    maxWidth: SIZE,
+    alignSelf: 'center',
+    alignItems: 'center',
+  },
+  contentArea: {
+    flex: 1,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'space-evenly',
   },
@@ -135,7 +155,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    paddingTop: 10,
   },
   headerTitle: {
     fontSize: 28,
@@ -153,10 +172,10 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   dailyBadge: {
-    backgroundColor: '#6aaa64',
+    backgroundColor: '#7C4DFF',
   },
   hardBadge: {
-    backgroundColor: '#c9b458',
+    backgroundColor: '#FF6B9D',
   },
   badgeText: {
     color: '#fff',
@@ -176,10 +195,11 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'space-evenly',
+    flexShrink: 1,
   },
   messageArea: {
     width: SIZE,
-    minHeight: 80,
+    minHeight: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -206,7 +226,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   shareButton: {
-    backgroundColor: '#6aaa64',
+    backgroundColor: '#7C4DFF',
   },
   newGameButton: {
     backgroundColor: '#404040',
@@ -224,5 +244,10 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: 'Montserrat_600SemiBold',
     fontSize: 14,
+  },
+  keyboardWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    flexShrink: 0,
   },
 });

@@ -17,9 +17,9 @@ Notifications.setNotificationHandler({
 });
 
 // Notification settings storage
-const NOTIFICATION_SETTINGS_KEY = 'wordle_notification_settings';
-const NOTIFICATION_HISTORY_KEY = 'wordle_notification_history';
-const SCHEDULED_IDS_KEY = 'wordle_scheduled_notification_ids';
+const NOTIFICATION_SETTINGS_KEY = 'wordvibe_notification_settings';
+const NOTIFICATION_HISTORY_KEY = 'wordvibe_notification_history';
+const SCHEDULED_IDS_KEY = 'wordvibe_scheduled_notification_ids';
 
 // Notification types
 export type NotificationType =
@@ -47,7 +47,7 @@ export interface NotificationSettings {
 // Notification content templates
 export const NOTIFICATION_TEMPLATES = {
   dailyReminder: {
-    title: "Today's Wordle is ready!",
+    title: "Today's WordVibe is ready!",
     messages: [
       'A new word awaits. Can you guess it in 6 tries?',
       'Your daily brain exercise is here. Good luck!',
@@ -69,11 +69,11 @@ export const NOTIFICATION_TEMPLATES = {
     messages: ["You've earned '{achievement}'! Keep up the great work."],
   },
   weeklyStats: {
-    title: 'Your Weekly Wordle Recap',
+    title: 'Your Weekly WordVibe Recap',
     messages: ['You played {games} games this week with a {winRate}% win rate!'],
   },
   newFeature: {
-    title: 'New in Wordle',
+    title: 'New in WordVibe',
     messages: ["Check out what's new in the latest update!"],
   },
 };
@@ -183,16 +183,16 @@ export async function requestNotificationPermission(): Promise<boolean> {
     // For Android, we need to set up the notification channel
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'Wordle Notifications',
+        name: 'WordVibe Notifications',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#6aaa64',
+        lightColor: '#7C4DFF',
         sound: 'default',
       });
 
       await Notifications.setNotificationChannelAsync('reminders', {
         name: 'Daily Reminders',
-        description: 'Daily Wordle puzzle reminders',
+        description: 'Daily WordVibe puzzle reminders',
         importance: Notifications.AndroidImportance.DEFAULT,
         sound: 'default',
       });
@@ -425,7 +425,7 @@ export async function scheduleWeeklyStats(): Promise<string | null> {
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: NOTIFICATION_TEMPLATES.weeklyStats.title,
-        body: 'Check your weekly Wordle statistics!',
+        body: 'Check your weekly WordVibe statistics!',
         sound: true,
         data: { type: 'weeklyStats' },
         ...(Platform.OS === 'android' && { channelId: 'default' }),

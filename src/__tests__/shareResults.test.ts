@@ -34,7 +34,7 @@ describe('generateEmojiGrid', () => {
     ];
 
     const result = generateEmojiGrid(guesses);
-    expect(result).toBe('🟩🟩🟩🟩🟩');
+    expect(result).toBe('🟪🟪🟪🟪🟪');
   });
 
   it('should generate correct emoji grid for mixed results', () => {
@@ -47,7 +47,7 @@ describe('generateEmojiGrid', () => {
     ];
 
     const result = generateEmojiGrid(guesses);
-    expect(result).toBe('🟩⬛🟨⬛⬛');
+    expect(result).toBe('🟪⬛💜⬛⬛');
   });
 
   it('should generate multiple rows for multiple guesses', () => {
@@ -60,9 +60,9 @@ describe('generateEmojiGrid', () => {
     const result = generateEmojiGrid(guesses);
     const lines = result.split('\n');
     expect(lines).toHaveLength(3);
-    expect(lines[0]).toBe('⬛⬛🟨⬛⬛');
-    expect(lines[1]).toBe('🟩⬛🟩⬛🟩');
-    expect(lines[2]).toBe('🟩🟩🟩🟩🟩');
+    expect(lines[0]).toBe('⬛⬛💜⬛⬛');
+    expect(lines[1]).toBe('🟪⬛🟪⬛🟪');
+    expect(lines[2]).toBe('🟪🟪🟪🟪🟪');
   });
 
   it('should only include completed guesses', () => {
@@ -72,7 +72,7 @@ describe('generateEmojiGrid', () => {
     ];
 
     const result = generateEmojiGrid(guesses);
-    expect(result).toBe('🟩⬛🟨⬛⬛');
+    expect(result).toBe('🟪⬛💜⬛⬛');
     expect(result.split('\n')).toHaveLength(1);
   });
 
@@ -98,9 +98,10 @@ describe('generateShareText', () => {
     ];
 
     const result = generateShareText(guesses, true, true, false, false);
-    expect(result).toContain('Wordle 1234 2/6');
-    expect(result).toContain('⬛⬛🟨⬛⬛');
-    expect(result).toContain('🟩🟩🟩🟩🟩');
+    expect(result).toContain('WordVibe #1234');
+    expect(result).toContain('2/6');
+    expect(result).toContain('⬛⬛💜⬛⬛');
+    expect(result).toContain('🟪🟪🟪🟪🟪');
   });
 
   it('should show X/6 for losses', () => {
@@ -109,7 +110,8 @@ describe('generateShareText', () => {
     );
 
     const result = generateShareText(guesses, false, true, false, false);
-    expect(result).toContain('Wordle 1234 X/6');
+    expect(result).toContain('WordVibe #1234');
+    expect(result).toContain('X/6');
   });
 
   it('should add asterisk for hard mode', () => {
@@ -118,16 +120,18 @@ describe('generateShareText', () => {
     ];
 
     const result = generateShareText(guesses, true, true, true, false);
-    expect(result).toContain('Wordle 1234 1/6*');
+    expect(result).toContain('WordVibe #1234');
+    expect(result).toContain('1/6*');
   });
 
-  it('should show Unlimited label for non-daily games', () => {
+  it('should show Free Play label for non-daily games', () => {
     const guesses = [
       createGuess(0, ['a', 'p', 'p', 'l', 'e'], ['correct', 'correct', 'correct', 'correct', 'correct'], true, true),
     ];
 
     const result = generateShareText(guesses, true, false, false, false);
-    expect(result).toContain('Wordle (Unlimited) 1/6');
+    expect(result).toContain('WordVibe (Free Play)');
+    expect(result).toContain('1/6');
   });
 
   it('should use high contrast emojis when enabled', () => {
@@ -137,8 +141,8 @@ describe('generateShareText', () => {
 
     const result = generateShareText(guesses, true, true, false, true);
     expect(result).toContain('🟧⬛🟦⬛⬛');
-    expect(result).not.toContain('🟩');
-    expect(result).not.toContain('🟨');
+    expect(result).not.toContain('🟪');
+    expect(result).not.toContain('💜');
   });
 
   it('should format with blank line between title and grid', () => {
@@ -149,8 +153,18 @@ describe('generateShareText', () => {
     const result = generateShareText(guesses, true, true, false, false);
     const parts = result.split('\n\n');
     expect(parts).toHaveLength(2);
-    expect(parts[0]).toBe('Wordle 1234 1/6');
-    expect(parts[1]).toBe('🟩🟩🟩🟩🟩');
+    expect(parts[0]).toContain('WordVibe #1234');
+    expect(parts[0]).toContain('1/6');
+    expect(parts[1]).toBe('🟪🟪🟪🟪🟪');
+  });
+
+  it('should include vibe score when provided', () => {
+    const guesses = [
+      createGuess(0, ['a', 'p', 'p', 'l', 'e'], ['correct', 'correct', 'correct', 'correct', 'correct'], true, true),
+    ];
+
+    const result = generateShareText(guesses, true, true, false, false, 87);
+    expect(result).toContain('(Vibe: 87%)');
   });
 });
 

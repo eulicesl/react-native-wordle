@@ -1,7 +1,7 @@
 /**
  * Error Logging Service
  *
- * A centralized error logging service for the Wordle app.
+ * A centralized error logging service for the WordVibe app.
  * In production, this can be easily integrated with services like:
  * - Sentry (expo-sentry)
  * - LogRocket

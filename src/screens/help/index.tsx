@@ -33,7 +33,7 @@ export default function Help() {
     >
       <Text style={[styles.title, themedStyles.text]}>How To Play</Text>
       <Text style={[styles.subtitle, themedStyles.secondaryText]}>
-        Guess the Wordle in 6 tries.
+        Guess the word in 6 tries.
       </Text>
 
       <View style={[styles.section, themedStyles.border]}>
@@ -149,7 +149,7 @@ export default function Help() {
 
       <View style={styles.footer}>
         <Text style={[styles.footerText, themedStyles.secondaryText]}>
-          A new Wordle will be available each day!
+          A new word drops every day!
         </Text>
       </View>
     </ScrollView>
