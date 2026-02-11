@@ -35,6 +35,7 @@ import {
   loadSettings,
 } from '../../utils/localStorageFuncs';
 import { toggleSounds } from '../../utils/sounds';
+import { SETTINGS as SETTINGS_STRINGS } from '../../utils/strings';
 import Onboarding, { resetOnboarding } from '../../components/Onboarding';
 
 export default function Settings() {
@@ -97,8 +98,8 @@ export default function Settings() {
   const handleHardModeToggle = (value: boolean) => {
     if (value && gameStarted) {
       Alert.alert(
-        'Hard Mode',
-        'Hard Mode can only be enabled at the start of a round.',
+        SETTINGS_STRINGS.hardMode,
+        SETTINGS_STRINGS.hardModeAlert,
         [{ text: 'OK' }]
       );
       return;
@@ -130,12 +131,12 @@ export default function Settings() {
 
   const handleResetStatistics = () => {
     Alert.alert(
-      'Reset Statistics',
-      'Are you sure you want to reset all statistics? This cannot be undone.',
+      SETTINGS_STRINGS.resetStatistics,
+      SETTINGS_STRINGS.resetStatisticsConfirm,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: SETTINGS_STRINGS.cancel, style: 'cancel' },
         {
-          text: 'Reset',
+          text: SETTINGS_STRINGS.reset,
           style: 'destructive',
           onPress: () => {
             dispatch(resetStatistics());
@@ -151,11 +152,11 @@ export default function Settings() {
       style={[styles.container, themedStyles.container]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.title, themedStyles.text]}>Settings</Text>
+      <Text style={[styles.title, themedStyles.text]}>{SETTINGS_STRINGS.title}</Text>
 
       {/* Language Section */}
       <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
-        Language
+        {SETTINGS_STRINGS.language}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
         <TouchableOpacity
@@ -198,13 +199,13 @@ export default function Settings() {
 
       {/* Appearance Section */}
       <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
-        Appearance
+        {SETTINGS_STRINGS.appearance}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
         <SettingRow
           icon="moon"
-          title="Dark Theme"
-          description="Reduce eye strain in low light"
+          title={SETTINGS_STRINGS.darkTheme}
+          description={SETTINGS_STRINGS.darkThemeDesc}
           value={theme.dark}
           onToggle={handleThemeToggle}
           themedStyles={themedStyles}
@@ -212,8 +213,8 @@ export default function Settings() {
         <View style={[styles.divider, themedStyles.border]} />
         <SettingRow
           icon="contrast"
-          title="High Contrast Mode"
-          description="Use orange/blue for colorblind accessibility"
+          title={SETTINGS_STRINGS.highContrastMode}
+          description={SETTINGS_STRINGS.highContrastDesc}
           value={highContrastMode}
           onToggle={handleHighContrastToggle}
           themedStyles={themedStyles}
@@ -222,13 +223,13 @@ export default function Settings() {
 
       {/* Gameplay Section */}
       <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
-        Gameplay
+        {SETTINGS_STRINGS.gameplay}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
         <SettingRow
           icon="flame"
-          title="Hard Mode"
-          description="Revealed hints must be used"
+          title={SETTINGS_STRINGS.hardMode}
+          description={SETTINGS_STRINGS.hardModeDesc}
           value={hardMode}
           onToggle={handleHardModeToggle}
           themedStyles={themedStyles}
@@ -236,8 +237,8 @@ export default function Settings() {
         <View style={[styles.divider, themedStyles.border]} />
         <SettingRow
           icon="phone-portrait"
-          title="Haptic Feedback"
-          description="Vibrate on key press"
+          title={SETTINGS_STRINGS.hapticFeedback}
+          description={SETTINGS_STRINGS.hapticDesc}
           value={hapticFeedback}
           onToggle={handleHapticToggle}
           themedStyles={themedStyles}
@@ -245,8 +246,8 @@ export default function Settings() {
         <View style={[styles.divider, themedStyles.border]} />
         <SettingRow
           icon="volume-high"
-          title="Sound Effects"
-          description="Play sounds on actions"
+          title={SETTINGS_STRINGS.soundEffects}
+          description={SETTINGS_STRINGS.soundDesc}
           value={soundEnabled}
           onToggle={handleSoundToggle}
           themedStyles={themedStyles}
@@ -255,7 +256,7 @@ export default function Settings() {
 
       {/* Data Section */}
       <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
-        Data
+        {SETTINGS_STRINGS.data}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
         <TouchableOpacity
@@ -263,7 +264,7 @@ export default function Settings() {
           onPress={handleReplayTutorial}
         >
           <Ionicons name="book-outline" size={20} color={themedStyles.text.color} />
-          <Text style={[styles.dataButtonText, themedStyles.text]}>Replay Tutorial</Text>
+          <Text style={[styles.dataButtonText, themedStyles.text]}>{SETTINGS_STRINGS.replayTutorial}</Text>
         </TouchableOpacity>
         <View style={[styles.divider, themedStyles.border]} />
         <TouchableOpacity
@@ -271,7 +272,7 @@ export default function Settings() {
           onPress={handleResetStatistics}
         >
           <Ionicons name="trash-outline" size={20} color="#FF453A" />
-          <Text style={styles.dangerButtonText}>Reset Statistics</Text>
+          <Text style={styles.dangerButtonText}>{SETTINGS_STRINGS.resetStatistics}</Text>
         </TouchableOpacity>
       </View>
 
@@ -286,10 +287,10 @@ export default function Settings() {
       {/* About */}
       <View style={styles.aboutSection}>
         <Text style={[styles.aboutText, themedStyles.secondaryText]}>
-          WordVibe v{Constants.expoConfig?.version ?? '2.0.0'}
+          WordVibe v{Constants.expoConfig?.version ?? 'unknown'}
         </Text>
         <Text style={[styles.aboutText, themedStyles.secondaryText]}>
-          Created with ♥ by Eulices Lopez
+          {SETTINGS_STRINGS.createdBy}
         </Text>
       </View>
     </ScrollView>

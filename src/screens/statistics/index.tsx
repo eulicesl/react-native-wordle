@@ -20,6 +20,7 @@ import {
 import { setStatistics } from '../../store/slices/statisticsSlice';
 import { colors } from '../../utils/constants';
 import { formatTimeUntilNextWord } from '../../utils/dailyWord';
+import { STATISTICS as STATISTICS_STRINGS } from '../../utils/strings';
 import { loadGameHistory, GameHistoryEntry } from '../../utils/gameHistory';
 import { loadStatistics } from '../../utils/localStorageFuncs';
 
@@ -190,7 +191,7 @@ export default function Statistics() {
         <View style={styles.statsRow}>
           <StatBox value={gamesPlayed} label="Played" theme={themedStyles} />
           <StatBox value={winPercentage} label="Win %" theme={themedStyles} />
-          <StatBox value={averageGuesses} label="Avg. Guesses" theme={themedStyles} />
+          <StatBox value={averageGuesses} label={STATISTICS_STRINGS.avgGuesses} theme={themedStyles} />
         </View>
         <View style={styles.statsRow}>
           <StatBox value={currentStreak} label="Current Streak" theme={themedStyles} />

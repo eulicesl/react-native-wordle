@@ -16,6 +16,13 @@ import { useAppSelector } from '../../../hooks/storeHooks';
 import { guess } from '../../../types';
 import { getTileAccessibilityLabel, isReduceMotionEnabled } from '../../../utils/accessibility';
 import { adjustLetterDisplay } from '../../../utils/adjustLetterDisplay';
+import {
+  TILE_FLIP_STAGGER_MS,
+  TILE_FLIP_DURATION_MS,
+  TILES_PER_ROW,
+  BOUNCE_POST_FLIP_GAP_MS,
+  BOUNCE_TILE_STAGGER_MS,
+} from '../../../utils/animations';
 import { colors, SIZE } from '../../../utils/constants';
 import { playHaptic } from '../../../utils/haptics';
 import interpolateColorBugFix from '../../../utils/interpolateColorFix';
@@ -49,8 +56,8 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
   const bounceY = useSharedValue(0);
   const progress = useDerivedValue(() => {
     return guess.isComplete
-      ? withDelay(250 * idx, withTiming(1))
-      : withDelay(250 * idx, withTiming(0));
+      ? withDelay(TILE_FLIP_STAGGER_MS * idx, withTiming(1))
+      : withDelay(TILE_FLIP_STAGGER_MS * idx, withTiming(0));
   }, [guess]);
   const shakeX = useSharedValue(0);
   const matchStatus = guess.matches[idx];
@@ -108,15 +115,15 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
     if (matchStatus !== '' && matchStatus !== undefined) {
       if (!reduceMotion) {
         rotateDegree.value = withDelay(
-          250 * idx,
+          TILE_FLIP_STAGGER_MS * idx,
           withTiming(90, {
-            duration: 250,
+            duration: TILE_FLIP_DURATION_MS,
           })
         );
         rotateDegree.value = withDelay(
-          250 * (idx + 1),
+          TILE_FLIP_STAGGER_MS * (idx + 1),
           withTiming(0, {
-            duration: 250,
+            duration: TILE_FLIP_DURATION_MS,
           })
         );
       }
@@ -128,12 +135,12 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         if (hapticFeedback) {
           playHaptic(matchStatus);
         }
-      }, 250 * idx);
+      }, TILE_FLIP_STAGGER_MS * idx);
 
       // Winning row bounce: after all flips complete, stagger a bounce on each tile
       if (guess.isCorrect && !reduceMotion) {
-        const flipDuration = 250 * 5; // Wait for all 5 flips
-        const bounceDelay = flipDuration + 200 + idx * 100;
+        const flipDuration = TILE_FLIP_STAGGER_MS * TILES_PER_ROW;
+        const bounceDelay = flipDuration + BOUNCE_POST_FLIP_GAP_MS + idx * BOUNCE_TILE_STAGGER_MS;
         bounceY.value = withDelay(
           bounceDelay,
           withSequence(
@@ -151,6 +158,9 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
       if (hapticFeedback) {
         playHaptic('error');
       }
+
+      const reduceMotion = isReduceMotionEnabled();
+      if (reduceMotion) return;
 
       for (let i = 1; i < 6; i++) {
         shakeX.value = withDelay(

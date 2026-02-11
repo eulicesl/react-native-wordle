@@ -45,6 +45,7 @@ import { announceGuessResult, announceGameResult } from '../../utils/accessibili
 import { checkAchievements, AchievementCategory } from '../../services/gameCenter';
 import { saveGameToHistory } from '../../utils/gameHistory';
 import { shareResults } from '../../utils/shareResults';
+import { PRE_GAME } from '../../utils/strings';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
@@ -510,7 +511,7 @@ export default function Game() {
         </ReAnimated.View>
         <ReAnimated.View entering={FadeInDown.delay(300).duration(500)}>
           <Text style={[styles.subtitle, themedStyles.secondaryText]}>
-            Feel the vibe. Guess the word in 6 tries.
+            {PRE_GAME.subtitle}
           </Text>
         </ReAnimated.View>
 
@@ -522,10 +523,10 @@ export default function Game() {
               disabled={dailyCompleted}
             >
               <Text style={styles.modeButtonText}>
-                {dailyCompleted ? 'Daily Complete' : 'Daily Challenge'}
+                {dailyCompleted ? PRE_GAME.dailyComplete : PRE_GAME.dailyChallenge}
               </Text>
               <Text style={styles.modeButtonSubtext}>
-                {dailyCompleted ? 'Come back tomorrow!' : 'Same word for everyone'}
+                {dailyCompleted ? PRE_GAME.comeBackTomorrow : PRE_GAME.sameWordForEveryone}
               </Text>
             </TouchableOpacity>
           </ReAnimated.View>
@@ -535,8 +536,8 @@ export default function Game() {
               style={[styles.modeButton, styles.unlimitedButton]}
               onPress={() => startGame('unlimited')}
             >
-              <Text style={styles.modeButtonText}>Unlimited</Text>
-              <Text style={styles.modeButtonSubtext}>Practice with random words</Text>
+              <Text style={styles.modeButtonText}>{PRE_GAME.unlimited}</Text>
+              <Text style={styles.modeButtonSubtext}>{PRE_GAME.practiceWithRandomWords}</Text>
             </TouchableOpacity>
           </ReAnimated.View>
         </View>
@@ -547,13 +548,13 @@ export default function Game() {
             <Text style={[styles.streakValue, { color: colors.correct }]}>
               {statistics.currentStreak}
             </Text>
-            <Text style={[styles.streakLabel, themedStyles.secondaryText]}>Day Streak</Text>
+            <Text style={[styles.streakLabel, themedStyles.secondaryText]}>{PRE_GAME.dayStreak}</Text>
           </ReAnimated.View>
         )}
 
         {hardMode && (
           <ReAnimated.View entering={FadeInUp.delay(700).duration(400)} style={[styles.hardModeBadge, themedStyles.card]}>
-            <Text style={[styles.hardModeText, themedStyles.text]}>Hard Mode Enabled</Text>
+            <Text style={[styles.hardModeText, themedStyles.text]}>{PRE_GAME.hardModeEnabled}</Text>
           </ReAnimated.View>
         )}
       </View>

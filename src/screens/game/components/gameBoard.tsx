@@ -10,18 +10,16 @@ import LetterSquare from './letterSquare';
 import VibeMeter from '../../../components/VibeMeter';
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
+import {
+  TILE_FLIP_STAGGER_MS,
+  TILES_PER_ROW,
+  WIN_MODAL_EXTRA_DELAY_MS,
+  LOSS_MODAL_DELAY_MS,
+} from '../../../utils/animations';
 import { APP_TITLE, colors, SIZE } from '../../../utils/constants';
+import { WIN_MESSAGES, GAME_BOARD } from '../../../utils/strings';
 import { calculateVibeScore } from '../../../utils/vibeMeter';
 import { fetchWordDefinition, WordDefinition } from '../../../utils/wordDefinitions';
-
-const WIN_MESSAGES = [
-  'Genius!',
-  'Magnificent!',
-  'Impressive!',
-  'Splendid!',
-  'Great!',
-  'Phew!',
-];
 
 interface GameBoardProps {
   solution: string;
@@ -62,9 +60,9 @@ const GameBoard = ({
     } else if (key === 'Backspace') {
       handleGuess('<');
     } else if (/^[a-zA-ZçğıöşüÇĞİÖŞÜ]$/.test(key)) {
-      handleGuess(key.toLowerCase());
+      handleGuess(gameLanguage === 'tr' ? key.toLocaleLowerCase('tr') : key.toLowerCase());
     }
-  }, [handleGuess, gameEnded]);
+  }, [handleGuess, gameEnded, gameLanguage]);
 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -85,7 +83,7 @@ const GameBoard = ({
   // Show modal after game ends with a delay for animations to complete
   useEffect(() => {
     if (gameEnded) {
-      const delay = gameWon ? 250 * 5 + 800 : 1500;
+      const delay = gameWon ? TILE_FLIP_STAGGER_MS * TILES_PER_ROW + WIN_MODAL_EXTRA_DELAY_MS : LOSS_MODAL_DELAY_MS;
       const timer = setTimeout(() => {
         setShowModal(true);
         RNAnimated.parallel([
@@ -136,12 +134,12 @@ const GameBoard = ({
           <View style={styles.headerBadges}>
             {gameMode === 'daily' && (
               <View style={[styles.badge, styles.dailyBadge]}>
-                <Text style={styles.badgeText}>Daily</Text>
+                <Text style={styles.badgeText}>{GAME_BOARD.daily}</Text>
               </View>
             )}
             {hardMode && (
               <View style={[styles.badge, styles.hardBadge]}>
-                <Text style={styles.badgeText}>Hard</Text>
+                <Text style={styles.badgeText}>{GAME_BOARD.hard}</Text>
               </View>
             )}
           </View>
@@ -190,7 +188,7 @@ const GameBoard = ({
       </View>
 
       {/* Game End Modal */}
-      <Modal transparent visible={showModal} animationType="none">
+      <Modal transparent visible={showModal} animationType="none" onRequestClose={handleDismissAndReset}>
         <RNAnimated.View
           style={[
             styles.modalOverlay,
@@ -212,7 +210,7 @@ const GameBoard = ({
                 </View>
                 <Text style={[styles.modalTitle, themedStyles.text]}>{winMessage}</Text>
                 <Text style={[styles.modalSubtitle, themedStyles.secondaryText]}>
-                  You got it in {guessCount} {guessCount === 1 ? 'guess' : 'guesses'}
+                  {GAME_BOARD.youGotItIn} {guessCount} {guessCount === 1 ? GAME_BOARD.guessSingular : GAME_BOARD.guessPlural}
                 </Text>
               </>
             ) : (
@@ -220,9 +218,9 @@ const GameBoard = ({
                 <View style={[styles.modalIconContainer, styles.modalIconLoss]}>
                   <Ionicons name="close-circle" size={40} color="#FF453A" />
                 </View>
-                <Text style={[styles.modalTitle, themedStyles.text]}>Better Luck Next Time</Text>
+                <Text style={[styles.modalTitle, themedStyles.text]}>{GAME_BOARD.betterLuckNextTime}</Text>
                 <Text style={[styles.modalSolutionLabel, themedStyles.secondaryText]}>
-                  The word was
+                  {GAME_BOARD.theWordWas}
                 </Text>
                 <Text style={[styles.modalSolutionWord, themedStyles.text]}>
                   {adjustTextDisplay(solution, gameLanguage)}
@@ -263,7 +261,7 @@ const GameBoard = ({
                 <Text style={[styles.modalStatValue, themedStyles.text]}>
                   {statistics.currentStreak}
                 </Text>
-                <Text style={[styles.modalStatLabel, themedStyles.secondaryText]}>Streak</Text>
+                <Text style={[styles.modalStatLabel, themedStyles.secondaryText]}>{GAME_BOARD.streak}</Text>
               </View>
               <View style={[styles.modalStatDivider, { backgroundColor: theme.colors.tertiary }]} />
               <View style={styles.modalStatItem}>
@@ -272,14 +270,14 @@ const GameBoard = ({
                     ? Math.round((statistics.gamesWon / statistics.gamesPlayed) * 100)
                     : 0}%
                 </Text>
-                <Text style={[styles.modalStatLabel, themedStyles.secondaryText]}>Win Rate</Text>
+                <Text style={[styles.modalStatLabel, themedStyles.secondaryText]}>{GAME_BOARD.winRate}</Text>
               </View>
               <View style={[styles.modalStatDivider, { backgroundColor: theme.colors.tertiary }]} />
               <View style={styles.modalStatItem}>
                 <Text style={[styles.modalStatValue, themedStyles.text]}>
                   {statistics.gamesPlayed}
                 </Text>
-                <Text style={[styles.modalStatLabel, themedStyles.secondaryText]}>Played</Text>
+                <Text style={[styles.modalStatLabel, themedStyles.secondaryText]}>{GAME_BOARD.played}</Text>
               </View>
             </View>
 
@@ -291,7 +289,7 @@ const GameBoard = ({
                   onPress={onShare}
                 >
                   <Ionicons name="share-social" size={18} color="#fff" />
-                  <Text style={styles.modalButtonText}>Share</Text>
+                  <Text style={styles.modalButtonText}>{GAME_BOARD.share}</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
@@ -299,7 +297,7 @@ const GameBoard = ({
                 onPress={handleDismissAndReset}
               >
                 <Ionicons name="refresh" size={18} color="#fff" />
-                <Text style={styles.modalButtonText}>New Game</Text>
+                <Text style={styles.modalButtonText}>{GAME_BOARD.newGame}</Text>
               </TouchableOpacity>
             </View>
           </RNAnimated.View>
