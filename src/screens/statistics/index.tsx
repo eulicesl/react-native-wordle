@@ -208,9 +208,11 @@ export default function Statistics() {
         ))}
       </View>
 
-      {/* Next Wordle Countdown */}
+      {/* Next WordVibe Countdown */}
       <View style={[styles.countdownCard, themedStyles.card]}>
-        <Text style={[styles.countdownLabel, themedStyles.secondaryText]}>Next Wordle</Text>
+        <Text style={[styles.countdownLabel, themedStyles.secondaryText]}>
+          Next WordVibe
+        </Text>
         <Text style={[styles.countdown, themedStyles.text]}>{countdown}</Text>
       </View>
     </>

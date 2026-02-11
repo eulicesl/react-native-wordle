@@ -19,7 +19,7 @@ import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const ONBOARDING_COMPLETE_KEY = 'onboarding_complete';
+const ONBOARDING_COMPLETE_KEY = 'wordvibe_onboarding_v2_complete';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -40,42 +40,41 @@ interface OnboardingStep {
 
 const STEPS: OnboardingStep[] = [
   {
-    title: 'Welcome to Wordle!',
-    description:
-      'Guess the hidden 5-letter word in 6 tries.\n\nEach guess must be a valid English word.',
+    title: 'Welcome to WordVibe!',
+    description: 'Feel the vibe as you guess the hidden word in 6 tries.\nEach guess must be a valid 5-letter word.',
     icon: 'game-controller',
     example: null,
     tip: 'A new puzzle is available every day!',
   },
   {
-    title: 'Green = Perfect!',
-    description: 'The letter W is in the word and in the correct position.',
+    title: 'Purple = Locked In',
+    description: 'The letter is in the word and in the correct spot.',
     example: {
-      letters: ['W', 'E', 'A', 'R', 'Y'],
+      letters: ['V', 'I', 'B', 'E', 'S'],
       highlights: ['correct', '', '', '', ''],
       highlightIndex: 0,
     },
-    tip: 'Green letters are locked in place for Hard Mode.',
+    tip: 'Purple letters are locked in place for Hard Mode.',
   },
   {
-    title: 'Yellow = Close!',
-    description: 'The letter I is in the word but in the wrong position.',
+    title: 'Pink = Close Vibe',
+    description: 'The letter is in the word but in the wrong spot.',
     example: {
-      letters: ['P', 'I', 'L', 'L', 'S'],
+      letters: ['W', 'O', 'R', 'D', 'S'],
       highlights: ['', 'present', '', '', ''],
       highlightIndex: 1,
     },
-    tip: 'Try moving yellow letters to different spots.',
+    tip: 'Try moving pink letters to different spots.',
   },
   {
-    title: 'Gray = Not There',
-    description: 'The letter U is not in the word at all.',
+    title: 'Slate = No Vibe',
+    description: 'The letter is not in the word at all.',
     example: {
-      letters: ['V', 'A', 'G', 'U', 'E'],
-      highlights: ['', '', '', 'absent', ''],
-      highlightIndex: 3,
+      letters: ['G', 'L', 'O', 'W', 'S'],
+      highlights: ['', '', 'absent', '', ''],
+      highlightIndex: 2,
     },
-    tip: 'Gray letters are removed from the keyboard.',
+    tip: 'Slate letters are removed from the keyboard.',
   },
   {
     title: 'Multiple Letters',
@@ -89,9 +88,15 @@ const STEPS: OnboardingStep[] = [
     tip: 'Watch for words like SPEED, GEESE, or VIVID!',
   },
   {
+    title: 'Your Vibe Meter',
+    description: 'Watch your Vibe score grow as you get closer.\nThe meter shows how warm your guesses are!',
+    icon: 'pulse',
+    example: null,
+  },
+  {
     title: 'Daily Challenge',
     description:
-      'Everyone gets the same word each day.\n\nShare your results with friends!',
+      'Everyone gets the same word each day.\nShare your results with friends!',
     icon: 'calendar',
     example: null,
     tip: 'Build your streak by playing every day.',

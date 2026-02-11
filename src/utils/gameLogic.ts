@@ -2,7 +2,7 @@ import { guess, matchStatus } from '../types';
 
 /**
  * Calculate match status for each letter in a guess compared to the solution.
- * Handles duplicate letters correctly according to Wordle rules:
+ * Handles duplicate letters correctly according to game rules:
  * - Exact matches (correct position) take priority
  * - Present matches only count if there are remaining unmatched letters in solution
  */

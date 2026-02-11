@@ -3,14 +3,17 @@ import { Dimensions } from 'react-native';
 import { guess } from '../types';
 
 export const { width: SIZE, height: HEIGHT } = Dimensions.get('window');
+export const APP_TITLE = 'WORDVIBE';
 
 export const colors = {
-  correct: '#6aaa64',
-  present: '#c9b458',
-  absent: '#282828',
-  keyDefault: '#606060',
+  correct: '#7C4DFF',
+  present: '#FF6B9D',
+  absent: '#455A64',
+  keyDefault: '#546E7A',
   white: '#ffffff',
-  bg: '#121212',
+  bg: '#1A1A2E',
+  primary: '#7C4DFF',
+  secondary: '#00BFA5',
 };
 
 export const initialGuesses: guess[] = [

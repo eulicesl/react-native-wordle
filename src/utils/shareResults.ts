@@ -4,8 +4,8 @@ import { guess, matchStatus } from '../types';
 import { getDayNumber } from './dailyWord';
 
 // Emoji mappings
-const EMOJI_CORRECT = '🟩';
-const EMOJI_PRESENT = '🟨';
+const EMOJI_CORRECT = '🟪';
+const EMOJI_PRESENT = '💜';
 const EMOJI_ABSENT = '⬛';
 const EMOJI_CORRECT_HIGH_CONTRAST = '🟧';
 const EMOJI_PRESENT_HIGH_CONTRAST = '🟦';
@@ -43,16 +43,18 @@ export function generateShareText(
   gameWon: boolean,
   isDaily: boolean,
   hardMode = false,
-  highContrast = false
+  highContrast = false,
+  vibeScore?: number
 ): string {
   const completedGuesses = guesses.filter((g) => g.isComplete);
   const guessCount = gameWon ? completedGuesses.length : 'X';
 
   const dayNumber = getDayNumber();
   const modeIndicator = hardMode ? '*' : '';
+  const vibeIndicator = vibeScore != null ? ` (Vibe: ${vibeScore}%)` : '';
   const title = isDaily
-    ? `Wordle ${dayNumber} ${guessCount}/6${modeIndicator}`
-    : `Wordle (Unlimited) ${guessCount}/6${modeIndicator}`;
+    ? `WordVibe #${dayNumber} 🎯 ${guessCount}/6${modeIndicator}${vibeIndicator}`
+    : `WordVibe (Free Play) 🎯 ${guessCount}/6${modeIndicator}${vibeIndicator}`;
 
   const emojiGrid = generateEmojiGrid(guesses, highContrast);
 
@@ -65,18 +67,19 @@ export async function shareResults(
   gameWon: boolean,
   isDaily: boolean,
   hardMode = false,
-  highContrast = false
+  highContrast = false,
+  vibeScore?: number
 ): Promise<boolean> {
-  const shareText = generateShareText(guesses, gameWon, isDaily, hardMode, highContrast);
+  const shareText = generateShareText(guesses, gameWon, isDaily, hardMode, highContrast, vibeScore);
 
   try {
     const result = await Share.share(
       {
         message: shareText,
-        ...(Platform.OS === 'ios' && { title: 'Wordle Results' }),
+        ...(Platform.OS === 'ios' && { title: 'WordVibe Results' }),
       },
       {
-        ...(Platform.OS === 'android' && { dialogTitle: 'Share your Wordle results' }),
+        ...(Platform.OS === 'android' && { dialogTitle: 'Share your WordVibe results' }),
       }
     );
 
@@ -96,7 +99,8 @@ export function getShareableText(
   gameWon: boolean,
   isDaily: boolean,
   hardMode = false,
-  highContrast = false
+  highContrast = false,
+  vibeScore?: number
 ): string {
-  return generateShareText(guesses, gameWon, isDaily, hardMode, highContrast);
+  return generateShareText(guesses, gameWon, isDaily, hardMode, highContrast, vibeScore);
 }

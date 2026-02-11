@@ -3,12 +3,15 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, Animated as RNAnimated } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Keyboard from './keyboard';
 import LetterSquare from './letterSquare';
+import VibeMeter from '../../../components/VibeMeter';
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
-import { colors, HEIGHT, SIZE } from '../../../utils/constants';
+import { APP_TITLE, colors, HEIGHT, SIZE } from '../../../utils/constants';
+import { calculateVibeScore } from '../../../utils/vibeMeter';
 
 const WIN_MESSAGES = [
   'Genius!',
@@ -42,6 +45,7 @@ const GameBoard = ({
   const { theme } = useAppSelector((state) => state.theme);
   const { hardMode } = useAppSelector((state) => state.settings);
   const { statistics } = useAppSelector((state) => state.statistics);
+  const insets = useSafeAreaInsets();
 
   const [showModal, setShowModal] = useState(false);
   const fadeAnim = useRef(new RNAnimated.Value(0)).current;
@@ -70,7 +74,7 @@ const GameBoard = ({
   // Show modal after game ends with a delay for animations to complete
   useEffect(() => {
     if (gameEnded) {
-      const delay = gameWon ? 250 * 5 + 800 : 1500; // Wait for flip + bounce animations, or a brief pause on loss
+      const delay = gameWon ? 250 * 5 + 800 : 1500;
       const timer = setTimeout(() => {
         setShowModal(true);
         RNAnimated.parallel([
@@ -114,58 +118,92 @@ const GameBoard = ({
 
   return (
     <View style={[styles.board, themedStyles.background]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, themedStyles.text]}>WORDLE</Text>
-        <View style={styles.headerBadges}>
-          {gameMode === 'daily' && (
-            <View style={[styles.badge, styles.dailyBadge]}>
-              <Text style={styles.badgeText}>Daily</Text>
+      <View style={[styles.contentArea, { paddingTop: insets.top }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, themedStyles.text]}>{APP_TITLE}</Text>
+          <View style={styles.headerBadges}>
+            {gameMode === 'daily' && (
+              <View style={[styles.badge, styles.dailyBadge]}>
+                <Text style={styles.badgeText}>Daily</Text>
+              </View>
+            )}
+            {hardMode && (
+              <View style={[styles.badge, styles.hardBadge]}>
+                <Text style={styles.badgeText}>Hard</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Game Grid */}
+        <View style={styles.blocksContainer}>
+          {guesses.map((guess, idx) => (
+            <View key={idx} style={styles.squareBlock}>
+              {guess.letters.map((letter, letterIdx) => {
+                return (
+                  <LetterSquare
+                    key={letterIdx}
+                    idx={letterIdx}
+                    letter={letter}
+                    guess={guess}
+                  />
+                );
+              })}
+            </View>
+          ))}
+        </View>
+
+        {/* Vibe Meter */}
+        <VibeMeter vibeScore={calculateVibeScore(guesses, solution)} />
+
+        {/* Message Area */}
+        <View style={styles.messageArea}>
+          {gameEnded && (
+            <View style={styles.gameEndContainer}>
+              <Text style={[styles.solutionText, themedStyles.text]}>
+                {gameWon
+                  ? 'Congratulations!'
+                  : `The word was: ${adjustTextDisplay(solution, gameLanguage)}`}
+              </Text>
+              <View style={styles.buttonRow}>
+                {onShare && (
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.shareButton]}
+                    onPress={onShare}
+                  >
+                    <Ionicons name="share-social" size={18} color="#fff" />
+                    <Text style={styles.actionButtonText}>Share</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.newGameButton]}
+                  onPress={resetGame}
+                >
+                  <Ionicons name="refresh" size={18} color="#fff" />
+                  <Text style={styles.actionButtonText}>New Game</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
-          {hardMode && (
-            <View style={[styles.badge, styles.hardBadge]}>
-              <Text style={styles.badgeText}>Hard</Text>
-            </View>
+          {wrongGuessShake && errorMessage && (
+            <Animated.View
+              entering={FadeIn}
+              exiting={FadeOut}
+              style={[styles.errorToast, themedStyles.card]}
+            >
+              <Text style={[styles.errorText, themedStyles.text]}>
+                {errorMessage}
+              </Text>
+            </Animated.View>
           )}
         </View>
       </View>
 
-      {/* Game Grid */}
-      <View style={styles.blocksContainer}>
-        {guesses.map((guess, idx) => (
-          <View key={idx} style={styles.squareBlock}>
-            {guess.letters.map((letter, letterIdx) => {
-              return (
-                <LetterSquare
-                  key={letterIdx}
-                  idx={letterIdx}
-                  letter={letter}
-                  guess={guess}
-                />
-              );
-            })}
-          </View>
-        ))}
+      <View style={styles.keyboardWrapper}>
+        {/* Keyboard */}
+        <Keyboard handleGuess={handleGuess} />
       </View>
-
-      {/* Error Toast */}
-      <View style={styles.messageArea}>
-        {wrongGuessShake && errorMessage && (
-          <Animated.View
-            entering={FadeIn}
-            exiting={FadeOut}
-            style={[styles.errorToast, themedStyles.card]}
-          >
-            <Text style={[styles.errorText, themedStyles.text]}>
-              {errorMessage}
-            </Text>
-          </Animated.View>
-        )}
-      </View>
-
-      {/* Keyboard */}
-      <Keyboard handleGuess={handleGuess} />
 
       {/* Game End Modal */}
       <Modal transparent visible={showModal} animationType="none">
@@ -264,8 +302,15 @@ export default GameBoard;
 
 const styles = StyleSheet.create({
   board: {
-    width: SIZE,
-    height: HEIGHT,
+    flex: 1,
+    width: '100%',
+    maxWidth: SIZE,
+    alignSelf: 'center',
+    alignItems: 'center',
+  },
+  contentArea: {
+    flex: 1,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'space-evenly',
   },
@@ -274,7 +319,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    paddingTop: 10,
   },
   headerTitle: {
     fontSize: 28,
@@ -292,10 +336,10 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   dailyBadge: {
-    backgroundColor: '#6aaa64',
+    backgroundColor: '#7C4DFF',
   },
   hardBadge: {
-    backgroundColor: '#c9b458',
+    backgroundColor: '#FF6B9D',
   },
   badgeText: {
     color: '#fff',
@@ -315,12 +359,40 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'space-evenly',
+    flexShrink: 1,
   },
   messageArea: {
     width: SIZE,
-    minHeight: 40,
+    minHeight: 56,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  gameEndContainer: {
+    alignItems: 'center',
+  },
+  solutionText: {
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
+    textTransform: 'uppercase',
+    marginBottom: 12,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    gap: 8,
+  },
+  actionButtonText: {
+    fontFamily: 'Montserrat_700Bold',
+    fontSize: 14,
+    color: '#fff',
   },
   errorToast: {
     paddingHorizontal: 16,
@@ -330,6 +402,11 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: 'Montserrat_600SemiBold',
     fontSize: 14,
+  },
+  keyboardWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    flexShrink: 0,
   },
   // Modal styles
   modalOverlay: {

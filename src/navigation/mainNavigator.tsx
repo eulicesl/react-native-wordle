@@ -22,13 +22,13 @@ export default function MainNavigator() {
 
           switch (route.name) {
             case 'Game':
-              iconName = focused ? 'game-controller' : 'game-controller-outline';
+              iconName = focused ? 'sparkles' : 'sparkles-outline';
               break;
             case 'Stats':
-              iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+              iconName = focused ? 'trending-up' : 'trending-up-outline';
               break;
             case 'Help':
-              iconName = focused ? 'help-circle' : 'help-circle-outline';
+              iconName = focused ? 'bulb' : 'bulb-outline';
               break;
             case 'Settings':
               iconName = focused ? 'settings' : 'settings-outline';
@@ -37,7 +37,7 @@ export default function MainNavigator() {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#6aaa64',
+        tabBarActiveTintColor: '#7C4DFF',
         tabBarInactiveTintColor: theme.dark ? '#808080' : '#a0a0a0',
         tabBarStyle: {
           backgroundColor: theme.colors.background,

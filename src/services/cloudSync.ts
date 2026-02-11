@@ -3,10 +3,10 @@ import { Platform } from 'react-native';
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
 
 // Cloud sync storage keys
-const CLOUD_SYNC_KEY = 'wordle_cloud_sync';
-const LAST_SYNC_KEY = 'wordle_last_sync';
-const DEVICE_ID_KEY = 'wordle_device_id';
-const SYNC_CONFLICT_KEY = 'wordle_sync_conflict';
+const CLOUD_SYNC_KEY = 'wordvibe_cloud_sync';
+const LAST_SYNC_KEY = 'wordvibe_last_sync';
+const DEVICE_ID_KEY = 'wordvibe_device_id';
+const SYNC_CONFLICT_KEY = 'wordvibe_sync_conflict';
 
 // Data that gets synced
 export interface SyncableData {
@@ -142,10 +142,10 @@ export async function getLocalSyncData(): Promise<SyncableData> {
   const deviceId = await getDeviceId();
 
   // Gather all local data
-  const statsStr = await getStoreData('wordle_statistics');
-  const settingsStr = await getStoreData('wordle_settings');
-  const achievementsStr = await getStoreData('wordle_achievements');
-  const dailyProgressStr = await getStoreData('wordle_daily_progress');
+  const statsStr = await getStoreData('wordvibe_statistics');
+  const settingsStr = await getStoreData('wordvibe_settings');
+  const achievementsStr = await getStoreData('wordvibe_achievements');
+  const dailyProgressStr = await getStoreData('wordvibe_daily_progress');
 
   const statistics = statsStr
     ? JSON.parse(statsStr)
@@ -182,10 +182,10 @@ export async function getLocalSyncData(): Promise<SyncableData> {
 
 // Save local sync data
 async function saveLocalSyncData(data: SyncableData): Promise<void> {
-  await setStoreData('wordle_statistics', JSON.stringify(data.statistics));
-  await setStoreData('wordle_settings', JSON.stringify(data.settings));
-  await setStoreData('wordle_achievements', JSON.stringify(data.achievements));
-  await setStoreData('wordle_daily_progress', JSON.stringify(data.dailyProgress));
+  await setStoreData('wordvibe_statistics', JSON.stringify(data.statistics));
+  await setStoreData('wordvibe_settings', JSON.stringify(data.settings));
+  await setStoreData('wordvibe_achievements', JSON.stringify(data.achievements));
+  await setStoreData('wordvibe_daily_progress', JSON.stringify(data.dailyProgress));
 }
 
 // Merge two sync data objects (for conflict resolution)

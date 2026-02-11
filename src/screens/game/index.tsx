@@ -23,7 +23,7 @@ import {
   recordGameLoss,
 } from '../../store/slices/statisticsSlice';
 import { guess, matchStatus } from '../../types';
-import { initialGuesses } from '../../utils/constants';
+import { APP_TITLE, colors, initialGuesses } from '../../utils/constants';
 import {
   getTodaysDailyWord,
   getRandomWord,
@@ -43,6 +43,7 @@ import { selectStatisticsLoaded } from '../../store/slices/statisticsSlice';
 import { announceGuessResult, announceGameResult } from '../../utils/accessibility';
 import { checkAchievements } from '../../services/gameCenter';
 import { shareResults } from '../../utils/shareResults';
+import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
 
@@ -411,7 +412,8 @@ export default function Game() {
   };
 
   const handleShare = async () => {
-    await shareResults(guesses, gameWon, gameMode === 'daily', hardMode, highContrastMode);
+    const vibeScore = calculateVibeScore(guesses, solution);
+    await shareResults(guesses, gameWon, gameMode === 'daily', hardMode, highContrastMode, vibeScore.score);
   };
 
   const resetGame = () => {
@@ -447,11 +449,11 @@ export default function Game() {
         </ReAnimated.View>
 
         <ReAnimated.View entering={FadeInDown.delay(200).duration(500)}>
-          <Text style={[styles.title, themedStyles.text]}>WORDLE</Text>
+          <Text style={[styles.title, themedStyles.text]}>{APP_TITLE}</Text>
         </ReAnimated.View>
         <ReAnimated.View entering={FadeInDown.delay(300).duration(500)}>
           <Text style={[styles.subtitle, themedStyles.secondaryText]}>
-            Get 6 chances to guess a 5-letter word.
+            Feel the vibe. Guess the word in 6 tries.
           </Text>
         </ReAnimated.View>
 
@@ -555,10 +557,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dailyButton: {
-    backgroundColor: '#6aaa64',
+    backgroundColor: '#7C4DFF',
   },
   unlimitedButton: {
-    backgroundColor: '#c9b458',
+    backgroundColor: '#FF6B9D',
   },
   disabledButton: {
     backgroundColor: '#606060',

@@ -29,10 +29,10 @@ const keysTR: string[][] = [
 
 // High contrast color palette
 const highContrastColors = {
-  correct: '#f5793a', // Orange
-  present: '#85c0f9', // Blue
-  absent: '#282828',
-  keyDefault: '#606060',
+  correct: '#FF9100', // High-visibility orange
+  present: '#40C4FF', // Bright cyan
+  absent: '#37474F',
+  keyDefault: '#546E7A',
 };
 
 const SPRING_CONFIG = { damping: 15, stiffness: 300, mass: 0.5 };
