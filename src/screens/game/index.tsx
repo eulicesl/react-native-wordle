@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ReAnimated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
+import AchievementToast from '../../components/AchievementToast';
 import { ConfettiExplosion } from '../../components/ParticleEffect';
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
@@ -41,7 +42,7 @@ import {
 } from '../../utils/localStorageFuncs';
 import { selectStatisticsLoaded } from '../../store/slices/statisticsSlice';
 import { announceGuessResult, announceGameResult } from '../../utils/accessibility';
-import { checkAchievements } from '../../services/gameCenter';
+import { checkAchievements, AchievementCategory } from '../../services/gameCenter';
 import { shareResults } from '../../utils/shareResults';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
@@ -69,6 +70,12 @@ export default function Game() {
   const [dailyCompleted, setDailyCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [pendingAchievement, setPendingAchievement] = useState<{
+    title: string;
+    description: string;
+    points: number;
+    category: AchievementCategory;
+  } | null>(null);
 
   // Load language preference on mount
   useEffect(() => {
@@ -236,7 +243,19 @@ export default function Game() {
       dispatch(recordGameLoss({ date: today, isDaily: gameMode === 'daily' }));
 
       // Check achievements on loss too
-      checkAchievements(false, 0, hardMode, gameMode === 'daily', null);
+      checkAchievements(false, 0, hardMode, gameMode === 'daily', null).then(
+        (newAchievements) => {
+          if (newAchievements.length > 0) {
+            const first = newAchievements[0];
+            setPendingAchievement({
+              title: first.achievement.title,
+              description: first.achievement.description,
+              points: first.achievement.points,
+              category: first.achievement.category,
+            });
+          }
+        }
+      );
 
       // Announce for screen readers
       announceGameResult(false, solution, 0);
@@ -313,8 +332,20 @@ export default function Game() {
           const today = getTodayDateString();
           dispatch(recordGameWin({ guessCount, date: today, isDaily: gameMode === 'daily' }));
 
-          // Check achievements
-          checkAchievements(true, guessCount, hardMode, gameMode === 'daily', null);
+          // Check achievements and show toast for new unlocks
+          checkAchievements(true, guessCount, hardMode, gameMode === 'daily', null).then(
+            (newAchievements) => {
+              if (newAchievements.length > 0) {
+                const first = newAchievements[0];
+                setPendingAchievement({
+                  title: first.achievement.title,
+                  description: first.achievement.description,
+                  points: first.achievement.points,
+                  category: first.achievement.category,
+                });
+              }
+            }
+          );
 
           // Announce for screen readers
           announceGameResult(true, solution, guessCount);
@@ -394,6 +425,7 @@ export default function Game() {
 
   const startGame = (mode: GameMode) => {
     setShowConfetti(false);
+    setPendingAchievement(null);
     setGameMode(mode);
     setErrorMessage(null);
     dispatch(setGameStarted(true));
@@ -513,6 +545,15 @@ export default function Game() {
         gameMode={gameMode}
         errorMessage={errorMessage}
       />
+      {pendingAchievement && (
+        <AchievementToast
+          title={pendingAchievement.title}
+          description={pendingAchievement.description}
+          points={pendingAchievement.points}
+          category={pendingAchievement.category}
+          onDismiss={() => setPendingAchievement(null)}
+        />
+      )}
       <ConfettiExplosion
         active={showConfetti}
         particleCount={60}
