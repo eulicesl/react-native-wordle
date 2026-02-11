@@ -1,5 +1,5 @@
 {
-  "main": "expo-router/entry",
+  "main": "expo/AppEntry",
   "scripts": {
     "postinstall": "patch-package",
     "start": "expo start",

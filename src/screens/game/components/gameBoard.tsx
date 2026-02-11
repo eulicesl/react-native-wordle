@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Keyboard from './keyboard';
 import LetterSquare from './letterSquare';
@@ -32,6 +33,7 @@ const GameBoard = ({
   );
   const { theme } = useAppSelector((state) => state.theme);
   const { hardMode } = useAppSelector((state) => state.settings);
+  const insets = useSafeAreaInsets();
 
   const themedStyles = {
     background: { backgroundColor: theme.colors.background },
@@ -42,7 +44,7 @@ const GameBoard = ({
 
   return (
     <View style={[styles.board, themedStyles.background]}>
-      <View style={styles.contentArea}>
+      <View style={[styles.contentArea, { paddingTop: insets.top }]}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, themedStyles.text]}>{APP_TITLE}</Text>
@@ -147,7 +149,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'space-evenly',
-    paddingTop: 10,
   },
   header: {
     flexDirection: 'row',

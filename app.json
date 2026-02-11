@@ -36,8 +36,7 @@
           "UIInterfaceOrientationLandscapeRight"
         ],
         "ITSAppUsesNonExemptEncryption": false,
-        "UIUserInterfaceStyle": "Automatic",
-        "UIViewControllerBasedStatusBarAppearance": true
+        "UIUserInterfaceStyle": "Automatic"
       },
       "config": {
         "usesNonExemptEncryption": false
