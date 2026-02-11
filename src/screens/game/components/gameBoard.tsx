@@ -10,8 +10,9 @@ import LetterSquare from './letterSquare';
 import VibeMeter from '../../../components/VibeMeter';
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
-import { APP_TITLE, colors, HEIGHT, SIZE } from '../../../utils/constants';
+import { APP_TITLE, colors, SIZE } from '../../../utils/constants';
 import { calculateVibeScore } from '../../../utils/vibeMeter';
+import { fetchWordDefinition, WordDefinition } from '../../../utils/wordDefinitions';
 
 const WIN_MESSAGES = [
   'Genius!',
@@ -48,6 +49,7 @@ const GameBoard = ({
   const insets = useSafeAreaInsets();
 
   const [showModal, setShowModal] = useState(false);
+  const [wordDef, setWordDef] = useState<WordDefinition | null>(null);
   const fadeAnim = useRef(new RNAnimated.Value(0)).current;
   const scaleAnim = useRef(new RNAnimated.Value(0.85)).current;
 
@@ -70,6 +72,15 @@ const GameBoard = ({
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
   }, [handleKeyDown]);
+
+  // Fetch word definition when game ends
+  useEffect(() => {
+    if (gameEnded && solution) {
+      fetchWordDefinition(solution, gameLanguage).then(setWordDef);
+    } else {
+      setWordDef(null);
+    }
+  }, [gameEnded, solution, gameLanguage]);
 
   // Show modal after game ends with a delay for animations to complete
   useEffect(() => {
@@ -217,6 +228,33 @@ const GameBoard = ({
                   {adjustTextDisplay(solution, gameLanguage)}
                 </Text>
               </>
+            )}
+
+            {/* Word Definition */}
+            {wordDef && (
+              <View style={[styles.definitionContainer, { borderTopColor: theme.colors.tertiary }]}>
+                <View style={styles.definitionHeader}>
+                  <Text style={[styles.definitionWord, themedStyles.text]}>
+                    {wordDef.word}
+                  </Text>
+                  {wordDef.phonetic && (
+                    <Text style={[styles.definitionPhonetic, themedStyles.secondaryText]}>
+                      {wordDef.phonetic}
+                    </Text>
+                  )}
+                  <Text style={[styles.definitionPos, { color: colors.correct }]}>
+                    {wordDef.partOfSpeech}
+                  </Text>
+                </View>
+                <Text style={[styles.definitionText, themedStyles.secondaryText]} numberOfLines={3}>
+                  {wordDef.definition}
+                </Text>
+                {wordDef.example && (
+                  <Text style={[styles.definitionExample, themedStyles.secondaryText]} numberOfLines={2}>
+                    &ldquo;{wordDef.example}&rdquo;
+                  </Text>
+                )}
+              </View>
             )}
 
             {/* Stats Summary */}
@@ -405,6 +443,45 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 4,
     marginBottom: 20,
+  },
+  definitionContainer: {
+    width: '100%',
+    borderTopWidth: 1,
+    paddingTop: 14,
+    marginBottom: 16,
+  },
+  definitionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 6,
+  },
+  definitionWord: {
+    fontSize: 15,
+    fontFamily: 'Montserrat_700Bold',
+  },
+  definitionPhonetic: {
+    fontSize: 12,
+    fontFamily: 'Montserrat_600SemiBold',
+    fontStyle: 'italic',
+  },
+  definitionPos: {
+    fontSize: 11,
+    fontFamily: 'Montserrat_700Bold',
+    textTransform: 'uppercase',
+  },
+  definitionText: {
+    fontSize: 13,
+    fontFamily: 'Montserrat_600SemiBold',
+    lineHeight: 18,
+  },
+  definitionExample: {
+    fontSize: 12,
+    fontFamily: 'Montserrat_600SemiBold',
+    fontStyle: 'italic',
+    marginTop: 4,
+    lineHeight: 16,
   },
   modalStatsRow: {
     flexDirection: 'row',
