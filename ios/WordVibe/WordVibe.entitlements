@@ -6,7 +6,7 @@
     <string>production</string>
     <key>com.apple.developer.associated-domains</key>
     <array>
-      <string>applinks:wordle.game</string>
+      <string>applinks:wordvibe.app</string>
     </array>
   </dict>
 </plist>

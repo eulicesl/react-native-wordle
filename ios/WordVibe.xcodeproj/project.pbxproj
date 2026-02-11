@@ -7,29 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		12F425EA5594B0E5970A1F11 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30D2F12F1D60B3C924D1E0F2 /* ExpoModulesProvider.swift */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		87FEE7486D5F4FB5A24FF3E9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1754D46C8054F20B42531FD /* PrivacyInfo.xcprivacy */; };
+		9EC2872BF2D54FDEA6E4A576 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7B9CB6B6410649DE81EC3AE1 /* PrivacyInfo.xcprivacy */; };
+		A39DC25A79C655050B3734EA /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7951A8E3073FD20C9E083958 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		EBA5CCEE31A200C1E525218A /* libPods-Wordle.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 451F40B860545C9458B26956 /* libPods-Wordle.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		F36CE48980B34D0A66D8A81E /* libPods-WordVibe.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 18A5AE19BACC67AA1EA4CCBA /* libPods-WordVibe.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		13B07F961A680F5B00A75B9A /* Wordle.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wordle.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Wordle/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Wordle/Info.plist; sourceTree = "<group>"; };
-		30D2F12F1D60B3C924D1E0F2 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Wordle/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		451F40B860545C9458B26956 /* libPods-Wordle.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Wordle.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		8E39DD4594A38704D42759EE /* Pods-Wordle.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Wordle.debug.xcconfig"; path = "Target Support Files/Pods-Wordle/Pods-Wordle.debug.xcconfig"; sourceTree = "<group>"; };
-		A1754D46C8054F20B42531FD /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = PrivacyInfo.xcprivacy; path = Wordle/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Wordle/SplashScreen.storyboard; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* WordVibe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WordVibe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = WordVibe/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = WordVibe/Info.plist; sourceTree = "<group>"; };
+		18A5AE19BACC67AA1EA4CCBA /* libPods-WordVibe.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-WordVibe.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		53D0130D59A3C9295B48ED44 /* Pods-WordVibe.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WordVibe.debug.xcconfig"; path = "Target Support Files/Pods-WordVibe/Pods-WordVibe.debug.xcconfig"; sourceTree = "<group>"; };
+		7951A8E3073FD20C9E083958 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-WordVibe/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		7B9CB6B6410649DE81EC3AE1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = PrivacyInfo.xcprivacy; path = WordVibe/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		93C5E57817D11E9DA929CEED /* Pods-WordVibe.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WordVibe.release.xcconfig"; path = "Target Support Files/Pods-WordVibe/Pods-WordVibe.release.xcconfig"; sourceTree = "<group>"; };
+		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = WordVibe/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		E7CA420463816F597AB6D2E3 /* Pods-Wordle.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Wordle.release.xcconfig"; path = "Target Support Files/Pods-Wordle/Pods-Wordle.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Wordle/AppDelegate.swift; sourceTree = "<group>"; };
-		F11748442D0722820044C1D9 /* Wordle-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Wordle-Bridging-Header.h"; path = "Wordle/Wordle-Bridging-Header.h"; sourceTree = "<group>"; };
+		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = WordVibe/AppDelegate.swift; sourceTree = "<group>"; };
+		F11748442D0722820044C1D9 /* WordVibe-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "WordVibe-Bridging-Header.h"; path = "WordVibe/WordVibe-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,42 +37,42 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EBA5CCEE31A200C1E525218A /* libPods-Wordle.a in Frameworks */,
+				F36CE48980B34D0A66D8A81E /* libPods-WordVibe.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* Wordle */ = {
+		13B07FAE1A68108700A75B9A /* WordVibe */ = {
 			isa = PBXGroup;
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
-				F11748442D0722820044C1D9 /* Wordle-Bridging-Header.h */,
+				F11748442D0722820044C1D9 /* WordVibe-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				A1754D46C8054F20B42531FD /* PrivacyInfo.xcprivacy */,
+				7B9CB6B6410649DE81EC3AE1 /* PrivacyInfo.xcprivacy */,
 			);
-			name = Wordle;
-			sourceTree = "<group>";
-		};
-		179C6C9A888F30E8AD00A085 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				FB4CC760A5BB58805C2415BC /* Wordle */,
-			);
-			name = ExpoModulesProviders;
+			name = WordVibe;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				451F40B860545C9458B26956 /* libPods-Wordle.a */,
+				18A5AE19BACC67AA1EA4CCBA /* libPods-WordVibe.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		34AF4B0BEEB52F55E89E7A0C /* WordVibe */ = {
+			isa = PBXGroup;
+			children = (
+				7951A8E3073FD20C9E083958 /* ExpoModulesProvider.swift */,
+			);
+			name = WordVibe;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -85,12 +85,12 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* Wordle */,
+				13B07FAE1A68108700A75B9A /* WordVibe */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				8C54296419E6F16F08B0D74F /* Pods */,
-				179C6C9A888F30E8AD00A085 /* ExpoModulesProviders */,
+				A8559290625B5BB04E859AE9 /* Pods */,
+				F112FCC326EC01F3A972DD79 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -100,17 +100,18 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* Wordle.app */,
+				13B07F961A680F5B00A75B9A /* WordVibe.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		8C54296419E6F16F08B0D74F /* Pods */ = {
+		A8559290625B5BB04E859AE9 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				8E39DD4594A38704D42759EE /* Pods-Wordle.debug.xcconfig */,
-				E7CA420463816F597AB6D2E3 /* Pods-Wordle.release.xcconfig */,
+				53D0130D59A3C9295B48ED44 /* Pods-WordVibe.debug.xcconfig */,
+				93C5E57817D11E9DA929CEED /* Pods-WordVibe.release.xcconfig */,
 			);
+			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -120,40 +121,40 @@
 				BB2F792C24A3F905000567C9 /* Expo.plist */,
 			);
 			name = Supporting;
-			path = Wordle/Supporting;
+			path = WordVibe/Supporting;
 			sourceTree = "<group>";
 		};
-		FB4CC760A5BB58805C2415BC /* Wordle */ = {
+		F112FCC326EC01F3A972DD79 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				30D2F12F1D60B3C924D1E0F2 /* ExpoModulesProvider.swift */,
+				34AF4B0BEEB52F55E89E7A0C /* WordVibe */,
 			);
-			name = Wordle;
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* Wordle */ = {
+		13B07F861A680F5B00A75B9A /* WordVibe */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Wordle" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "WordVibe" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				096EF628DD240A40D10759D4 /* [Expo] Configure project */,
+				C6C37280F2752CAD4B641684 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				A52AF4E47214ADF0EAD9F9CB /* [CP] Embed Pods Frameworks */,
+				E8DD86E4B6ED9282C5DADACE /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = Wordle;
-			productName = Wordle;
-			productReference = 13B07F961A680F5B00A75B9A /* Wordle.app */;
+			name = WordVibe;
+			productName = WordVibe;
+			productReference = 13B07F961A680F5B00A75B9A /* WordVibe.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -166,10 +167,12 @@
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1250;
+						DevelopmentTeam = "8394UJXX4F";
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Wordle" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "WordVibe" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -182,7 +185,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* Wordle */,
+				13B07F861A680F5B00A75B9A /* WordVibe */,
 			);
 		};
 /* End PBXProject section */
@@ -195,7 +198,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				87FEE7486D5F4FB5A24FF3E9 /* PrivacyInfo.xcprivacy in Resources */,
+				9EC2872BF2D54FDEA6E4A576 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,36 +237,12 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-Wordle-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-WordVibe-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
-		};
-		096EF628DD240A40D10759D4 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/Wordle/Wordle.entitlements",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-Wordle/expo-configure-project.sh",
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-Wordle/ExpoModulesProvider.swift",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Wordle/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -271,7 +250,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Wordle/Pods-Wordle-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-WordVibe/Pods-WordVibe-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
@@ -300,16 +279,40 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Wordle/Pods-Wordle-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-WordVibe/Pods-WordVibe-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		A52AF4E47214ADF0EAD9F9CB /* [CP] Embed Pods Frameworks */ = {
+		C6C37280F2752CAD4B641684 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/WordVibe/WordVibe.entitlements",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-WordVibe/expo-configure-project.sh",
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Pods/Target Support Files/Pods-WordVibe/ExpoModulesProvider.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-WordVibe/expo-configure-project.sh\"\n";
+		};
+		E8DD86E4B6ED9282C5DADACE /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Wordle/Pods-Wordle-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-WordVibe/Pods-WordVibe-frameworks.sh",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -318,7 +321,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Wordle/Pods-Wordle-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-WordVibe/Pods-WordVibe-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -329,7 +332,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				12F425EA5594B0E5970A1F11 /* ExpoModulesProvider.swift in Sources */,
+				A39DC25A79C655050B3734EA /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -338,19 +341,18 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8E39DD4594A38704D42759EE /* Pods-Wordle.debug.xcconfig */;
+			baseConfigurationReference = 53D0130D59A3C9295B48ED44 /* Pods-WordVibe.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Wordle/Wordle.entitlements;
+				CODE_SIGN_ENTITLEMENTS = WordVibe/WordVibe.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8394UJXX4F;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"FB_SONARKIT_ENABLED=1",
 				);
-				INFOPLIST_FILE = Wordle/Info.plist;
+				INFOPLIST_FILE = WordVibe/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -363,26 +365,28 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.eulices.wordle;
-				PRODUCT_NAME = Wordle;
-				SWIFT_OBJC_BRIDGING_HEADER = "Wordle/Wordle-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = com.eulices.wordvibe;
+				PRODUCT_NAME = WordVibe;
+				SWIFT_OBJC_BRIDGING_HEADER = "WordVibe/WordVibe-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				DEVELOPMENT_TEAM = "8394UJXX4F";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Debug;
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E7CA420463816F597AB6D2E3 /* Pods-Wordle.release.xcconfig */;
+			baseConfigurationReference = 93C5E57817D11E9DA929CEED /* Pods-WordVibe.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Wordle/Wordle.entitlements;
+				CODE_SIGN_ENTITLEMENTS = WordVibe/WordVibe.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8394UJXX4F;
-				INFOPLIST_FILE = Wordle/Info.plist;
+				INFOPLIST_FILE = WordVibe/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -395,12 +399,15 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.eulices.wordle;
-				PRODUCT_NAME = Wordle;
-				SWIFT_OBJC_BRIDGING_HEADER = "Wordle/Wordle-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = com.eulices.wordvibe;
+				PRODUCT_NAME = WordVibe;
+				SWIFT_OBJC_BRIDGING_HEADER = "WordVibe/WordVibe-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				DEVELOPMENT_TEAM = "8394UJXX4F";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Release;
 		};
@@ -523,7 +530,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Wordle" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "WordVibe" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -532,7 +539,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Wordle" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "WordVibe" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,

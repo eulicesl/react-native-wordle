@@ -20,7 +20,7 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 
 prepare_react_native_project!
 
-target 'Wordle' do
+target 'WordVibe' do
   use_expo_modules!
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
@@ -59,12 +59,5 @@ target 'Wordle' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
-
-    # Fix C++ std::move issue in react-native-screens and other pods
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++20'
-      end
-    end
   end
 end
