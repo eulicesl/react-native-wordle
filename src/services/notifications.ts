@@ -183,16 +183,16 @@ export async function requestNotificationPermission(): Promise<boolean> {
     // For Android, we need to set up the notification channel
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'Wordle Notifications',
+        name: 'WordVibe Notifications',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#6aaa64',
+        lightColor: '#7C4DFF',
         sound: 'default',
       });
 
       await Notifications.setNotificationChannelAsync('reminders', {
         name: 'Daily Reminders',
-        description: 'Daily Wordle puzzle reminders',
+        description: 'Daily WordVibe puzzle reminders',
         importance: Notifications.AndroidImportance.DEFAULT,
         sound: 'default',
       });
@@ -425,7 +425,7 @@ export async function scheduleWeeklyStats(): Promise<string | null> {
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: NOTIFICATION_TEMPLATES.weeklyStats.title,
-        body: 'Check your weekly Wordle statistics!',
+        body: 'Check your weekly WordVibe statistics!',
         sound: true,
         data: { type: 'weeklyStats' },
         ...(Platform.OS === 'android' && { channelId: 'default' }),
