@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, Animated as RNAnimated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, Animated as RNAnimated, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -49,6 +49,8 @@ const GameBoard = ({
   const { hardMode } = useAppSelector((state) => state.settings);
   const { statistics } = useAppSelector((state) => state.statistics);
   const insets = useSafeAreaInsets();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const isLandscapeTablet = windowWidth > windowHeight && Math.min(windowWidth, windowHeight) >= 768;
 
   const [showModal, setShowModal] = useState(false);
   const [wordDef, setWordDef] = useState<WordDefinition | null>(null);
@@ -131,70 +133,76 @@ const GameBoard = ({
   };
 
   return (
-    <View style={[styles.board, themedStyles.background]}>
-      <View style={[styles.contentArea, { paddingTop: insets.top }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, themedStyles.text]}>{APP_TITLE}</Text>
-          <View style={styles.headerBadges}>
-            {gameMode === 'daily' && (
-              <View style={[styles.badge, styles.dailyBadge]}>
-                <Text style={styles.badgeText}>{GAME_BOARD.daily}</Text>
+    <View style={[styles.board, themedStyles.background, isLandscapeTablet && styles.boardLandscape]}>
+      <View style={[
+        isLandscapeTablet ? styles.landscapeLayout : styles.portraitLayout,
+        { paddingTop: insets.top },
+      ]}>
+        {/* Left side (or top in portrait): Grid area */}
+        <View style={[styles.contentArea, isLandscapeTablet && styles.contentAreaLandscape]}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={[styles.headerTitle, themedStyles.text]}>{APP_TITLE}</Text>
+            <View style={styles.headerBadges}>
+              {gameMode === 'daily' && (
+                <View style={[styles.badge, styles.dailyBadge]}>
+                  <Text style={styles.badgeText}>{GAME_BOARD.daily}</Text>
+                </View>
+              )}
+              {gameMode === 'speed' && (
+                <View style={[styles.badge, styles.speedBadge]}>
+                  <Text style={styles.badgeText}>Speed</Text>
+                </View>
+              )}
+              {hardMode && (
+                <View style={[styles.badge, styles.hardBadge]}>
+                  <Text style={styles.badgeText}>{GAME_BOARD.hard}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Game Grid */}
+          <View style={styles.blocksContainer}>
+            {guesses.map((guess, idx) => (
+              <View key={idx} style={styles.squareBlock}>
+                {guess.letters.map((letter, letterIdx) => {
+                  return (
+                    <LetterSquare
+                      key={letterIdx}
+                      idx={letterIdx}
+                      letter={letter}
+                      guess={guess}
+                    />
+                  );
+                })}
               </View>
-            )}
-            {gameMode === 'speed' && (
-              <View style={[styles.badge, styles.speedBadge]}>
-                <Text style={styles.badgeText}>Speed</Text>
-              </View>
-            )}
-            {hardMode && (
-              <View style={[styles.badge, styles.hardBadge]}>
-                <Text style={styles.badgeText}>{GAME_BOARD.hard}</Text>
-              </View>
+            ))}
+          </View>
+
+          {/* Vibe Meter */}
+          <VibeMeter vibeScore={calculateVibeScore(guesses, solution)} />
+
+          {/* Message Area */}
+          <View style={styles.messageArea}>
+            {wrongGuessShake && errorMessage && (
+              <Animated.View
+                entering={FadeIn}
+                exiting={FadeOut}
+                style={[styles.errorToast, themedStyles.card]}
+              >
+                <Text style={[styles.errorText, themedStyles.text]}>
+                  {errorMessage}
+                </Text>
+              </Animated.View>
             )}
           </View>
         </View>
 
-        {/* Game Grid */}
-        <View style={styles.blocksContainer}>
-          {guesses.map((guess, idx) => (
-            <View key={idx} style={styles.squareBlock}>
-              {guess.letters.map((letter, letterIdx) => {
-                return (
-                  <LetterSquare
-                    key={letterIdx}
-                    idx={letterIdx}
-                    letter={letter}
-                    guess={guess}
-                  />
-                );
-              })}
-            </View>
-          ))}
+        {/* Right side (or bottom in portrait): Keyboard */}
+        <View style={[styles.keyboardWrapper, isLandscapeTablet && styles.keyboardWrapperLandscape]}>
+          <Keyboard handleGuess={handleGuess} />
         </View>
-
-        {/* Vibe Meter */}
-        <VibeMeter vibeScore={calculateVibeScore(guesses, solution)} />
-
-        {/* Message Area */}
-        <View style={styles.messageArea}>
-          {wrongGuessShake && errorMessage && (
-            <Animated.View
-              entering={FadeIn}
-              exiting={FadeOut}
-              style={[styles.errorToast, themedStyles.card]}
-            >
-              <Text style={[styles.errorText, themedStyles.text]}>
-                {errorMessage}
-              </Text>
-            </Animated.View>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.keyboardWrapper}>
-        {/* Keyboard */}
-        <Keyboard handleGuess={handleGuess} />
       </View>
 
       {/* Game End Modal */}
@@ -352,11 +360,32 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
   },
+  boardLandscape: {
+    maxWidth: '100%',
+  },
+  portraitLayout: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+  },
+  landscapeLayout: {
+    flex: 1,
+    flexDirection: 'row',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    gap: 24,
+  },
   contentArea: {
     flex: 1,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'space-evenly',
+  },
+  contentAreaLandscape: {
+    flex: 1,
+    maxWidth: 500,
   },
   header: {
     flexDirection: 'row',
@@ -427,6 +456,11 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     flexShrink: 0,
+  },
+  keyboardWrapperLandscape: {
+    flex: 1,
+    maxWidth: 500,
+    justifyContent: 'center',
   },
   // Modal styles
   modalOverlay: {
