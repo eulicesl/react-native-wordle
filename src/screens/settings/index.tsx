@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -11,6 +11,8 @@ import {
   Alert,
 } from 'react-native';
 
+import Constants from 'expo-constants';
+
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
 import {
   setGameLanguage,
@@ -20,6 +22,7 @@ import {
   setHardMode,
   setHighContrastMode,
   setHapticFeedback,
+  setSoundEnabled,
   setSettings,
 } from '../../store/slices/settingsSlice';
 import { resetStatistics } from '../../store/slices/statisticsSlice';
@@ -31,12 +34,16 @@ import {
   clearStatistics,
   loadSettings,
 } from '../../utils/localStorageFuncs';
+import { toggleSounds } from '../../utils/sounds';
+import { SETTINGS as SETTINGS_STRINGS } from '../../utils/strings';
+import Onboarding, { resetOnboarding } from '../../components/Onboarding';
 
 export default function Settings() {
+  const [showTutorial, setShowTutorial] = useState(false);
   const dispatch = useAppDispatch();
   const { theme } = useAppSelector((state) => state.theme);
   const { gameLanguage, gameStarted } = useAppSelector((state) => state.gameState);
-  const { hardMode, highContrastMode, hapticFeedback } = useAppSelector(
+  const { hardMode, highContrastMode, hapticFeedback, soundEnabled } = useAppSelector(
     (state) => state.settings
   );
 
@@ -91,34 +98,45 @@ export default function Settings() {
   const handleHardModeToggle = (value: boolean) => {
     if (value && gameStarted) {
       Alert.alert(
-        'Hard Mode',
-        'Hard Mode can only be enabled at the start of a round.',
+        SETTINGS_STRINGS.hardMode,
+        SETTINGS_STRINGS.hardModeAlert,
         [{ text: 'OK' }]
       );
       return;
     }
     dispatch(setHardMode(value));
-    saveSettings({ hardMode: value, highContrastMode, hapticFeedback });
+    saveSettings({ hardMode: value, highContrastMode, hapticFeedback, soundEnabled });
   };
 
   const handleHighContrastToggle = (value: boolean) => {
     dispatch(setHighContrastMode(value));
-    saveSettings({ hardMode, highContrastMode: value, hapticFeedback });
+    saveSettings({ hardMode, highContrastMode: value, hapticFeedback, soundEnabled });
   };
 
   const handleHapticToggle = (value: boolean) => {
     dispatch(setHapticFeedback(value));
-    saveSettings({ hardMode, highContrastMode, hapticFeedback: value });
+    saveSettings({ hardMode, highContrastMode, hapticFeedback: value, soundEnabled });
+  };
+
+  const handleSoundToggle = (value: boolean) => {
+    dispatch(setSoundEnabled(value));
+    toggleSounds(value);
+    saveSettings({ hardMode, highContrastMode, hapticFeedback, soundEnabled: value });
+  };
+
+  const handleReplayTutorial = async () => {
+    await resetOnboarding();
+    setShowTutorial(true);
   };
 
   const handleResetStatistics = () => {
     Alert.alert(
-      'Reset Statistics',
-      'Are you sure you want to reset all statistics? This cannot be undone.',
+      SETTINGS_STRINGS.resetStatistics,
+      SETTINGS_STRINGS.resetStatisticsConfirm,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: SETTINGS_STRINGS.cancel, style: 'cancel' },
         {
-          text: 'Reset',
+          text: SETTINGS_STRINGS.reset,
           style: 'destructive',
           onPress: () => {
             dispatch(resetStatistics());
@@ -134,11 +152,11 @@ export default function Settings() {
       style={[styles.container, themedStyles.container]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.title, themedStyles.text]}>Settings</Text>
+      <Text style={[styles.title, themedStyles.text]}>{SETTINGS_STRINGS.title}</Text>
 
       {/* Language Section */}
       <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
-        Language
+        {SETTINGS_STRINGS.language}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
         <TouchableOpacity
@@ -181,13 +199,13 @@ export default function Settings() {
 
       {/* Appearance Section */}
       <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
-        Appearance
+        {SETTINGS_STRINGS.appearance}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
         <SettingRow
           icon="moon"
-          title="Dark Theme"
-          description="Reduce eye strain in low light"
+          title={SETTINGS_STRINGS.darkTheme}
+          description={SETTINGS_STRINGS.darkThemeDesc}
           value={theme.dark}
           onToggle={handleThemeToggle}
           themedStyles={themedStyles}
@@ -195,8 +213,8 @@ export default function Settings() {
         <View style={[styles.divider, themedStyles.border]} />
         <SettingRow
           icon="contrast"
-          title="High Contrast Mode"
-          description="Use orange/blue for colorblind accessibility"
+          title={SETTINGS_STRINGS.highContrastMode}
+          description={SETTINGS_STRINGS.highContrastDesc}
           value={highContrastMode}
           onToggle={handleHighContrastToggle}
           themedStyles={themedStyles}
@@ -205,13 +223,13 @@ export default function Settings() {
 
       {/* Gameplay Section */}
       <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
-        Gameplay
+        {SETTINGS_STRINGS.gameplay}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
         <SettingRow
           icon="flame"
-          title="Hard Mode"
-          description="Revealed hints must be used"
+          title={SETTINGS_STRINGS.hardMode}
+          description={SETTINGS_STRINGS.hardModeDesc}
           value={hardMode}
           onToggle={handleHardModeToggle}
           themedStyles={themedStyles}
@@ -219,35 +237,60 @@ export default function Settings() {
         <View style={[styles.divider, themedStyles.border]} />
         <SettingRow
           icon="phone-portrait"
-          title="Haptic Feedback"
-          description="Vibrate on key press"
+          title={SETTINGS_STRINGS.hapticFeedback}
+          description={SETTINGS_STRINGS.hapticDesc}
           value={hapticFeedback}
           onToggle={handleHapticToggle}
+          themedStyles={themedStyles}
+        />
+        <View style={[styles.divider, themedStyles.border]} />
+        <SettingRow
+          icon="volume-high"
+          title={SETTINGS_STRINGS.soundEffects}
+          description={SETTINGS_STRINGS.soundDesc}
+          value={soundEnabled}
+          onToggle={handleSoundToggle}
           themedStyles={themedStyles}
         />
       </View>
 
       {/* Data Section */}
       <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
-        Data
+        {SETTINGS_STRINGS.data}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
+        <TouchableOpacity
+          style={styles.dataButton}
+          onPress={handleReplayTutorial}
+        >
+          <Ionicons name="book-outline" size={20} color={themedStyles.text.color} />
+          <Text style={[styles.dataButtonText, themedStyles.text]}>{SETTINGS_STRINGS.replayTutorial}</Text>
+        </TouchableOpacity>
+        <View style={[styles.divider, themedStyles.border]} />
         <TouchableOpacity
           style={styles.dangerButton}
           onPress={handleResetStatistics}
         >
           <Ionicons name="trash-outline" size={20} color="#FF453A" />
-          <Text style={styles.dangerButtonText}>Reset Statistics</Text>
+          <Text style={styles.dangerButtonText}>{SETTINGS_STRINGS.resetStatistics}</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Tutorial overlay */}
+      {showTutorial && (
+        <Onboarding
+          onComplete={() => setShowTutorial(false)}
+          forceShow={true}
+        />
+      )}
 
       {/* About */}
       <View style={styles.aboutSection}>
         <Text style={[styles.aboutText, themedStyles.secondaryText]}>
-          WordVibe v2.0.0
+          WordVibe v{Constants.expoConfig?.version ?? 'unknown'}
         </Text>
         <Text style={[styles.aboutText, themedStyles.secondaryText]}>
-          Created with ♥ by Eulices Lopez
+          {SETTINGS_STRINGS.createdBy}
         </Text>
       </View>
     </ScrollView>
@@ -374,6 +417,17 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     marginHorizontal: 12,
+  },
+  dataButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  dataButtonText: {
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
+    marginLeft: 8,
   },
   dangerButton: {
     flexDirection: 'row',

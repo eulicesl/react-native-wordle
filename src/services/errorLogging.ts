@@ -63,7 +63,7 @@ interface UserContext {
 // Configuration
 const ERROR_LOG_KEY = 'wordle_error_log';
 const MAX_LOG_ENTRIES = 100;
-const APP_VERSION = '1.0.0';
+const APP_VERSION: string = (() => { try { return require('expo-constants').default?.expoConfig?.version ?? 'unknown'; } catch { return 'unknown'; } })();
 
 // Session tracking
 let sessionId = generateSessionId();

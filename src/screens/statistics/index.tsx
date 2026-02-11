@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -20,6 +20,8 @@ import {
 import { setStatistics } from '../../store/slices/statisticsSlice';
 import { colors } from '../../utils/constants';
 import { formatTimeUntilNextWord } from '../../utils/dailyWord';
+import { STATISTICS as STATISTICS_STRINGS } from '../../utils/strings';
+import { loadGameHistory, GameHistoryEntry } from '../../utils/gameHistory';
 import { loadStatistics } from '../../utils/localStorageFuncs';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -56,7 +58,7 @@ function formatAchievementDate(dateString: string | null): string {
   });
 }
 
-type TabType = 'stats' | 'achievements';
+type TabType = 'stats' | 'achievements' | 'history';
 
 interface AchievementData {
   key: string;
@@ -80,6 +82,7 @@ export default function Statistics() {
   const [activeTab, setActiveTab] = useState<TabType>('stats');
   const [achievements, setAchievements] = useState<AchievementData[]>([]);
   const [achievementProgress, setAchievementProgress] = useState<AchievementProgress | null>(null);
+  const [gameHistory, setGameHistory] = useState<GameHistoryEntry[]>([]);
 
   // Measured width of the tab container for accurate indicator positioning
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
@@ -120,6 +123,7 @@ export default function Statistics() {
     };
     loadStats();
     loadAchievements();
+    loadGameHistory().then(setGameHistory);
   }, [dispatch, loadAchievements]);
 
   // Update countdown every second
@@ -132,8 +136,9 @@ export default function Statistics() {
 
   // Animate tab indicator
   useEffect(() => {
+    const tabIndex = activeTab === 'stats' ? 0 : activeTab === 'achievements' ? 1 : 2;
     Animated.spring(tabIndicatorAnim, {
-      toValue: activeTab === 'stats' ? 0 : 1,
+      toValue: tabIndex,
       useNativeDriver: true,
       tension: 68,
       friction: 10,
@@ -143,6 +148,10 @@ export default function Statistics() {
   const { gamesPlayed, gamesWon, currentStreak, maxStreak, guessDistribution } = statistics;
 
   const winPercentage = gamesPlayed > 0 ? Math.round((gamesWon / gamesPlayed) * 100) : 0;
+
+  const averageGuesses = gamesWon > 0
+    ? (guessDistribution.reduce((sum, count, i) => sum + count * (i + 1), 0) / gamesWon).toFixed(1)
+    : '-';
 
   const maxGuesses = Math.max(...guessDistribution, 1);
 
@@ -161,27 +170,34 @@ export default function Statistics() {
     },
   };
 
+  const TAB_COUNT = 3;
   const TAB_CONTAINER_PADDING = 4;
   const SCREEN_HORIZONTAL_PADDING = 20;
 
-  const tabIndicatorTravel =
+  const tabIndicatorWidth =
     tabContainerWidth > 0
-      ? (tabContainerWidth - TAB_CONTAINER_PADDING * 2) / 2
-      : (SCREEN_WIDTH - SCREEN_HORIZONTAL_PADDING * 2 - TAB_CONTAINER_PADDING * 2) / 2;
+      ? (tabContainerWidth - TAB_CONTAINER_PADDING * 2) / TAB_COUNT
+      : (SCREEN_WIDTH - SCREEN_HORIZONTAL_PADDING * 2 - TAB_CONTAINER_PADDING * 2) / TAB_COUNT;
 
   const tabIndicatorTranslate = tabIndicatorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, tabIndicatorTravel],
+    inputRange: [0, 1, 2],
+    outputRange: [0, tabIndicatorWidth, tabIndicatorWidth * 2],
   });
 
   const renderStats = () => (
     <>
-      {/* Stats Row */}
-      <View style={styles.statsRow}>
-        <StatBox value={gamesPlayed} label="Played" theme={themedStyles} />
-        <StatBox value={winPercentage} label="Win %" theme={themedStyles} />
-        <StatBox value={currentStreak} label="Current Streak" theme={themedStyles} />
-        <StatBox value={maxStreak} label="Max Streak" theme={themedStyles} />
+      {/* Stats Grid */}
+      <View style={styles.statsGrid}>
+        <View style={styles.statsRow}>
+          <StatBox value={gamesPlayed} label="Played" theme={themedStyles} />
+          <StatBox value={winPercentage} label="Win %" theme={themedStyles} />
+          <StatBox value={averageGuesses} label={STATISTICS_STRINGS.avgGuesses} theme={themedStyles} />
+        </View>
+        <View style={styles.statsRow}>
+          <StatBox value={currentStreak} label="Current Streak" theme={themedStyles} />
+          <StatBox value={maxStreak} label="Max Streak" theme={themedStyles} />
+          <StatBox value="" label="" theme={themedStyles} />
+        </View>
       </View>
 
       {/* Guess Distribution */}
@@ -205,6 +221,23 @@ export default function Statistics() {
         </Text>
         <Text style={[styles.countdown, themedStyles.text]}>{countdown}</Text>
       </View>
+    </>
+  );
+
+  const renderHistory = () => (
+    <>
+      {gameHistory.length === 0 ? (
+        <View style={styles.emptyHistory}>
+          <Ionicons name="time-outline" size={48} color={theme.colors.secondary} />
+          <Text style={[styles.emptyHistoryText, themedStyles.secondaryText]}>
+            No games played yet
+          </Text>
+        </View>
+      ) : (
+        gameHistory.map((entry, index) => (
+          <HistoryCard key={`${entry.date}-${index}`} entry={entry} theme={themedStyles} />
+        ))
+      )}
     </>
   );
 
@@ -305,8 +338,7 @@ export default function Statistics() {
             styles.tabIndicator,
             {
               transform: [{ translateX: tabIndicatorTranslate }],
-              width: tabIndicatorTravel, // half the inner tabContainer width
-
+              width: tabIndicatorWidth,
             },
           ]}
         />
@@ -347,18 +379,40 @@ export default function Statistics() {
               activeTab === 'achievements' ? styles.activeTabText : themedStyles.secondaryText,
             ]}
           >
-            Achievements
+            Trophies
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.tab}
+          onPress={() => setActiveTab('history')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'history' }}
+        >
+          <Ionicons
+            name="time"
+            size={18}
+            color={activeTab === 'history' ? colors.white : theme.colors.secondary}
+          />
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'history' ? styles.activeTabText : themedStyles.secondaryText,
+            ]}
+          >
+            History
           </Text>
         </TouchableOpacity>
       </View>
 
-      {activeTab === 'stats' ? renderStats() : renderAchievements()}
+      {activeTab === 'stats' && renderStats()}
+      {activeTab === 'achievements' && renderAchievements()}
+      {activeTab === 'history' && renderHistory()}
     </ScrollView>
   );
 }
 
 interface StatBoxProps {
-  value: number;
+  value: number | string;
   label: string;
   theme: {
     text: { color: string };
@@ -367,6 +421,7 @@ interface StatBoxProps {
 }
 
 function StatBox({ value, label, theme }: StatBoxProps) {
+  if (value === '' && label === '') return <View style={styles.statBox} />;
   return (
     <View style={styles.statBox}>
       <Text style={[styles.statValue, theme.text]}>{value}</Text>
@@ -388,22 +443,38 @@ interface DistributionBarProps {
 function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps) {
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
   const barWidth = Math.max(percentage, count > 0 ? 15 : 8);
+  const widthAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    widthAnim.setValue(0);
+    Animated.timing(widthAnim, {
+      toValue: barWidth,
+      duration: 500,
+      delay: (guess - 1) * 80,
+      useNativeDriver: false,
+    }).start();
+  }, [barWidth, guess, widthAnim]);
+
+  const animatedWidth = widthAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <View style={styles.distributionRow}>
       <Text style={[styles.guessNumber, theme.text]}>{guess}</Text>
       <View style={styles.barContainer}>
-        <View
+        <Animated.View
           style={[
             styles.bar,
             {
-              width: `${barWidth}%`,
+              width: animatedWidth,
               backgroundColor: count > 0 ? colors.correct : theme.card.backgroundColor,
             },
           ]}
         >
           <Text style={[styles.barCount, count === 0 && theme.text]}>{count}</Text>
-        </View>
+        </Animated.View>
       </View>
     </View>
   );
@@ -485,6 +556,78 @@ function AchievementCard({ achievement, theme }: AchievementCardProps) {
   );
 }
 
+const MATCH_COLORS: Record<string, string> = {
+  correct: colors.correct,
+  present: colors.present,
+  absent: colors.absent,
+  '': colors.keyDefault,
+};
+
+interface HistoryCardProps {
+  entry: GameHistoryEntry;
+  theme: {
+    text: { color: string };
+    secondaryText: { color: string };
+    card: { backgroundColor: string };
+  };
+}
+
+function HistoryCard({ entry, theme }: HistoryCardProps) {
+  const date = new Date(entry.date);
+  const dateStr = date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+  return (
+    <View style={[styles.historyCard, theme.card]}>
+      <View style={styles.historyHeader}>
+        <View style={styles.historyMeta}>
+          <Ionicons
+            name={entry.won ? 'checkmark-circle' : 'close-circle'}
+            size={18}
+            color={entry.won ? colors.correct : '#FF453A'}
+          />
+          <Text style={[styles.historyWord, theme.text]}>
+            {entry.solution.toUpperCase()}
+          </Text>
+          {entry.hardMode && (
+            <View style={styles.historyHardBadge}>
+              <Text style={styles.historyHardText}>H</Text>
+            </View>
+          )}
+          {entry.gameMode === 'daily' && (
+            <View style={styles.historyDailyBadge}>
+              <Text style={styles.historyDailyText}>D</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.historyRight}>
+          <Text style={[styles.historyGuessCount, theme.text]}>
+            {entry.won ? `${entry.guessCount}/6` : 'X/6'}
+          </Text>
+          <Text style={[styles.historyDate, theme.secondaryText]}>{dateStr}</Text>
+        </View>
+      </View>
+      {/* Mini emoji grid */}
+      <View style={styles.historyGrid}>
+        {entry.matches.map((row, rowIdx) => (
+          <View key={rowIdx} style={styles.historyRow}>
+            {row.map((match, colIdx) => (
+              <View
+                key={colIdx}
+                style={[styles.historyTile, { backgroundColor: MATCH_COLORS[match] || colors.keyDefault }]}
+              />
+            ))}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -531,10 +674,13 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: colors.white,
   },
+  statsGrid: {
+    marginBottom: 24,
+    gap: 12,
+  },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 30,
   },
   statBox: {
     alignItems: 'center',
@@ -707,5 +853,87 @@ const styles = StyleSheet.create({
   },
   unlockedBadge: {
     marginLeft: 8,
+  },
+  // History styles
+  emptyHistory: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    gap: 12,
+  },
+  emptyHistoryText: {
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
+  },
+  historyCard: {
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  historyMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  historyWord: {
+    fontSize: 16,
+    fontFamily: 'Montserrat_700Bold',
+    letterSpacing: 2,
+  },
+  historyHardBadge: {
+    backgroundColor: colors.present,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  historyHardText: {
+    color: '#fff',
+    fontSize: 9,
+    fontFamily: 'Montserrat_700Bold',
+  },
+  historyDailyBadge: {
+    backgroundColor: colors.correct,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  historyDailyText: {
+    color: '#fff',
+    fontSize: 9,
+    fontFamily: 'Montserrat_700Bold',
+  },
+  historyRight: {
+    alignItems: 'flex-end',
+  },
+  historyGuessCount: {
+    fontSize: 16,
+    fontFamily: 'Montserrat_700Bold',
+  },
+  historyDate: {
+    fontSize: 10,
+    fontFamily: 'Montserrat_600SemiBold',
+    marginTop: 2,
+  },
+  historyGrid: {
+    gap: 3,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    gap: 3,
+  },
+  historyTile: {
+    width: 14,
+    height: 14,
+    borderRadius: 2,
   },
 });

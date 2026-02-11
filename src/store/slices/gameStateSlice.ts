@@ -14,6 +14,8 @@ interface gameState {
   gameWon: boolean;
   wrongGuessShake: boolean;
   gameLanguage: string;
+  hintsUsed: number;
+  hintedPositions: number[];
 }
 
 const initialState: gameState = {
@@ -26,6 +28,8 @@ const initialState: gameState = {
   gameWon: false,
   wrongGuessShake: false,
   gameLanguage: 'en',
+  hintsUsed: 0,
+  hintedPositions: [],
 };
 
 export const gameStateSlice = createSlice({
@@ -59,6 +63,12 @@ export const gameStateSlice = createSlice({
     setGameLanguage: (state, action) => {
       state.gameLanguage = action.payload;
     },
+    setHintsUsed: (state, action) => {
+      state.hintsUsed = action.payload;
+    },
+    setHintedPositions: (state, action) => {
+      state.hintedPositions = action.payload;
+    },
   },
 });
 
@@ -72,6 +82,8 @@ export const {
   setGameWon,
   setWrongGuessShake,
   setGameLanguage,
+  setHintsUsed,
+  setHintedPositions,
 } = gameStateSlice.actions;
 
 export const gameState = (state: RootState) => state.gameState;

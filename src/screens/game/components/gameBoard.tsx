@@ -1,22 +1,36 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, Animated as RNAnimated } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import ViewShot from 'react-native-view-shot';
+
 import Keyboard from './keyboard';
 import LetterSquare from './letterSquare';
+import ShareCard from '../../../components/ShareCard';
 import VibeMeter from '../../../components/VibeMeter';
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
-import { APP_TITLE, SIZE } from '../../../utils/constants';
+import {
+  TILE_FLIP_STAGGER_MS,
+  TILES_PER_ROW,
+  WIN_MODAL_EXTRA_DELAY_MS,
+  LOSS_MODAL_DELAY_MS,
+} from '../../../utils/animations';
+import { APP_TITLE, colors, SIZE } from '../../../utils/constants';
+import { captureAndShare } from '../../../utils/shareImage';
+import { WIN_MESSAGES, GAME_BOARD } from '../../../utils/strings';
 import { calculateVibeScore } from '../../../utils/vibeMeter';
+import { fetchWordDefinition, WordDefinition } from '../../../utils/wordDefinitions';
 
 interface GameBoardProps {
   solution: string;
   handleGuess: (keyPressed: string) => void;
   resetGame: () => void;
   onShare?: () => void;
-  gameMode?: 'daily' | 'unlimited';
+  gameMode?: 'daily' | 'unlimited' | 'speed';
   errorMessage?: string | null;
 }
 
@@ -33,7 +47,81 @@ const GameBoard = ({
   );
   const { theme } = useAppSelector((state) => state.theme);
   const { hardMode } = useAppSelector((state) => state.settings);
+  const { statistics } = useAppSelector((state) => state.statistics);
   const insets = useSafeAreaInsets();
+
+  const [showModal, setShowModal] = useState(false);
+  const [wordDef, setWordDef] = useState<WordDefinition | null>(null);
+  const shareCardRef = useRef<ViewShot>(null);
+  const fadeAnim = useRef(new RNAnimated.Value(0)).current;
+  const scaleAnim = useRef(new RNAnimated.Value(0.85)).current;
+
+  // Physical keyboard support (web + external keyboards)
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (gameEnded) return;
+    const key = e.key;
+    if (key === 'Enter') {
+      handleGuess('Enter');
+    } else if (key === 'Backspace') {
+      handleGuess('<');
+    } else if (/^[a-zA-ZçğıöşüÇĞİÖŞÜ]$/.test(key)) {
+      handleGuess(gameLanguage === 'tr' ? key.toLocaleLowerCase('tr') : key.toLowerCase());
+    }
+  }, [handleGuess, gameEnded, gameLanguage]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [handleKeyDown]);
+
+  // Fetch word definition when game ends
+  useEffect(() => {
+    if (gameEnded && solution) {
+      fetchWordDefinition(solution, gameLanguage).then(setWordDef);
+    } else {
+      setWordDef(null);
+    }
+  }, [gameEnded, solution, gameLanguage]);
+
+  // Show modal after game ends with a delay for animations to complete
+  useEffect(() => {
+    if (gameEnded) {
+      const delay = gameWon ? TILE_FLIP_STAGGER_MS * TILES_PER_ROW + WIN_MODAL_EXTRA_DELAY_MS : LOSS_MODAL_DELAY_MS;
+      const timer = setTimeout(() => {
+        setShowModal(true);
+        RNAnimated.parallel([
+          RNAnimated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          RNAnimated.spring(scaleAnim, {
+            toValue: 1,
+            tension: 65,
+            friction: 10,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }, delay);
+      return () => clearTimeout(timer);
+    } else {
+      setShowModal(false);
+      fadeAnim.setValue(0);
+      scaleAnim.setValue(0.85);
+    }
+  }, [gameEnded, gameWon, fadeAnim, scaleAnim]);
+
+  const guessCount = guesses.filter((g) => g.isComplete).length;
+  const winMessage = gameWon ? WIN_MESSAGES[Math.min(guessCount - 1, 5)] : '';
+
+  const handleDismissAndReset = () => {
+    setShowModal(false);
+    fadeAnim.setValue(0);
+    scaleAnim.setValue(0.85);
+    resetGame();
+  };
 
   const themedStyles = {
     background: { backgroundColor: theme.colors.background },
@@ -51,12 +139,17 @@ const GameBoard = ({
           <View style={styles.headerBadges}>
             {gameMode === 'daily' && (
               <View style={[styles.badge, styles.dailyBadge]}>
-                <Text style={styles.badgeText}>Daily</Text>
+                <Text style={styles.badgeText}>{GAME_BOARD.daily}</Text>
+              </View>
+            )}
+            {gameMode === 'speed' && (
+              <View style={[styles.badge, styles.speedBadge]}>
+                <Text style={styles.badgeText}>Speed</Text>
               </View>
             )}
             {hardMode && (
               <View style={[styles.badge, styles.hardBadge]}>
-                <Text style={styles.badgeText}>Hard</Text>
+                <Text style={styles.badgeText}>{GAME_BOARD.hard}</Text>
               </View>
             )}
           </View>
@@ -85,33 +178,6 @@ const GameBoard = ({
 
         {/* Message Area */}
         <View style={styles.messageArea}>
-          {gameEnded && (
-            <View style={styles.gameEndContainer}>
-              <Text style={[styles.solutionText, themedStyles.text]}>
-                {gameWon
-                  ? 'Congratulations!'
-                  : `The word was: ${adjustTextDisplay(solution, gameLanguage)}`}
-              </Text>
-              <View style={styles.buttonRow}>
-                {onShare && (
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.shareButton]}
-                    onPress={onShare}
-                  >
-                    <Ionicons name="share-social" size={18} color="#fff" />
-                    <Text style={styles.actionButtonText}>Share</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.newGameButton]}
-                  onPress={resetGame}
-                >
-                  <Ionicons name="refresh" size={18} color="#fff" />
-                  <Text style={styles.actionButtonText}>New Game</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
           {wrongGuessShake && errorMessage && (
             <Animated.View
               entering={FadeIn}
@@ -130,6 +196,148 @@ const GameBoard = ({
         {/* Keyboard */}
         <Keyboard handleGuess={handleGuess} />
       </View>
+
+      {/* Game End Modal */}
+      <Modal transparent visible={showModal} animationType="none" onRequestClose={handleDismissAndReset}>
+        <RNAnimated.View
+          style={[
+            styles.modalOverlay,
+            { opacity: fadeAnim },
+            { backgroundColor: theme.dark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.5)' },
+          ]}
+        >
+          <RNAnimated.View
+            style={[
+              styles.modalCard,
+              themedStyles.card,
+              { transform: [{ scale: scaleAnim }] },
+            ]}
+          >
+            {gameWon ? (
+              <>
+                <View style={styles.modalIconContainer}>
+                  <Ionicons name="trophy" size={40} color={colors.correct} />
+                </View>
+                <Text style={[styles.modalTitle, themedStyles.text]}>{winMessage}</Text>
+                <Text style={[styles.modalSubtitle, themedStyles.secondaryText]}>
+                  {GAME_BOARD.youGotItIn} {guessCount} {guessCount === 1 ? GAME_BOARD.guessSingular : GAME_BOARD.guessPlural}
+                </Text>
+              </>
+            ) : (
+              <>
+                <View style={[styles.modalIconContainer, styles.modalIconLoss]}>
+                  <Ionicons name="close-circle" size={40} color="#FF453A" />
+                </View>
+                <Text style={[styles.modalTitle, themedStyles.text]}>{GAME_BOARD.betterLuckNextTime}</Text>
+                <Text style={[styles.modalSolutionLabel, themedStyles.secondaryText]}>
+                  {GAME_BOARD.theWordWas}
+                </Text>
+                <Text style={[styles.modalSolutionWord, themedStyles.text]}>
+                  {adjustTextDisplay(solution, gameLanguage)}
+                </Text>
+              </>
+            )}
+
+            {/* Word Definition */}
+            {wordDef && (
+              <View style={[styles.definitionContainer, { borderTopColor: theme.colors.tertiary }]}>
+                <View style={styles.definitionHeader}>
+                  <Text style={[styles.definitionWord, themedStyles.text]}>
+                    {wordDef.word}
+                  </Text>
+                  {wordDef.phonetic && (
+                    <Text style={[styles.definitionPhonetic, themedStyles.secondaryText]}>
+                      {wordDef.phonetic}
+                    </Text>
+                  )}
+                  <Text style={[styles.definitionPos, { color: colors.correct }]}>
+                    {wordDef.partOfSpeech}
+                  </Text>
+                </View>
+                <Text style={[styles.definitionText, themedStyles.secondaryText]} numberOfLines={3}>
+                  {wordDef.definition}
+                </Text>
+                {wordDef.example && (
+                  <Text style={[styles.definitionExample, themedStyles.secondaryText]} numberOfLines={2}>
+                    &ldquo;{wordDef.example}&rdquo;
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Stats Summary */}
+            <View style={styles.modalStatsRow}>
+              <View style={styles.modalStatItem}>
+                <Text style={[styles.modalStatValue, themedStyles.text]}>
+                  {statistics.currentStreak}
+                </Text>
+                <Text style={[styles.modalStatLabel, themedStyles.secondaryText]}>{GAME_BOARD.streak}</Text>
+              </View>
+              <View style={[styles.modalStatDivider, { backgroundColor: theme.colors.tertiary }]} />
+              <View style={styles.modalStatItem}>
+                <Text style={[styles.modalStatValue, themedStyles.text]}>
+                  {statistics.gamesPlayed > 0
+                    ? Math.round((statistics.gamesWon / statistics.gamesPlayed) * 100)
+                    : 0}%
+                </Text>
+                <Text style={[styles.modalStatLabel, themedStyles.secondaryText]}>{GAME_BOARD.winRate}</Text>
+              </View>
+              <View style={[styles.modalStatDivider, { backgroundColor: theme.colors.tertiary }]} />
+              <View style={styles.modalStatItem}>
+                <Text style={[styles.modalStatValue, themedStyles.text]}>
+                  {statistics.gamesPlayed}
+                </Text>
+                <Text style={[styles.modalStatLabel, themedStyles.secondaryText]}>{GAME_BOARD.played}</Text>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.modalButtonRow}>
+              {onShare && (
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.shareButton]}
+                  onPress={onShare}
+                >
+                  <Ionicons name="share-social" size={18} color="#fff" />
+                  <Text style={styles.modalButtonText}>{GAME_BOARD.share}</Text>
+                </TouchableOpacity>
+              )}
+              {Platform.OS !== 'web' && (
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.shareImageButton]}
+                  onPress={() => {
+                    if (shareCardRef.current) {
+                      captureAndShare(shareCardRef.current);
+                    }
+                  }}
+                >
+                  <Ionicons name="image" size={18} color="#fff" />
+                  <Text style={styles.modalButtonText}>{GAME_BOARD.share}</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.modalButton, styles.newGameButton]}
+                onPress={handleDismissAndReset}
+              >
+                <Ionicons name="refresh" size={18} color="#fff" />
+                <Text style={styles.modalButtonText}>{GAME_BOARD.newGame}</Text>
+              </TouchableOpacity>
+            </View>
+          </RNAnimated.View>
+        </RNAnimated.View>
+      </Modal>
+
+      {/* Hidden share card for image capture */}
+      <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 1 }} style={styles.hiddenCard}>
+        <ShareCard
+          guesses={guesses}
+          gameWon={gameWon}
+          guessCount={guessCount}
+          streak={statistics.currentStreak}
+          isDaily={gameMode === 'daily'}
+          hardMode={hardMode}
+        />
+      </ViewShot>
     </View>
   );
 };
@@ -174,6 +382,9 @@ const styles = StyleSheet.create({
   dailyBadge: {
     backgroundColor: '#7C4DFF',
   },
+  speedBadge: {
+    backgroundColor: '#FF9500',
+  },
   hardBadge: {
     backgroundColor: '#FF6B9D',
   },
@@ -203,39 +414,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  gameEndContainer: {
-    alignItems: 'center',
-  },
-  solutionText: {
-    fontSize: 16,
-    fontFamily: 'Montserrat_600SemiBold',
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    gap: 8,
-  },
-  shareButton: {
-    backgroundColor: '#7C4DFF',
-  },
-  newGameButton: {
-    backgroundColor: '#404040',
-  },
-  actionButtonText: {
-    fontFamily: 'Montserrat_700Bold',
-    fontSize: 14,
-    color: '#fff',
-  },
   errorToast: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -249,5 +427,156 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     flexShrink: 0,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 16,
+    padding: 28,
+    alignItems: 'center',
+  },
+  modalIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(106, 170, 100, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalIconLoss: {
+    backgroundColor: 'rgba(255, 69, 58, 0.15)',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontFamily: 'Montserrat_800ExtraBold',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Montserrat_600SemiBold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalSolutionLabel: {
+    fontSize: 12,
+    fontFamily: 'Montserrat_600SemiBold',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  modalSolutionWord: {
+    fontSize: 28,
+    fontFamily: 'Montserrat_800ExtraBold',
+    textTransform: 'uppercase',
+    letterSpacing: 4,
+    marginBottom: 20,
+  },
+  definitionContainer: {
+    width: '100%',
+    borderTopWidth: 1,
+    paddingTop: 14,
+    marginBottom: 16,
+  },
+  definitionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 6,
+  },
+  definitionWord: {
+    fontSize: 15,
+    fontFamily: 'Montserrat_700Bold',
+  },
+  definitionPhonetic: {
+    fontSize: 12,
+    fontFamily: 'Montserrat_600SemiBold',
+    fontStyle: 'italic',
+  },
+  definitionPos: {
+    fontSize: 11,
+    fontFamily: 'Montserrat_700Bold',
+    textTransform: 'uppercase',
+  },
+  definitionText: {
+    fontSize: 13,
+    fontFamily: 'Montserrat_600SemiBold',
+    lineHeight: 18,
+  },
+  definitionExample: {
+    fontSize: 12,
+    fontFamily: 'Montserrat_600SemiBold',
+    fontStyle: 'italic',
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  modalStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    width: '100%',
+  },
+  modalStatItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  modalStatValue: {
+    fontSize: 22,
+    fontFamily: 'Montserrat_700Bold',
+  },
+  modalStatLabel: {
+    fontSize: 10,
+    fontFamily: 'Montserrat_600SemiBold',
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
+  modalStatDivider: {
+    width: 1,
+    height: 32,
+    opacity: 0.3,
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 25,
+    gap: 8,
+  },
+  shareButton: {
+    backgroundColor: '#6aaa64',
+  },
+  shareImageButton: {
+    backgroundColor: '#007AFF',
+  },
+  newGameButton: {
+    backgroundColor: '#404040',
+  },
+  hiddenCard: {
+    position: 'absolute',
+    left: -1000,
+    top: -1000,
+  },
+  modalButtonText: {
+    fontFamily: 'Montserrat_700Bold',
+    fontSize: 14,
+    color: '#fff',
   },
 });

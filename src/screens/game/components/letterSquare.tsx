@@ -5,6 +5,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
+  withSequence,
   Easing,
   withDelay,
   useDerivedValue,
@@ -12,8 +14,15 @@ import Animated, {
 
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { guess } from '../../../types';
-import { getTileAccessibilityLabel } from '../../../utils/accessibility';
+import { getTileAccessibilityLabel, isReduceMotionEnabled } from '../../../utils/accessibility';
 import { adjustLetterDisplay } from '../../../utils/adjustLetterDisplay';
+import {
+  TILE_FLIP_STAGGER_MS,
+  TILE_FLIP_DURATION_MS,
+  TILES_PER_ROW,
+  BOUNCE_POST_FLIP_GAP_MS,
+  BOUNCE_TILE_STAGGER_MS,
+} from '../../../utils/animations';
 import { colors, SIZE } from '../../../utils/constants';
 import { playHaptic } from '../../../utils/haptics';
 import interpolateColorBugFix from '../../../utils/interpolateColorFix';
@@ -44,10 +53,11 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
 
   const scale = useSharedValue(1);
   const rotateDegree = useSharedValue(0);
+  const bounceY = useSharedValue(0);
   const progress = useDerivedValue(() => {
     return guess.isComplete
-      ? withDelay(250 * idx, withTiming(1))
-      : withDelay(250 * idx, withTiming(0));
+      ? withDelay(TILE_FLIP_STAGGER_MS * idx, withTiming(1))
+      : withDelay(TILE_FLIP_STAGGER_MS * idx, withTiming(0));
   }, [guess]);
   const shakeX = useSharedValue(0);
   const matchStatus = guess.matches[idx];
@@ -87,12 +97,15 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         { scale: scale.value },
         { rotateY: `${rotateDegree.value}deg` },
         { translateX: shakeX.value },
+        { translateY: bounceY.value },
       ],
     };
   });
 
   useEffect(() => {
-    if (letter !== '' && matchStatus === '') {
+    const reduceMotion = isReduceMotionEnabled();
+
+    if (letter !== '' && matchStatus === '' && !reduceMotion) {
       scale.value = withTiming(1.2, {
         duration: 50,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
@@ -100,18 +113,20 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
       scale.value = withDelay(50, withTiming(1));
     }
     if (matchStatus !== '' && matchStatus !== undefined) {
-      rotateDegree.value = withDelay(
-        250 * idx,
-        withTiming(90, {
-          duration: 250,
-        })
-      );
-      rotateDegree.value = withDelay(
-        250 * (idx + 1),
-        withTiming(0, {
-          duration: 250,
-        })
-      );
+      if (!reduceMotion) {
+        rotateDegree.value = withDelay(
+          TILE_FLIP_STAGGER_MS * idx,
+          withTiming(90, {
+            duration: TILE_FLIP_DURATION_MS,
+          })
+        );
+        rotateDegree.value = withDelay(
+          TILE_FLIP_STAGGER_MS * (idx + 1),
+          withTiming(0, {
+            duration: TILE_FLIP_DURATION_MS,
+          })
+        );
+      }
 
       // Play sound and haptic when tile flips
       setTimeout(() => {
@@ -120,9 +135,22 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         if (hapticFeedback) {
           playHaptic(matchStatus);
         }
-      }, 250 * idx);
+      }, TILE_FLIP_STAGGER_MS * idx);
+
+      // Winning row bounce: after all flips complete, stagger a bounce on each tile
+      if (guess.isCorrect && !reduceMotion) {
+        const flipDuration = TILE_FLIP_STAGGER_MS * TILES_PER_ROW;
+        const bounceDelay = flipDuration + BOUNCE_POST_FLIP_GAP_MS + idx * BOUNCE_TILE_STAGGER_MS;
+        bounceY.value = withDelay(
+          bounceDelay,
+          withSequence(
+            withSpring(-12, { damping: 4, stiffness: 300 }),
+            withSpring(0, { damping: 8, stiffness: 200 })
+          )
+        );
+      }
     }
-  }, [letter, matchStatus, hapticFeedback, idx]);
+  }, [letter, matchStatus, hapticFeedback, idx, guess.isCorrect]);
 
   useEffect(() => {
     if (wrongGuessShake && currentGuessIndex === guess.id) {
@@ -130,6 +158,9 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
       if (hapticFeedback) {
         playHaptic('error');
       }
+
+      const reduceMotion = isReduceMotionEnabled();
+      if (reduceMotion) return;
 
       for (let i = 1; i < 6; i++) {
         shakeX.value = withDelay(
@@ -167,6 +198,9 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
   const rowNumber = guess.id + 1;
   const accessibilityLabel = getTileAccessibilityLabel(letter, idx, matchStatus, rowNumber);
 
+  const isActiveRow = currentGuessIndex === guess.id && !guess.isComplete;
+  const hasFill = letter !== '';
+
   return (
     <Animated.View
       key={idx}
@@ -174,8 +208,10 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
         {
           ...styles.square,
           backgroundColor: matchColor(),
-          borderWidth: guess.isComplete ? 0 : 1,
-          borderColor: theme.colors.tertiary,
+          borderWidth: guess.isComplete ? 0 : isActiveRow && hasFill ? 2 : 1,
+          borderColor: isActiveRow
+            ? hasFill ? theme.colors.text : theme.colors.secondary
+            : theme.colors.tertiary,
         },
         animatedStyles,
         bgStyle,
