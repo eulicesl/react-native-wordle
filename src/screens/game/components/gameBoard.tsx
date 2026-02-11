@@ -5,8 +5,11 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, Animated as 
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import ViewShot from 'react-native-view-shot';
+
 import Keyboard from './keyboard';
 import LetterSquare from './letterSquare';
+import ShareCard from '../../../components/ShareCard';
 import VibeMeter from '../../../components/VibeMeter';
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
@@ -17,6 +20,7 @@ import {
   LOSS_MODAL_DELAY_MS,
 } from '../../../utils/animations';
 import { APP_TITLE, colors, SIZE } from '../../../utils/constants';
+import { captureAndShare } from '../../../utils/shareImage';
 import { WIN_MESSAGES, GAME_BOARD } from '../../../utils/strings';
 import { calculateVibeScore } from '../../../utils/vibeMeter';
 import { fetchWordDefinition, WordDefinition } from '../../../utils/wordDefinitions';
@@ -48,6 +52,7 @@ const GameBoard = ({
 
   const [showModal, setShowModal] = useState(false);
   const [wordDef, setWordDef] = useState<WordDefinition | null>(null);
+  const shareCardRef = useRef<ViewShot>(null);
   const fadeAnim = useRef(new RNAnimated.Value(0)).current;
   const scaleAnim = useRef(new RNAnimated.Value(0.85)).current;
 
@@ -297,6 +302,19 @@ const GameBoard = ({
                   <Text style={styles.modalButtonText}>{GAME_BOARD.share}</Text>
                 </TouchableOpacity>
               )}
+              {Platform.OS !== 'web' && (
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.shareImageButton]}
+                  onPress={() => {
+                    if (shareCardRef.current) {
+                      captureAndShare(shareCardRef.current);
+                    }
+                  }}
+                >
+                  <Ionicons name="image" size={18} color="#fff" />
+                  <Text style={styles.modalButtonText}>{GAME_BOARD.share}</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 style={[styles.modalButton, styles.newGameButton]}
                 onPress={handleDismissAndReset}
@@ -308,6 +326,18 @@ const GameBoard = ({
           </RNAnimated.View>
         </RNAnimated.View>
       </Modal>
+
+      {/* Hidden share card for image capture */}
+      <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 1 }} style={styles.hiddenCard}>
+        <ShareCard
+          guesses={guesses}
+          gameWon={gameWon}
+          guessCount={guessCount}
+          streak={statistics.currentStreak}
+          isDaily={gameMode === 'daily'}
+          hardMode={hardMode}
+        />
+      </ViewShot>
     </View>
   );
 };
@@ -533,8 +563,16 @@ const styles = StyleSheet.create({
   shareButton: {
     backgroundColor: '#6aaa64',
   },
+  shareImageButton: {
+    backgroundColor: '#007AFF',
+  },
   newGameButton: {
     backgroundColor: '#404040',
+  },
+  hiddenCard: {
+    position: 'absolute',
+    left: -1000,
+    top: -1000,
   },
   modalButtonText: {
     fontFamily: 'Montserrat_700Bold',
