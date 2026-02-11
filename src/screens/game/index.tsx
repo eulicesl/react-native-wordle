@@ -48,6 +48,7 @@ import { selectStatisticsLoaded } from '../../store/slices/statisticsSlice';
 import { announceGuessResult, announceGameResult } from '../../utils/accessibility';
 import { checkAchievements, AchievementCategory } from '../../services/gameCenter';
 import { saveGameToHistory } from '../../utils/gameHistory';
+import { maybeRequestReview } from '../../utils/ratingPrompt';
 import { shareResults } from '../../utils/shareResults';
 import { PRE_GAME } from '../../utils/strings';
 import { calculateVibeScore } from '../../utils/vibeMeter';
@@ -390,6 +391,9 @@ export default function Game() {
           if (gameMode === 'daily') {
             setDailyCompleted(true);
           }
+
+          // Maybe prompt for app store rating after a win
+          maybeRequestReview(statistics.gamesPlayed + 1, statistics.gamesWon + 1, true);
         }, 250 * 6);
       } else if (wordList().includes(currentGuessedWord)) {
         const matches: matchStatus[] = [];
