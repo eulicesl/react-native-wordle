@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 
 import { StyleSheet, Text } from 'react-native';
 import Animated, {
@@ -129,7 +129,7 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
       }
 
       // Play sound and haptic when tile flips
-      setTimeout(() => {
+      const soundTimer = setTimeout(() => {
         const soundType = matchStatus === 'correct' ? 'flipCorrect' : matchStatus === 'present' ? 'flipPresent' : 'flipAbsent';
         playSound(soundType);
         if (hapticFeedback) {
@@ -149,8 +149,10 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
           )
         );
       }
+
+      return () => clearTimeout(soundTimer);
     }
-  }, [letter, matchStatus, hapticFeedback, idx, guess.isCorrect]);
+  }, [letter, matchStatus, hapticFeedback, idx, guess.isComplete, guess.isCorrect]);
 
   useEffect(() => {
     if (wrongGuessShake && currentGuessIndex === guess.id) {
@@ -234,7 +236,7 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
   );
 };
 
-export default LetterSquare;
+export default memo(LetterSquare);
 
 const styles = StyleSheet.create({
   square: {

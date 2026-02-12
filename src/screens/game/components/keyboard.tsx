@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, memo } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
@@ -47,7 +47,7 @@ interface AnimatedKeyProps {
   gameLanguage: string;
 }
 
-function AnimatedKey({
+const AnimatedKey = memo(function AnimatedKey({
   keyboardKey,
   backgroundColor,
   height,
@@ -104,7 +104,7 @@ function AnimatedKey({
       </Pressable>
     </Animated.View>
   );
-}
+});
 
 interface KeyboardProps {
   handleGuess: (keyPressed: string) => void;

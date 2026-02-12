@@ -48,6 +48,8 @@ export default function Settings() {
     (state) => state.settings
   );
 
+  const settingsLoaded = useAppSelector((state) => state.settings.isLoaded);
+
   useEffect(() => {
     const loadSavedSettings = async () => {
       const saved = await loadSettings();
@@ -57,6 +59,13 @@ export default function Settings() {
     };
     loadSavedSettings();
   }, [dispatch]);
+
+  // Central persistence: auto-save settings whenever they change
+  useEffect(() => {
+    if (settingsLoaded) {
+      saveSettings({ hardMode, highContrastMode, hapticFeedback, soundEnabled });
+    }
+  }, [settingsLoaded, hardMode, highContrastMode, hapticFeedback, soundEnabled]);
 
   const themedStyles = {
     container: {
@@ -106,24 +115,21 @@ export default function Settings() {
       return;
     }
     dispatch(setHardMode(value));
-    saveSettings({ hardMode: value, highContrastMode, hapticFeedback, soundEnabled });
   };
 
   const handleHighContrastToggle = (value: boolean) => {
     dispatch(setHighContrastMode(value));
-    saveSettings({ hardMode, highContrastMode: value, hapticFeedback, soundEnabled });
   };
 
   const handleHapticToggle = (value: boolean) => {
     dispatch(setHapticFeedback(value));
-    saveSettings({ hardMode, highContrastMode, hapticFeedback: value, soundEnabled });
   };
 
   const handleSoundToggle = (value: boolean) => {
     dispatch(setSoundEnabled(value));
     toggleSounds(value);
-    saveSettings({ hardMode, highContrastMode, hapticFeedback, soundEnabled: value });
   };
+
 
   const handleReplayTutorial = async () => {
     await resetOnboarding();

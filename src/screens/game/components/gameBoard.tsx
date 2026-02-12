@@ -215,6 +215,7 @@ const GameBoard = ({
           ]}
         >
           <RNAnimated.View
+            accessibilityViewIsModal={true}
             style={[
               styles.modalCard,
               themedStyles.card,

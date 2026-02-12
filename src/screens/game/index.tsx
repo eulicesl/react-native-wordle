@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ReAnimated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -83,12 +83,30 @@ export default function Game() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [gameStartTime, setGameStartTime] = useState<number | null>(null);
+
+  // Refs for timeout cleanup on unmount
+  const winTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const usedKeysRef = useRef(usedKeys);
   const [pendingAchievement, setPendingAchievement] = useState<{
     title: string;
     description: string;
     points: number;
     category: AchievementCategory;
   } | null>(null);
+
+  // Keep usedKeys ref in sync to avoid stale closures
+  useEffect(() => {
+    usedKeysRef.current = usedKeys;
+  }, [usedKeys]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (winTimeoutRef.current) clearTimeout(winTimeoutRef.current);
+      if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
+    };
+  }, []);
 
   // Load language preference on mount
   useEffect(() => {
@@ -171,7 +189,7 @@ export default function Game() {
     gameMode,
   ]);
 
-  const wordList = useCallback(() => {
+  const wordList = useMemo(() => {
     switch (gameLanguage) {
       case 'en':
         return wordsEN.concat(answersEN);
@@ -183,7 +201,7 @@ export default function Game() {
   }, [gameLanguage]);
 
   const handleFoundKeysOnKeyboard = (guess: guess) => {
-    const tempUsedKeys = { ...usedKeys };
+    const tempUsedKeys = { ...usedKeysRef.current };
     guess.letters.forEach((letter: string, idx: number) => {
       const keyValue = tempUsedKeys[letter];
       const matchValue = guess.matches[idx];
@@ -326,7 +344,7 @@ export default function Game() {
       if (hardModeError) {
         setErrorMessage(hardModeError);
         dispatch(setWrongGuessShake(true));
-        setTimeout(() => {
+        shakeTimeoutRef.current = setTimeout(() => {
           dispatch(setWrongGuessShake(false));
         }, 1000);
         return;
@@ -345,7 +363,7 @@ export default function Game() {
           else return guess;
         });
         dispatch(setGuesses(updatedGuesses));
-        setTimeout(() => {
+        winTimeoutRef.current = setTimeout(() => {
           setShowConfetti(true);
           dispatch(setGameWon(true));
           dispatch(setGameEnded(true));
@@ -395,7 +413,7 @@ export default function Game() {
           // Maybe prompt for app store rating after a win
           maybeRequestReview(statistics.gamesPlayed + 1, statistics.gamesWon + 1, true);
         }, 250 * 6);
-      } else if (wordList().includes(currentGuessedWord)) {
+      } else if (wordList.includes(currentGuessedWord)) {
         const matches: matchStatus[] = [];
         currentGuessedWord.split('').forEach((letter, index) => {
           const leftSlice = currentGuessedWord.slice(0, index + 1);
@@ -439,7 +457,7 @@ export default function Game() {
       } else {
         setErrorMessage('Not in word list');
         dispatch(setWrongGuessShake(true));
-        setTimeout(() => {
+        shakeTimeoutRef.current = setTimeout(() => {
           dispatch(setWrongGuessShake(false));
           setErrorMessage(null);
         }, 1000);
