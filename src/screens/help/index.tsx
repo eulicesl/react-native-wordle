@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 import { useAppSelector } from '../../hooks/storeHooks';
 import { colors, SIZE } from '../../utils/constants';
+import { dynamicFontSize } from '../../utils/responsive';
 
 export default function Help() {
   const { theme } = useAppSelector((state) => state.theme);
@@ -31,16 +32,16 @@ export default function Help() {
       style={[styles.container, themedStyles.container]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.title, themedStyles.text]}>How To Play</Text>
-      <Text style={[styles.subtitle, themedStyles.secondaryText]}>
+      <Text style={[styles.title, themedStyles.text, { fontSize: dynamicFontSize(24, 1.3) }]} allowFontScaling={false}>How To Play</Text>
+      <Text style={[styles.subtitle, themedStyles.secondaryText, { fontSize: dynamicFontSize(16) }]} allowFontScaling={false}>
         Guess the word in 6 tries.
       </Text>
 
       <View style={[styles.section, themedStyles.border]}>
-        <Text style={[styles.instruction, themedStyles.text]}>
+        <Text style={[styles.instruction, themedStyles.text, { fontSize: dynamicFontSize(14) }]} allowFontScaling={false}>
           • Each guess must be a valid 5-letter word.
         </Text>
-        <Text style={[styles.instruction, themedStyles.text]}>
+        <Text style={[styles.instruction, themedStyles.text, { fontSize: dynamicFontSize(14) }]} allowFontScaling={false}>
           • The color of the tiles will change to show how close your guess was to the word.
         </Text>
       </View>
@@ -125,23 +126,23 @@ export default function Help() {
       <Text style={[styles.sectionTitle, themedStyles.text]}>Game Modes</Text>
 
       <View style={[styles.modeCard, themedStyles.card]}>
-        <Text style={[styles.modeTitle, themedStyles.text]}>Daily Challenge</Text>
-        <Text style={[styles.modeDescription, themedStyles.secondaryText]}>
+        <Text style={[styles.modeTitle, themedStyles.text, { fontSize: dynamicFontSize(16) }]} allowFontScaling={false}>Daily Challenge</Text>
+        <Text style={[styles.modeDescription, themedStyles.secondaryText, { fontSize: dynamicFontSize(14) }]} allowFontScaling={false}>
           A new word every day at midnight UTC. Everyone plays the same word!
           Your streak increases when you complete daily challenges on consecutive days.
         </Text>
       </View>
 
       <View style={[styles.modeCard, themedStyles.card]}>
-        <Text style={[styles.modeTitle, themedStyles.text]}>Unlimited Mode</Text>
-        <Text style={[styles.modeDescription, themedStyles.secondaryText]}>
+        <Text style={[styles.modeTitle, themedStyles.text, { fontSize: dynamicFontSize(16) }]} allowFontScaling={false}>Unlimited Mode</Text>
+        <Text style={[styles.modeDescription, themedStyles.secondaryText, { fontSize: dynamicFontSize(14) }]} allowFontScaling={false}>
           Practice with random words anytime. Play as many games as you want!
         </Text>
       </View>
 
       <View style={[styles.modeCard, themedStyles.card]}>
-        <Text style={[styles.modeTitle, themedStyles.text]}>Hard Mode</Text>
-        <Text style={[styles.modeDescription, themedStyles.secondaryText]}>
+        <Text style={[styles.modeTitle, themedStyles.text, { fontSize: dynamicFontSize(16) }]} allowFontScaling={false}>Hard Mode</Text>
+        <Text style={[styles.modeDescription, themedStyles.secondaryText, { fontSize: dynamicFontSize(14) }]} allowFontScaling={false}>
           Any revealed hints must be used in subsequent guesses.
           Enable in Settings for an extra challenge!
         </Text>

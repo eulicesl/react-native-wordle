@@ -10,7 +10,7 @@ export interface GameHistoryEntry {
   won: boolean;
   guessCount: number;
   matches: matchStatus[][]; // array of match arrays per row
-  gameMode: 'daily' | 'unlimited';
+  gameMode: 'daily' | 'unlimited' | 'speed';
   hardMode: boolean;
 }
 

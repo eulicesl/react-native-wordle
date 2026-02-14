@@ -1,7 +1,16 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withDelay,
+  withSequence,
+  runOnJS,
+} from 'react-native-reanimated';
 
 import { useAppSelector } from '../hooks/storeHooks';
 import { AchievementCategory } from '../services/gameCenter';
@@ -9,6 +18,7 @@ import { announceAchievement } from '../utils/accessibility';
 import { colors } from '../utils/constants';
 import { playHaptic } from '../utils/haptics';
 import { playSound } from '../utils/sounds';
+import { ACHIEVEMENTS } from '../utils/strings';
 
 interface AchievementToastProps {
   title: string;
@@ -32,6 +42,8 @@ const CATEGORY_COLORS: Record<AchievementCategory, string> = {
   daily: '#007AFF',
 };
 
+const SPRING_CONFIG = { damping: 12, stiffness: 80, mass: 1 };
+
 export default function AchievementToast({
   title,
   description,
@@ -40,8 +52,8 @@ export default function AchievementToast({
   onDismiss,
 }: AchievementToastProps) {
   const { theme } = useAppSelector((state) => state.theme);
-  const translateY = useRef(new Animated.Value(-120)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useSharedValue(-120);
+  const opacity = useSharedValue(0);
 
   useEffect(() => {
     // Play sound and haptic
@@ -52,38 +64,28 @@ export default function AchievementToast({
     announceAchievement(title, description);
 
     // Slide in
-    Animated.parallel([
-      Animated.spring(translateY, {
-        toValue: 0,
-        tension: 80,
-        friction: 12,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    translateY.value = withSpring(0, SPRING_CONFIG);
+    opacity.value = withTiming(1, { duration: 200 });
 
     // Auto-dismiss after 3 seconds
-    const timer = setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: -120,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => onDismiss());
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    translateY.value = withSequence(
+      withSpring(0, SPRING_CONFIG),
+      withDelay(3000, withTiming(-120, { duration: 300 }, (finished) => {
+        if (finished) {
+          runOnJS(onDismiss)();
+        }
+      }))
+    );
+    opacity.value = withSequence(
+      withTiming(1, { duration: 200 }),
+      withDelay(3000, withTiming(0, { duration: 300 }))
+    );
   }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
 
   const accentColor = CATEGORY_COLORS[category];
   const iconName = CATEGORY_ICONS[category];
@@ -92,9 +94,8 @@ export default function AchievementToast({
     <Animated.View
       style={[
         styles.container,
+        animatedStyle,
         {
-          transform: [{ translateY }],
-          opacity,
           backgroundColor: theme.colors.background2,
           borderLeftColor: accentColor,
         },
@@ -107,7 +108,7 @@ export default function AchievementToast({
         <Ionicons name={iconName} size={24} color={accentColor} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={[styles.label, { color: accentColor }]}>Achievement Unlocked!</Text>
+        <Text style={[styles.label, { color: accentColor }]}>{ACHIEVEMENTS.unlocked}</Text>
         <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
         <Text style={[styles.description, { color: theme.colors.secondary }]}>{description}</Text>
       </View>

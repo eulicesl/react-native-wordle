@@ -71,3 +71,35 @@ export const SETTINGS = {
 export const STATISTICS = {
   avgGuesses: 'Avg. Guesses',
 } as const;
+
+// Achievements
+export const ACHIEVEMENTS = {
+  unlocked: 'Achievement Unlocked!',
+} as const;
+
+// Game modes
+export const GAME_MODES = {
+  speedChallenge: 'Speed Challenge',
+  twoMinutes: '2 minutes',
+  fiveMinutes: '5 minutes',
+  speed: 'Speed',
+} as const;
+
+// Hints
+export const HINTS = {
+  useHint: 'Use hint',
+  hint: 'Hint',
+  hintsRemaining: 'hints remaining',
+} as const;
+
+// Share card
+export const SHARE_CARD = {
+  appName: 'WordVibe',
+  dailyChallenge: 'Daily Challenge',
+} as const;
+
+// Timer
+export const TIMER_COLORS = {
+  critical: '#FF453A',
+  warning: '#FF9500',
+} as const;

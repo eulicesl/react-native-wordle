@@ -31,7 +31,7 @@ export default function MainScreen() {
       const saved = await loadSettings();
       if (saved) {
         dispatch(setSettings(saved));
-        toggleSounds(saved.soundEnabled);
+        toggleSounds(saved.soundEnabled ?? true);
       }
     })();
   }, [dispatch]);

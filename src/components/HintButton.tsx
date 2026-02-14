@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { useAppSelector } from '../hooks/storeHooks';
+import { HINTS, TIMER_COLORS } from '../utils/strings';
 
 interface HintButtonProps {
   hintsUsed: number;
@@ -9,6 +10,11 @@ interface HintButtonProps {
   disabled: boolean;
   onPress: () => void;
 }
+
+const HINT_COLORS = {
+  active: TIMER_COLORS.warning,
+  disabled: '#606060',
+};
 
 export default function HintButton({ hintsUsed, maxHints, disabled, onPress }: HintButtonProps) {
   const { theme } = useAppSelector((state) => state.theme);
@@ -23,13 +29,13 @@ export default function HintButton({ hintsUsed, maxHints, disabled, onPress }: H
       ]}
       onPress={onPress}
       disabled={disabled}
-      accessibilityLabel={`Use hint. ${remaining} remaining.`}
+      accessibilityLabel={`${HINTS.useHint}. ${remaining} ${HINTS.hintsRemaining}.`}
       accessibilityRole="button"
     >
       <Ionicons
         name="bulb-outline"
         size={16}
-        color={disabled ? theme.colors.secondary : '#FF9500'}
+        color={disabled ? theme.colors.secondary : HINT_COLORS.active}
       />
       <Text
         style={[
@@ -37,9 +43,9 @@ export default function HintButton({ hintsUsed, maxHints, disabled, onPress }: H
           { color: disabled ? theme.colors.secondary : theme.colors.text },
         ]}
       >
-        Hint
+        {HINTS.hint}
       </Text>
-      <View style={[styles.badge, disabled && styles.badgeDisabled]}>
+      <View style={[styles.badge, { backgroundColor: disabled ? HINT_COLORS.disabled : HINT_COLORS.active }]}>
         <Text style={styles.badgeText}>{remaining}</Text>
       </View>
     </TouchableOpacity>
@@ -63,15 +69,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat_600SemiBold',
   },
   badge: {
-    backgroundColor: '#FF9500',
     width: 18,
     height: 18,
     borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  badgeDisabled: {
-    backgroundColor: '#606060',
   },
   badgeText: {
     color: '#fff',

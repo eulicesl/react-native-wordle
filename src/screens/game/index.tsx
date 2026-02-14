@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ReAnimated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -47,10 +47,11 @@ import {
 import { selectStatisticsLoaded } from '../../store/slices/statisticsSlice';
 import { announceGuessResult, announceGameResult } from '../../utils/accessibility';
 import { checkAchievements, AchievementCategory } from '../../services/gameCenter';
+import { calculateMatches } from '../../utils/gameLogic';
 import { saveGameToHistory } from '../../utils/gameHistory';
 import { maybeRequestReview } from '../../utils/ratingPrompt';
 import { shareResults } from '../../utils/shareResults';
-import { PRE_GAME } from '../../utils/strings';
+import { PRE_GAME, GAME_MODES } from '../../utils/strings';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
@@ -83,12 +84,30 @@ export default function Game() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [gameStartTime, setGameStartTime] = useState<number | null>(null);
+
+  // Refs for timeout cleanup on unmount
+  const winTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const usedKeysRef = useRef(usedKeys);
   const [pendingAchievement, setPendingAchievement] = useState<{
     title: string;
     description: string;
     points: number;
     category: AchievementCategory;
   } | null>(null);
+
+  // Keep usedKeys ref in sync to avoid stale closures
+  useEffect(() => {
+    usedKeysRef.current = usedKeys;
+  }, [usedKeys]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (winTimeoutRef.current) clearTimeout(winTimeoutRef.current);
+      if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
+    };
+  }, []);
 
   // Load language preference on mount
   useEffect(() => {
@@ -171,7 +190,7 @@ export default function Game() {
     gameMode,
   ]);
 
-  const wordList = useCallback(() => {
+  const wordList = useMemo(() => {
     switch (gameLanguage) {
       case 'en':
         return wordsEN.concat(answersEN);
@@ -183,7 +202,7 @@ export default function Game() {
   }, [gameLanguage]);
 
   const handleFoundKeysOnKeyboard = (guess: guess) => {
-    const tempUsedKeys = { ...usedKeys };
+    const tempUsedKeys = { ...usedKeysRef.current };
     guess.letters.forEach((letter: string, idx: number) => {
       const keyValue = tempUsedKeys[letter];
       const matchValue = guess.matches[idx];
@@ -258,8 +277,8 @@ export default function Game() {
       // Check achievements on loss too
       checkAchievements(false, 0, hardMode, gameMode === 'daily', null).then(
         (newAchievements) => {
-          if (newAchievements.length > 0) {
-            const first = newAchievements[0];
+          const first = newAchievements[0];
+          if (first) {
             setPendingAchievement({
               title: first.achievement.title,
               description: first.achievement.description,
@@ -326,7 +345,7 @@ export default function Game() {
       if (hardModeError) {
         setErrorMessage(hardModeError);
         dispatch(setWrongGuessShake(true));
-        setTimeout(() => {
+        shakeTimeoutRef.current = setTimeout(() => {
           dispatch(setWrongGuessShake(false));
         }, 1000);
         return;
@@ -345,7 +364,7 @@ export default function Game() {
           else return guess;
         });
         dispatch(setGuesses(updatedGuesses));
-        setTimeout(() => {
+        winTimeoutRef.current = setTimeout(() => {
           setShowConfetti(true);
           dispatch(setGameWon(true));
           dispatch(setGameEnded(true));
@@ -360,8 +379,8 @@ export default function Game() {
           const timeTaken = gameStartTime ? Date.now() - gameStartTime : null;
           checkAchievements(true, guessCount, hardMode, gameMode === 'daily', timeTaken).then(
             (newAchievements) => {
-              if (newAchievements.length > 0) {
-                const first = newAchievements[0];
+              const first = newAchievements[0];
+              if (first) {
                 setPendingAchievement({
                   title: first.achievement.title,
                   description: first.achievement.description,
@@ -395,28 +414,8 @@ export default function Game() {
           // Maybe prompt for app store rating after a win
           maybeRequestReview(statistics.gamesPlayed + 1, statistics.gamesWon + 1, true);
         }, 250 * 6);
-      } else if (wordList().includes(currentGuessedWord)) {
-        const matches: matchStatus[] = [];
-        currentGuessedWord.split('').forEach((letter, index) => {
-          const leftSlice = currentGuessedWord.slice(0, index + 1);
-          const countInLeft = leftSlice.split('').filter((item) => item === letter).length;
-          const totalCount = solution.split('').filter((item) => item === letter).length;
-          const nonMatchingPairs = solution
-            .split('')
-            .filter((item, idx) => currentGuessedWord[idx] !== item);
-
-          if (letter === solution[index]) {
-            matches.push('correct');
-          } else if (solution.includes(letter)) {
-            if (countInLeft <= totalCount && nonMatchingPairs.includes(letter)) {
-              matches.push('present');
-            } else {
-              matches.push('absent');
-            }
-          } else {
-            matches.push('absent');
-          }
-        });
+      } else if (wordList.includes(currentGuessedWord)) {
+        const matches = calculateMatches(currentGuessedWord, solution);
 
         const updatedGuess = {
           ...currentGuess,
@@ -439,7 +438,7 @@ export default function Game() {
       } else {
         setErrorMessage('Not in word list');
         dispatch(setWrongGuessShake(true));
-        setTimeout(() => {
+        shakeTimeoutRef.current = setTimeout(() => {
           dispatch(setWrongGuessShake(false));
           setErrorMessage(null);
         }, 1000);
@@ -516,7 +515,9 @@ export default function Game() {
       const unhinted = [0, 1, 2, 3, 4].filter((i) => !hintedPositions.includes(i));
       if (unhinted.length === 0) return;
       const pos = unhinted[Math.floor(Math.random() * unhinted.length)];
+      if (pos === undefined) return;
       const letter = solution[pos];
+      if (!letter) return;
 
       // Place the letter in the current guess at the correct position
       const currentGuess = guesses[currentGuessIndex];
@@ -541,8 +542,8 @@ export default function Game() {
         (l) => !usedLetters.includes(l) && !hintedPositions.some((p) => solution[p] === l)
       );
 
-      if (unusedSolutionLetters.length > 0) {
-        const hintLetter = unusedSolutionLetters[Math.floor(Math.random() * unusedSolutionLetters.length)];
+      const hintLetter = unusedSolutionLetters[Math.floor(Math.random() * unusedSolutionLetters.length)];
+      if (hintLetter) {
         setErrorMessage(`The word contains "${hintLetter.toUpperCase()}"`);
         setTimeout(() => setErrorMessage(null), 3000);
       } else {
@@ -630,9 +631,9 @@ export default function Game() {
               style={[styles.modeButton, styles.speedButton]}
               onPress={() => startGame('speed')}
             >
-              <Text style={styles.modeButtonText}>Speed Challenge</Text>
+              <Text style={styles.modeButtonText}>{GAME_MODES.speedChallenge}</Text>
               <Text style={styles.modeButtonSubtext}>
-                {hardMode ? '2 minutes' : '5 minutes'} to solve it
+                {hardMode ? GAME_MODES.twoMinutes : GAME_MODES.fiveMinutes} to solve it
               </Text>
             </TouchableOpacity>
           </ReAnimated.View>

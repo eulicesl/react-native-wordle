@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, memo } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
@@ -42,17 +42,17 @@ interface AnimatedKeyProps {
   backgroundColor: string;
   height: number;
   flex: number;
-  onPress: () => void;
+  onKeyPress: (key: string) => void;
   accessibilityLabel: string;
   gameLanguage: string;
 }
 
-function AnimatedKey({
+const AnimatedKey = memo(function AnimatedKey({
   keyboardKey,
   backgroundColor,
   height,
   flex,
-  onPress,
+  onKeyPress,
   accessibilityLabel,
   gameLanguage,
 }: AnimatedKeyProps) {
@@ -70,6 +70,10 @@ function AnimatedKey({
     scale.value = withSpring(1, SPRING_CONFIG);
   }, [scale]);
 
+  const handlePress = useCallback(() => {
+    onKeyPress(keyboardKey);
+  }, [onKeyPress, keyboardKey]);
+
   return (
     <Animated.View style={[{ flex }, animatedStyle]}>
       <Pressable
@@ -78,7 +82,7 @@ function AnimatedKey({
           backgroundColor,
           height,
         }}
-        onPress={onPress}
+        onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         accessibilityRole="button"
@@ -96,6 +100,7 @@ function AnimatedKey({
               ...styles.keyboardKey,
               fontSize: keyboardKey === 'Enter' ? 12 : 18,
             }}
+            maxFontSizeMultiplier={1}
           >
             {adjustLetterDisplay(keyboardKey, gameLanguage)}
           </Text>
@@ -103,7 +108,7 @@ function AnimatedKey({
       </Pressable>
     </Animated.View>
   );
-}
+});
 
 interface KeyboardProps {
   handleGuess: (keyPressed: string) => void;
@@ -169,7 +174,7 @@ export default function Keyboard({ handleGuess }: KeyboardProps) {
                 backgroundColor={handleKeyboardKeyColor(keyboardKey)}
                 height={SIZE / keyRowCount + 2 + 20}
                 flex={keyboardKey === '<' || keyboardKey === 'Enter' ? 2 : 1}
-                onPress={() => handleKeyPress(keyboardKey)}
+                onKeyPress={handleKeyPress}
                 accessibilityLabel={getKeyAccessibilityLabel(keyboardKey, keyStatus)}
                 gameLanguage={gameLanguage}
               />

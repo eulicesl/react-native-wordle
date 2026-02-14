@@ -35,7 +35,8 @@ export const settingsSlice = createSlice({
       state.soundEnabled = action.payload;
     },
     setSettings: (state, action: PayloadAction<Partial<SettingsState>>) => {
-      return { ...state, ...action.payload, isLoaded: true };
+      Object.assign(state, action.payload);
+      state.isLoaded = true;
     },
     setSettingsLoaded: (state, action: PayloadAction<boolean>) => {
       state.isLoaded = action.payload;
