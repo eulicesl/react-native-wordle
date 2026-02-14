@@ -28,7 +28,7 @@ import {
 } from '../../../utils/animations';
 import { APP_TITLE, colors, SIZE } from '../../../utils/constants';
 import { captureAndShare } from '../../../utils/shareImage';
-import { WIN_MESSAGES, GAME_BOARD } from '../../../utils/strings';
+import { WIN_MESSAGES, GAME_BOARD, GAME_MODES } from '../../../utils/strings';
 import { calculateVibeScore } from '../../../utils/vibeMeter';
 import { fetchWordDefinition, WordDefinition } from '../../../utils/wordDefinitions';
 
@@ -155,7 +155,7 @@ const GameBoard = ({
               )}
               {gameMode === 'speed' && (
                 <View style={[styles.badge, styles.speedBadge]}>
-                  <Text style={styles.badgeText}>Speed</Text>
+                  <Text style={styles.badgeText}>{GAME_MODES.speed}</Text>
                 </View>
               )}
               {hardMode && (

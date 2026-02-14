@@ -51,7 +51,7 @@ import { calculateMatches } from '../../utils/gameLogic';
 import { saveGameToHistory } from '../../utils/gameHistory';
 import { maybeRequestReview } from '../../utils/ratingPrompt';
 import { shareResults } from '../../utils/shareResults';
-import { PRE_GAME } from '../../utils/strings';
+import { PRE_GAME, GAME_MODES } from '../../utils/strings';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
@@ -629,9 +629,9 @@ export default function Game() {
               style={[styles.modeButton, styles.speedButton]}
               onPress={() => startGame('speed')}
             >
-              <Text style={styles.modeButtonText}>Speed Challenge</Text>
+              <Text style={styles.modeButtonText}>{GAME_MODES.speedChallenge}</Text>
               <Text style={styles.modeButtonSubtext}>
-                {hardMode ? '2 minutes' : '5 minutes'} to solve it
+                {hardMode ? GAME_MODES.twoMinutes : GAME_MODES.fiveMinutes} to solve it
               </Text>
             </TouchableOpacity>
           </ReAnimated.View>

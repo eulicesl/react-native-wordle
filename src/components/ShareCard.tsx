@@ -4,6 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 
 import { guess, matchStatus } from '../types';
 import { colors } from '../utils/constants';
+import { SHARE_CARD, PRE_GAME } from '../utils/strings';
 
 interface ShareCardProps {
   guesses: guess[];
@@ -14,11 +15,16 @@ interface ShareCardProps {
   hardMode: boolean;
 }
 
+const SHARE_CARD_COLORS = {
+  background: '#1a1a2e',
+  absent: '#3a3a3c',
+};
+
 const MATCH_COLORS: Record<string, string> = {
   correct: colors.correct,
   present: colors.present,
-  absent: '#3a3a3c',
-  '': '#3a3a3c',
+  absent: SHARE_CARD_COLORS.absent,
+  '': SHARE_CARD_COLORS.absent,
 };
 
 const ShareCard = forwardRef<View, ShareCardProps>(
@@ -27,9 +33,9 @@ const ShareCard = forwardRef<View, ShareCardProps>(
 
     return (
       <View ref={ref} style={styles.card} collapsable={false}>
-        <Text style={styles.title}>WordVibe</Text>
+        <Text style={styles.title}>{SHARE_CARD.appName}</Text>
         <Text style={styles.subtitle}>
-          {isDaily ? 'Daily Challenge' : 'Free Play'}
+          {isDaily ? SHARE_CARD.dailyChallenge : 'Free Play'}
           {hardMode ? ' (Hard)' : ''}
         </Text>
 
@@ -51,7 +57,7 @@ const ShareCard = forwardRef<View, ShareCardProps>(
         </View>
 
         {streak > 0 && (
-          <Text style={styles.streak}>{streak} day streak</Text>
+          <Text style={styles.streak}>{streak} {PRE_GAME.dayStreak.toLowerCase()}</Text>
         )}
 
         <Text style={styles.footer}>wordvibe.app</Text>
@@ -66,7 +72,7 @@ export default ShareCard;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: SHARE_CARD_COLORS.background,
     padding: 24,
     borderRadius: 16,
     alignItems: 'center',

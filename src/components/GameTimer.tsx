@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet } from 'react-native';
 
 import { useAppSelector } from '../hooks/storeHooks';
+import { TIMER_COLORS } from '../utils/strings';
 
 interface GameTimerProps {
   durationMs: number;
@@ -46,7 +47,7 @@ export default function GameTimer({ durationMs, active, onExpire }: GameTimerPro
   const isLow = remaining <= 30000;
   const isCritical = remaining <= 10000;
 
-  const timerColor = isCritical ? '#FF453A' : isLow ? '#FF9500' : theme.colors.text;
+  const timerColor = isCritical ? TIMER_COLORS.critical : isLow ? TIMER_COLORS.warning : theme.colors.text;
 
   return (
     <View style={styles.container}>
