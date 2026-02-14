@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -7,18 +7,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Animated,
   Dimensions,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  withDelay,
-} from 'react-native-reanimated';
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
-import { dynamicFontSize } from '../../utils/responsive';
 import {
   ACHIEVEMENTS,
   getAllAchievements,
@@ -95,7 +88,7 @@ export default function Statistics() {
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
 
   // Animation for tab indicator
-  const tabIndicatorAnim = useSharedValue(0);
+  const [tabIndicatorAnim] = useState(new Animated.Value(0));
 
   const loadAchievements = useCallback(async () => {
     const allAchievements = await getAllAchievements();
@@ -144,7 +137,12 @@ export default function Statistics() {
   // Animate tab indicator
   useEffect(() => {
     const tabIndex = activeTab === 'stats' ? 0 : activeTab === 'achievements' ? 1 : 2;
-    tabIndicatorAnim.value = withSpring(tabIndex, { damping: 14, stiffness: 120 });
+    Animated.spring(tabIndicatorAnim, {
+      toValue: tabIndex,
+      useNativeDriver: true,
+      tension: 68,
+      friction: 10,
+    }).start();
   }, [activeTab, tabIndicatorAnim]);
 
   const { gamesPlayed, gamesWon, currentStreak, maxStreak, guessDistribution } = statistics;
@@ -181,11 +179,9 @@ export default function Statistics() {
       ? (tabContainerWidth - TAB_CONTAINER_PADDING * 2) / TAB_COUNT
       : (SCREEN_WIDTH - SCREEN_HORIZONTAL_PADDING * 2 - TAB_CONTAINER_PADDING * 2) / TAB_COUNT;
 
-  const tabIndicatorStyle = useAnimatedStyle(() => {
-    'worklet';
-    // Manual interpolation: map tabIndex [0,1,2] to translateX
-    const translateX = tabIndicatorAnim.value * tabIndicatorWidth;
-    return { transform: [{ translateX }] };
+  const tabIndicatorTranslate = tabIndicatorAnim.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [0, tabIndicatorWidth, tabIndicatorWidth * 2],
   });
 
   const renderStats = () => (
@@ -205,7 +201,7 @@ export default function Statistics() {
       </View>
 
       {/* Guess Distribution */}
-      <Text style={[styles.sectionTitle, themedStyles.text, { fontSize: dynamicFontSize(14) }]} allowFontScaling={false}>Guess Distribution</Text>
+      <Text style={[styles.sectionTitle, themedStyles.text]}>Guess Distribution</Text>
       <View style={styles.distributionContainer}>
         {guessDistribution.map((count, index) => (
           <DistributionBar
@@ -220,10 +216,10 @@ export default function Statistics() {
 
       {/* Next WordVibe Countdown */}
       <View style={[styles.countdownCard, themedStyles.card]}>
-        <Text style={[styles.countdownLabel, themedStyles.secondaryText, { fontSize: dynamicFontSize(12) }]} allowFontScaling={false}>
+        <Text style={[styles.countdownLabel, themedStyles.secondaryText]}>
           Next WordVibe
         </Text>
-        <Text style={[styles.countdown, themedStyles.text, { fontSize: dynamicFontSize(36, 1.3) }]} allowFontScaling={false}>{countdown}</Text>
+        <Text style={[styles.countdown, themedStyles.text]}>{countdown}</Text>
       </View>
     </>
   );
@@ -330,7 +326,7 @@ export default function Statistics() {
       style={[styles.container, themedStyles.container]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.title, themedStyles.text, { fontSize: dynamicFontSize(24, 1.3) }]} allowFontScaling={false}>Statistics</Text>
+      <Text style={[styles.title, themedStyles.text]}>Statistics</Text>
 
       {/* Tab Switcher */}
       <View
@@ -340,8 +336,10 @@ export default function Statistics() {
         <Animated.View
           style={[
             styles.tabIndicator,
-            { width: tabIndicatorWidth },
-            tabIndicatorStyle,
+            {
+              transform: [{ translateX: tabIndicatorTranslate }],
+              width: tabIndicatorWidth,
+            },
           ]}
         />
         <TouchableOpacity
@@ -426,8 +424,8 @@ function StatBox({ value, label, theme }: StatBoxProps) {
   if (value === '' && label === '') return <View style={styles.statBox} />;
   return (
     <View style={styles.statBox}>
-      <Text style={[styles.statValue, theme.text, { fontSize: dynamicFontSize(32, 1.3) }]} allowFontScaling={false}>{value}</Text>
-      <Text style={[styles.statLabel, theme.secondaryText, { fontSize: dynamicFontSize(11) }]} allowFontScaling={false}>{label}</Text>
+      <Text style={[styles.statValue, theme.text]}>{value}</Text>
+      <Text style={[styles.statLabel, theme.secondaryText]}>{label}</Text>
     </View>
   );
 }
@@ -445,19 +443,22 @@ interface DistributionBarProps {
 function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps) {
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
   const barWidth = Math.max(percentage, count > 0 ? 15 : 8);
-  const widthAnim = useSharedValue(0);
+  const widthAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    widthAnim.value = 0;
-    widthAnim.value = withDelay(
-      (guess - 1) * 80,
-      withTiming(barWidth, { duration: 500 })
-    );
+    widthAnim.setValue(0);
+    Animated.timing(widthAnim, {
+      toValue: barWidth,
+      duration: 500,
+      delay: (guess - 1) * 80,
+      useNativeDriver: false,
+    }).start();
   }, [barWidth, guess, widthAnim]);
 
-  const animatedBarStyle = useAnimatedStyle(() => ({
-    width: `${widthAnim.value}%`,
-  }));
+  const animatedWidth = widthAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <View style={styles.distributionRow}>
@@ -466,8 +467,10 @@ function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps
         <Animated.View
           style={[
             styles.bar,
-            { backgroundColor: count > 0 ? colors.correct : theme.card.backgroundColor },
-            animatedBarStyle,
+            {
+              width: animatedWidth,
+              backgroundColor: count > 0 ? colors.correct : theme.card.backgroundColor,
+            },
           ]}
         >
           <Text style={[styles.barCount, count === 0 && theme.text]}>{count}</Text>
@@ -514,17 +517,14 @@ function AchievementCard({ achievement, theme }: AchievementCardProps) {
             styles.achievementTitle,
             theme.text,
             !unlocked && styles.achievementTitleLocked,
-            { fontSize: dynamicFontSize(14) },
           ]}
           numberOfLines={1}
-          allowFontScaling={false}
         >
           {achievementData.title}
         </Text>
         <Text
-          style={[styles.achievementDescription, theme.secondaryText, { fontSize: dynamicFontSize(12) }]}
+          style={[styles.achievementDescription, theme.secondaryText]}
           numberOfLines={2}
-          allowFontScaling={false}
         >
           {achievementData.description}
         </Text>
