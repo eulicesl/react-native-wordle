@@ -152,6 +152,7 @@ const LetterSquare = ({ guess, letter, idx }: LetterSquareProps) => {
 
       return () => clearTimeout(soundTimer);
     }
+    return undefined;
   }, [letter, matchStatus, hapticFeedback, idx, guess.isComplete, guess.isCorrect]);
 
   useEffect(() => {

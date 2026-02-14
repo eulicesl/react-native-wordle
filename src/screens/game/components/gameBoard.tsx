@@ -83,6 +83,7 @@ const GameBoard = ({
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
+    return undefined;
   }, [handleKeyDown]);
 
   // Fetch word definition when game ends
@@ -104,11 +105,11 @@ const GameBoard = ({
         scaleAnim.value = withSpring(1, { damping: 12, stiffness: 120 });
       }, delay);
       return () => clearTimeout(timer);
-    } else {
-      setShowModal(false);
-      fadeAnim.value = 0;
-      scaleAnim.value = 0.85;
     }
+    setShowModal(false);
+    fadeAnim.value = 0;
+    scaleAnim.value = 0.85;
+    return undefined;
   }, [gameEnded, gameWon, fadeAnim, scaleAnim]);
 
   const guessCount = guesses.filter((g) => g.isComplete).length;

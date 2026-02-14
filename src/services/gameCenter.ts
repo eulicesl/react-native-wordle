@@ -96,13 +96,6 @@ export const ACHIEVEMENTS = {
     points: 75,
     category: 'skill' as AchievementCategory,
   },
-  speedDemon: {
-    id: 'com.wordle.achievement.speed_demon',
-    title: 'Speed Demon',
-    description: 'Win a game in under 30 seconds',
-    points: 40,
-    category: 'skill' as AchievementCategory,
-  },
 
   // Daily challenge achievements
   dailyPlayer: {

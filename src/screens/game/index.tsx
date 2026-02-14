@@ -277,8 +277,8 @@ export default function Game() {
       // Check achievements on loss too
       checkAchievements(false, 0, hardMode, gameMode === 'daily', null).then(
         (newAchievements) => {
-          if (newAchievements.length > 0) {
-            const first = newAchievements[0];
+          const first = newAchievements[0];
+          if (first) {
             setPendingAchievement({
               title: first.achievement.title,
               description: first.achievement.description,
@@ -379,8 +379,8 @@ export default function Game() {
           const timeTaken = gameStartTime ? Date.now() - gameStartTime : null;
           checkAchievements(true, guessCount, hardMode, gameMode === 'daily', timeTaken).then(
             (newAchievements) => {
-              if (newAchievements.length > 0) {
-                const first = newAchievements[0];
+              const first = newAchievements[0];
+              if (first) {
                 setPendingAchievement({
                   title: first.achievement.title,
                   description: first.achievement.description,
@@ -515,7 +515,9 @@ export default function Game() {
       const unhinted = [0, 1, 2, 3, 4].filter((i) => !hintedPositions.includes(i));
       if (unhinted.length === 0) return;
       const pos = unhinted[Math.floor(Math.random() * unhinted.length)];
+      if (pos === undefined) return;
       const letter = solution[pos];
+      if (!letter) return;
 
       // Place the letter in the current guess at the correct position
       const currentGuess = guesses[currentGuessIndex];
@@ -540,8 +542,8 @@ export default function Game() {
         (l) => !usedLetters.includes(l) && !hintedPositions.some((p) => solution[p] === l)
       );
 
-      if (unusedSolutionLetters.length > 0) {
-        const hintLetter = unusedSolutionLetters[Math.floor(Math.random() * unusedSolutionLetters.length)];
+      const hintLetter = unusedSolutionLetters[Math.floor(Math.random() * unusedSolutionLetters.length)];
+      if (hintLetter) {
         setErrorMessage(`The word contains "${hintLetter.toUpperCase()}"`);
         setTimeout(() => setErrorMessage(null), 3000);
       } else {
