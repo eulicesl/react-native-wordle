@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -7,9 +7,15 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Animated,
   Dimensions,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withDelay,
+} from 'react-native-reanimated';
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
 import { dynamicFontSize } from '../../utils/responsive';
@@ -89,7 +95,7 @@ export default function Statistics() {
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
 
   // Animation for tab indicator
-  const [tabIndicatorAnim] = useState(new Animated.Value(0));
+  const tabIndicatorAnim = useSharedValue(0);
 
   const loadAchievements = useCallback(async () => {
     const allAchievements = await getAllAchievements();
@@ -138,12 +144,7 @@ export default function Statistics() {
   // Animate tab indicator
   useEffect(() => {
     const tabIndex = activeTab === 'stats' ? 0 : activeTab === 'achievements' ? 1 : 2;
-    Animated.spring(tabIndicatorAnim, {
-      toValue: tabIndex,
-      useNativeDriver: true,
-      tension: 68,
-      friction: 10,
-    }).start();
+    tabIndicatorAnim.value = withSpring(tabIndex, { damping: 14, stiffness: 120 });
   }, [activeTab, tabIndicatorAnim]);
 
   const { gamesPlayed, gamesWon, currentStreak, maxStreak, guessDistribution } = statistics;
@@ -180,9 +181,11 @@ export default function Statistics() {
       ? (tabContainerWidth - TAB_CONTAINER_PADDING * 2) / TAB_COUNT
       : (SCREEN_WIDTH - SCREEN_HORIZONTAL_PADDING * 2 - TAB_CONTAINER_PADDING * 2) / TAB_COUNT;
 
-  const tabIndicatorTranslate = tabIndicatorAnim.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [0, tabIndicatorWidth, tabIndicatorWidth * 2],
+  const tabIndicatorStyle = useAnimatedStyle(() => {
+    'worklet';
+    // Manual interpolation: map tabIndex [0,1,2] to translateX
+    const translateX = tabIndicatorAnim.value * tabIndicatorWidth;
+    return { transform: [{ translateX }] };
   });
 
   const renderStats = () => (
@@ -337,10 +340,8 @@ export default function Statistics() {
         <Animated.View
           style={[
             styles.tabIndicator,
-            {
-              transform: [{ translateX: tabIndicatorTranslate }],
-              width: tabIndicatorWidth,
-            },
+            { width: tabIndicatorWidth },
+            tabIndicatorStyle,
           ]}
         />
         <TouchableOpacity
@@ -444,22 +445,19 @@ interface DistributionBarProps {
 function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps) {
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
   const barWidth = Math.max(percentage, count > 0 ? 15 : 8);
-  const widthAnim = useRef(new Animated.Value(0)).current;
+  const widthAnim = useSharedValue(0);
 
   useEffect(() => {
-    widthAnim.setValue(0);
-    Animated.timing(widthAnim, {
-      toValue: barWidth,
-      duration: 500,
-      delay: (guess - 1) * 80,
-      useNativeDriver: false,
-    }).start();
+    widthAnim.value = 0;
+    widthAnim.value = withDelay(
+      (guess - 1) * 80,
+      withTiming(barWidth, { duration: 500 })
+    );
   }, [barWidth, guess, widthAnim]);
 
-  const animatedWidth = widthAnim.interpolate({
-    inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
-  });
+  const animatedBarStyle = useAnimatedStyle(() => ({
+    width: `${widthAnim.value}%`,
+  }));
 
   return (
     <View style={styles.distributionRow}>
@@ -468,10 +466,8 @@ function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps
         <Animated.View
           style={[
             styles.bar,
-            {
-              width: animatedWidth,
-              backgroundColor: count > 0 ? colors.correct : theme.card.backgroundColor,
-            },
+            { backgroundColor: count > 0 ? colors.correct : theme.card.backgroundColor },
+            animatedBarStyle,
           ]}
         >
           <Text style={[styles.barCount, count === 0 && theme.text]}>{count}</Text>

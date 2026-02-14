@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, Animated as RNAnimated, useWindowDimensions } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, useWindowDimensions } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ViewShot from 'react-native-view-shot';
@@ -55,8 +62,8 @@ const GameBoard = ({
   const [showModal, setShowModal] = useState(false);
   const [wordDef, setWordDef] = useState<WordDefinition | null>(null);
   const shareCardRef = useRef<ViewShot>(null);
-  const fadeAnim = useRef(new RNAnimated.Value(0)).current;
-  const scaleAnim = useRef(new RNAnimated.Value(0.85)).current;
+  const fadeAnim = useSharedValue(0);
+  const scaleAnim = useSharedValue(0.85);
 
   // Physical keyboard support (web + external keyboards)
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -93,25 +100,14 @@ const GameBoard = ({
       const delay = gameWon ? TILE_FLIP_STAGGER_MS * TILES_PER_ROW + WIN_MODAL_EXTRA_DELAY_MS : LOSS_MODAL_DELAY_MS;
       const timer = setTimeout(() => {
         setShowModal(true);
-        RNAnimated.parallel([
-          RNAnimated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          RNAnimated.spring(scaleAnim, {
-            toValue: 1,
-            tension: 65,
-            friction: 10,
-            useNativeDriver: true,
-          }),
-        ]).start();
+        fadeAnim.value = withTiming(1, { duration: 300 });
+        scaleAnim.value = withSpring(1, { damping: 12, stiffness: 120 });
       }, delay);
       return () => clearTimeout(timer);
     } else {
       setShowModal(false);
-      fadeAnim.setValue(0);
-      scaleAnim.setValue(0.85);
+      fadeAnim.value = 0;
+      scaleAnim.value = 0.85;
     }
   }, [gameEnded, gameWon, fadeAnim, scaleAnim]);
 
@@ -120,10 +116,18 @@ const GameBoard = ({
 
   const handleDismissAndReset = () => {
     setShowModal(false);
-    fadeAnim.setValue(0);
-    scaleAnim.setValue(0.85);
+    fadeAnim.value = 0;
+    scaleAnim.value = 0.85;
     resetGame();
   };
+
+  const overlayAnimStyle = useAnimatedStyle(() => ({
+    opacity: fadeAnim.value,
+  }));
+
+  const cardAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scaleAnim.value }],
+  }));
 
   const themedStyles = {
     background: { backgroundColor: theme.colors.background },
@@ -207,19 +211,19 @@ const GameBoard = ({
 
       {/* Game End Modal */}
       <Modal transparent visible={showModal} animationType="none" onRequestClose={handleDismissAndReset}>
-        <RNAnimated.View
+        <Animated.View
           style={[
             styles.modalOverlay,
-            { opacity: fadeAnim },
+            overlayAnimStyle,
             { backgroundColor: theme.dark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.5)' },
           ]}
         >
-          <RNAnimated.View
+          <Animated.View
             accessibilityViewIsModal={true}
             style={[
               styles.modalCard,
               themedStyles.card,
-              { transform: [{ scale: scaleAnim }] },
+              cardAnimStyle,
             ]}
           >
             {gameWon ? (
@@ -332,8 +336,8 @@ const GameBoard = ({
                 <Text style={styles.modalButtonText}>{GAME_BOARD.newGame}</Text>
               </TouchableOpacity>
             </View>
-          </RNAnimated.View>
-        </RNAnimated.View>
+          </Animated.View>
+        </Animated.View>
       </Modal>
 
       {/* Hidden share card for image capture */}

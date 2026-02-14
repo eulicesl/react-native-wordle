@@ -47,6 +47,7 @@ import {
 import { selectStatisticsLoaded } from '../../store/slices/statisticsSlice';
 import { announceGuessResult, announceGameResult } from '../../utils/accessibility';
 import { checkAchievements, AchievementCategory } from '../../services/gameCenter';
+import { calculateMatches } from '../../utils/gameLogic';
 import { saveGameToHistory } from '../../utils/gameHistory';
 import { maybeRequestReview } from '../../utils/ratingPrompt';
 import { shareResults } from '../../utils/shareResults';
@@ -414,27 +415,7 @@ export default function Game() {
           maybeRequestReview(statistics.gamesPlayed + 1, statistics.gamesWon + 1, true);
         }, 250 * 6);
       } else if (wordList.includes(currentGuessedWord)) {
-        const matches: matchStatus[] = [];
-        currentGuessedWord.split('').forEach((letter, index) => {
-          const leftSlice = currentGuessedWord.slice(0, index + 1);
-          const countInLeft = leftSlice.split('').filter((item) => item === letter).length;
-          const totalCount = solution.split('').filter((item) => item === letter).length;
-          const nonMatchingPairs = solution
-            .split('')
-            .filter((item, idx) => currentGuessedWord[idx] !== item);
-
-          if (letter === solution[index]) {
-            matches.push('correct');
-          } else if (solution.includes(letter)) {
-            if (countInLeft <= totalCount && nonMatchingPairs.includes(letter)) {
-              matches.push('present');
-            } else {
-              matches.push('absent');
-            }
-          } else {
-            matches.push('absent');
-          }
-        });
+        const matches = calculateMatches(currentGuessedWord, solution);
 
         const updatedGuess = {
           ...currentGuess,
