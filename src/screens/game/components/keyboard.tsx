@@ -42,7 +42,7 @@ interface AnimatedKeyProps {
   backgroundColor: string;
   height: number;
   flex: number;
-  onPress: () => void;
+  onKeyPress: (key: string) => void;
   accessibilityLabel: string;
   gameLanguage: string;
 }
@@ -52,7 +52,7 @@ const AnimatedKey = memo(function AnimatedKey({
   backgroundColor,
   height,
   flex,
-  onPress,
+  onKeyPress,
   accessibilityLabel,
   gameLanguage,
 }: AnimatedKeyProps) {
@@ -70,6 +70,10 @@ const AnimatedKey = memo(function AnimatedKey({
     scale.value = withSpring(1, SPRING_CONFIG);
   }, [scale]);
 
+  const handlePress = useCallback(() => {
+    onKeyPress(keyboardKey);
+  }, [onKeyPress, keyboardKey]);
+
   return (
     <Animated.View style={[{ flex }, animatedStyle]}>
       <Pressable
@@ -78,7 +82,7 @@ const AnimatedKey = memo(function AnimatedKey({
           backgroundColor,
           height,
         }}
-        onPress={onPress}
+        onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         accessibilityRole="button"
@@ -170,7 +174,7 @@ export default function Keyboard({ handleGuess }: KeyboardProps) {
                 backgroundColor={handleKeyboardKeyColor(keyboardKey)}
                 height={SIZE / keyRowCount + 2 + 20}
                 flex={keyboardKey === '<' || keyboardKey === 'Enter' ? 2 : 1}
-                onPress={() => handleKeyPress(keyboardKey)}
+                onKeyPress={handleKeyPress}
                 accessibilityLabel={getKeyAccessibilityLabel(keyboardKey, keyStatus)}
                 gameLanguage={gameLanguage}
               />
