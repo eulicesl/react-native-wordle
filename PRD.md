@@ -84,16 +84,16 @@ This PRD defines the transformation from a "well-built clone" into a **distincti
 | Keyboard component | Spring physics, dynamic coloring | Good |
 | Tile flip animation | 3D rotateY with stagger | Good |
 
-### Critical Issues (Must Fix)
+### Critical Issues (Status as of v2.0)
 
-| Issue | Location | Impact |
+| Issue | Location | Status |
 |-------|----------|--------|
-| Duplicate game-end UI | `gameBoard.tsx` - inline container + modal both render | Visual glitch, broken UX |
-| Mixed animation APIs | Reanimated + RN Animated used inconsistently | Bundle size, maintenance burden |
-| setTimeout without cleanup | `letterSquare.tsx`, `gameBoard.tsx` | Memory leaks, crash potential |
-| Stale closure | `handleFoundKeysOnKeyboard` captures old `usedKeys` | Incorrect keyboard colors |
-| No React.memo on hot paths | `LetterSquare`, `AnimatedKey` | Unnecessary re-renders |
-| Modal focus trap missing | Game-end modal | Accessibility violation |
+| ~~Duplicate game-end UI~~ | `gameBoard.tsx` | ✅ Resolved — single modal renders |
+| Mixed animation APIs | Reanimated + RN Animated | ⚠️ In progress — migrating to Reanimated |
+| ~~setTimeout without cleanup~~ | `letterSquare.tsx`, `gameBoard.tsx` | ✅ Resolved — cleanup in useEffect |
+| ~~Stale closure~~ | `handleFoundKeysOnKeyboard` | ✅ Resolved — uses ref for current state |
+| ~~No React.memo on hot paths~~ | `LetterSquare`, `AnimatedKey` | ✅ Resolved — components memoized |
+| ~~Modal focus trap missing~~ | Game-end modal | ✅ Resolved — `accessibilityViewIsModal` set |
 
 ### What's Missing (Gaps to Award-Quality)
 
@@ -313,13 +313,13 @@ Apple evaluates across six categories. Here's where WordVibe stands and what's n
   - Key press: `impactLight`
   - Submit guess: `impactMedium`
   - Tile reveal (correct): `notificationSuccess`
-  - Tile reveal (present): `impactLight`
-  - Tile reveal (absent): `impactHeavy` (brief)
-  - Invalid word: `notificationError`
-  - Win: Custom pattern -- three ascending impacts
-  - Loss: `notificationWarning`
+  - Tile reveal (present): `impactMedium` (moderate tap)
+  - Tile reveal (absent): `impactLight` (subtle acknowledgment)
+  - Invalid word: `notificationWarning`
+  - Win: Custom pattern — triple `notificationSuccess` with 150ms gaps
+  - Loss: `notificationError`
   - Streak milestone: `notificationSuccess` repeated
-- **Technical:** Use Expo Haptics API with platform-specific tuning.
+- **Technical:** Use Expo Haptics API with platform-specific tuning. See DESIGN.md §11 for full haptic choreography.
 
 ### 6.3 Visual Foundation
 
