@@ -1,0 +1,46 @@
+project:
+  name: "WordVibe"
+  language: "TypeScript"
+  framework: "React Native, Expo SDK 54"
+  description: "A premium word-guessing game (Wordle clone) built with React Native/Expo. Players guess a 5-letter word in 6 attempts with colored tile feedback. Supports daily challenges, unlimited mode, speed mode, achievements, and multi-language (EN/TR)."
+
+commands:
+  test: "npm test"
+  lint: "npm run lint"
+  build: "npx expo export --platform web"
+
+rules:
+  - "Use React Native Reanimated 3 for ALL animations. Never import Animated from 'react-native'. All animation code must use worklets and run on the UI thread."
+  - "Use Redux Toolkit for state management. Access state with typed hooks useAppSelector and useAppDispatch from src/hooks/storeHooks.ts."
+  - "All game state is managed through 4 Redux slices in src/store/slices/: gameStateSlice, statisticsSlice, settingsSlice, themeSlice."
+  - "Persist data via AsyncStorage using helpers in src/utils/localStorageFuncs.ts. Statistics auto-save via the central useEffect in Game screen."
+  - "The match algorithm in checkGuess() handles duplicate letter edge cases. Do not change the core matching logic without updating tests in src/__tests__/gameLogic.test.ts."
+  - "Daily word selection uses a Mulberry32 seeded PRNG in src/utils/dailyWord.ts. The seed is UTC date-based so all users get the same word. Do not modify the seeding algorithm."
+  - "Support both English (src/words/en.ts) and Turkish (src/words/tr.ts) word lists. Turkish has special keyboard layout and character handling."
+  - "All interactive elements must have accessibilityLabel, accessibilityRole, and appropriate accessibilityState. Use helpers from src/utils/accessibility.ts."
+  - "Respect system reduceMotion preference via isReduceMotionEnabled() from src/utils/accessibility.ts. When enabled, skip all animations and show instant state changes."
+  - "Respect high contrast mode via the highContrastMode setting. High contrast colors: correct=#FF9100 (orange), present=#40C4FF (cyan), absent=#37474F."
+  - "Use Montserrat font family: 600 (SemiBold), 700 (Bold), 800 (ExtraBold) weights. Never use system fonts."
+  - "Game colors: correct=#7C4DFF (purple), present=#FF6B9D (pink), absent=#455A64 (slate). These are defined in src/utils/constants.ts."
+  - "Write tests for any new utility function. Place tests in src/__tests__/. Use Jest with jest-expo preset."
+  - "Use React.memo for components that receive stable props but re-render due to parent state changes. Especially game board tiles and keyboard keys."
+  - "All setTimeout calls inside React components MUST be cleaned up in useEffect return functions. Store timeout IDs in useRef."
+  - "After completing each task, run npm test and npm run lint. Fix any failures before marking the task complete."
+  - "Make atomic git commits with descriptive messages for each logical change."
+
+boundaries:
+  never_touch:
+    - "node_modules/**"
+    - "*.lock"
+    - ".expo/**"
+    - "dist/**"
+    - "build/**"
+    - "assets/**"
+    - "src/words/en.ts"
+    - "src/words/tr.ts"
+    - "src/utils/dailyWord.ts"
+    - "app.json"
+    - "eas.json"
+    - "PRD.md"
+    - "DESIGN.md"
+    - "CLAUDE.md"
