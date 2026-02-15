@@ -240,7 +240,7 @@ const GameBoard = ({
             ) : (
               <>
                 <View style={[styles.modalIconContainer, styles.modalIconLoss]}>
-                  <Ionicons name="close-circle" size={40} color="#FF453A" />
+                  <Ionicons name="close-circle" size={40} color={colors.error} />
                 </View>
                 <Text style={[styles.modalTitle, themedStyles.text]}>{GAME_BOARD.betterLuckNextTime}</Text>
                 <Text style={[styles.modalSolutionLabel, themedStyles.secondaryText]}>
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#7C4DFF',
   },
   speedBadge: {
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.warning,
   },
   hardBadge: {
     backgroundColor: '#FF6B9D',

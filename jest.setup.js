@@ -49,6 +49,16 @@ jest.mock('expo-notifications', () => ({
   },
 }));
 
+// Mock expo-constants
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    expoConfig: {
+      version: '1.0.0',
+    },
+  },
+}));
+
 // Mock lottie-react-native
 // Use a virtual mock so tests don't depend on native module installation in CI.
 jest.mock('lottie-react-native', () => 'LottieView', { virtual: true });

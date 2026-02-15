@@ -26,6 +26,7 @@ import {
 } from '../../store/slices/settingsSlice';
 import { resetStatistics } from '../../store/slices/statisticsSlice';
 import { setLightTheme, setDarkTheme } from '../../store/slices/themeSlice';
+import { colors } from '../../utils/constants';
 import {
   setStoreData,
   saveSettings,
@@ -45,8 +46,8 @@ export default function Settings() {
     (state) => state.settings
   );
 
-  // Settings are loaded once in main/index.tsx at app startup;
-  // no duplicate load needed here.
+  // Settings are loaded once at app startup in main/index.tsx.
+  // No need to re-load here; trust Redux state.
 
   const themedStyles = {
     container: {
@@ -262,7 +263,7 @@ export default function Settings() {
           style={styles.dangerButton}
           onPress={handleResetStatistics}
         >
-          <Ionicons name="trash-outline" size={20} color="#FF453A" />
+          <Ionicons name="trash-outline" size={20} color={colors.error} />
           <Text style={styles.dangerButtonText}>{SETTINGS_STRINGS.resetStatistics}</Text>
         </TouchableOpacity>
       </View>
@@ -427,7 +428,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   dangerButtonText: {
-    color: '#FF453A',
+    color: colors.error,
     fontSize: 16,
     fontFamily: 'Montserrat_600SemiBold',
     marginLeft: 8,

@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { useAppSelector } from '../hooks/storeHooks';
-import { HINTS, TIMER_COLORS } from '../utils/strings';
+import { colors } from '../utils/constants';
+import { HINTS } from '../utils/strings';
 
 interface HintButtonProps {
   hintsUsed: number;
@@ -12,8 +13,8 @@ interface HintButtonProps {
 }
 
 const HINT_COLORS = {
-  active: TIMER_COLORS.warning,
-  disabled: '#767577',
+  active: colors.warning,
+  disabled: colors.disabled,
 };
 
 export default function HintButton({ hintsUsed, maxHints, disabled, onPress }: HintButtonProps) {

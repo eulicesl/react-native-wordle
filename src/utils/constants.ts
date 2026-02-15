@@ -14,6 +14,9 @@ export const colors = {
   bg: '#1A1A2E',
   primary: '#7C4DFF',
   secondary: '#00BFA5',
+  error: '#FF453A',
+  warning: '#FF9500',
+  disabled: '#606060',
 };
 
 export const initialGuesses: guess[] = [

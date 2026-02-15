@@ -37,7 +37,7 @@ const CATEGORY_ICONS: Record<AchievementCategory, React.ComponentProps<typeof Io
 
 const CATEGORY_COLORS: Record<AchievementCategory, string> = {
   game: colors.correct,
-  streak: '#FF9500',
+  streak: colors.warning,
   skill: '#AF52DE',
   daily: '#007AFF',
 };

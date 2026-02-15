@@ -189,19 +189,19 @@ export default function Statistics() {
       {/* Stats Grid */}
       <View style={styles.statsGrid}>
         <View style={styles.statsRow}>
-          <StatBox value={gamesPlayed} label="Played" theme={themedStyles} />
-          <StatBox value={winPercentage} label="Win %" theme={themedStyles} />
+          <StatBox value={gamesPlayed} label={STATISTICS_STRINGS.played} theme={themedStyles} />
+          <StatBox value={winPercentage} label={STATISTICS_STRINGS.winPercent} theme={themedStyles} />
           <StatBox value={averageGuesses} label={STATISTICS_STRINGS.avgGuesses} theme={themedStyles} />
         </View>
         <View style={styles.statsRow}>
-          <StatBox value={currentStreak} label="Current Streak" theme={themedStyles} />
-          <StatBox value={maxStreak} label="Max Streak" theme={themedStyles} />
+          <StatBox value={currentStreak} label={STATISTICS_STRINGS.currentStreak} theme={themedStyles} />
+          <StatBox value={maxStreak} label={STATISTICS_STRINGS.maxStreak} theme={themedStyles} />
           <View style={styles.statBox} />
         </View>
       </View>
 
       {/* Guess Distribution */}
-      <Text style={[styles.sectionTitle, themedStyles.text]}>Guess Distribution</Text>
+      <Text style={[styles.sectionTitle, themedStyles.text]}>{STATISTICS_STRINGS.guessDistribution}</Text>
       <View style={styles.distributionContainer}>
         {guessDistribution.map((count, index) => (
           <DistributionBar
@@ -217,7 +217,7 @@ export default function Statistics() {
       {/* Next WordVibe Countdown */}
       <View style={[styles.countdownCard, themedStyles.card]}>
         <Text style={[styles.countdownLabel, themedStyles.secondaryText]}>
-          Next WordVibe
+          {STATISTICS_STRINGS.nextWordVibe}
         </Text>
         <Text style={[styles.countdown, themedStyles.text]}>{countdown}</Text>
       </View>
@@ -230,7 +230,7 @@ export default function Statistics() {
         <View style={styles.emptyHistory}>
           <Ionicons name="time-outline" size={48} color={theme.colors.secondary} />
           <Text style={[styles.emptyHistoryText, themedStyles.secondaryText]}>
-            No games played yet
+            {STATISTICS_STRINGS.noGamesYet}
           </Text>
         </View>
       ) : (
@@ -251,14 +251,14 @@ export default function Statistics() {
               <Text style={[styles.progressValue, themedStyles.text]}>
                 {achievementProgress.unlockedCount}/{achievementProgress.totalAchievements}
               </Text>
-              <Text style={[styles.progressLabel, themedStyles.secondaryText]}>Unlocked</Text>
+              <Text style={[styles.progressLabel, themedStyles.secondaryText]}>{STATISTICS_STRINGS.unlocked}</Text>
             </View>
             <View style={styles.progressDivider} />
             <View style={styles.progressItem}>
               <Text style={[styles.progressValue, themedStyles.text]}>
                 {achievementProgress.earnedPoints}
               </Text>
-              <Text style={[styles.progressLabel, themedStyles.secondaryText]}>Points Earned</Text>
+              <Text style={[styles.progressLabel, themedStyles.secondaryText]}>{STATISTICS_STRINGS.pointsEarned}</Text>
             </View>
           </View>
           <View style={styles.progressBarContainer}>
@@ -275,7 +275,7 @@ export default function Statistics() {
       )}
 
       {/* Achievement Categories - using memoized grouped achievements */}
-      <Text style={[styles.sectionTitle, themedStyles.text]}>Game Achievements</Text>
+      <Text style={[styles.sectionTitle, themedStyles.text]}>{STATISTICS_STRINGS.gameAchievements}</Text>
       <View style={styles.achievementsGrid}>
         {achievementsByCategory.game.map((achievement) => (
           <AchievementCard
@@ -286,7 +286,7 @@ export default function Statistics() {
         ))}
       </View>
 
-      <Text style={[styles.sectionTitle, themedStyles.text]}>Streak Achievements</Text>
+      <Text style={[styles.sectionTitle, themedStyles.text]}>{STATISTICS_STRINGS.streakAchievements}</Text>
       <View style={styles.achievementsGrid}>
         {achievementsByCategory.streak.map((achievement) => (
           <AchievementCard
@@ -297,7 +297,7 @@ export default function Statistics() {
         ))}
       </View>
 
-      <Text style={[styles.sectionTitle, themedStyles.text]}>Skill Achievements</Text>
+      <Text style={[styles.sectionTitle, themedStyles.text]}>{STATISTICS_STRINGS.skillAchievements}</Text>
       <View style={styles.achievementsGrid}>
         {achievementsByCategory.skill.map((achievement) => (
           <AchievementCard
@@ -308,7 +308,7 @@ export default function Statistics() {
         ))}
       </View>
 
-      <Text style={[styles.sectionTitle, themedStyles.text]}>Daily Challenge</Text>
+      <Text style={[styles.sectionTitle, themedStyles.text]}>{STATISTICS_STRINGS.dailyChallenge}</Text>
       <View style={styles.achievementsGrid}>
         {achievementsByCategory.daily.map((achievement) => (
           <AchievementCard
@@ -326,7 +326,7 @@ export default function Statistics() {
       style={[styles.container, themedStyles.container]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.title, themedStyles.text]}>Statistics</Text>
+      <Text style={[styles.title, themedStyles.text]}>{STATISTICS_STRINGS.title}</Text>
 
       {/* Tab Switcher */}
       <View
@@ -359,7 +359,7 @@ export default function Statistics() {
               activeTab === 'stats' ? styles.activeTabText : themedStyles.secondaryText,
             ]}
           >
-            {STATISTICS_STRINGS.stats}
+            {STATISTICS_STRINGS.tabs.stats}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -379,7 +379,7 @@ export default function Statistics() {
               activeTab === 'achievements' ? styles.activeTabText : themedStyles.secondaryText,
             ]}
           >
-            {STATISTICS_STRINGS.trophies}
+            {STATISTICS_STRINGS.tabs.trophies}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -399,7 +399,7 @@ export default function Statistics() {
               activeTab === 'history' ? styles.activeTabText : themedStyles.secondaryText,
             ]}
           >
-            {STATISTICS_STRINGS.history}
+            {STATISTICS_STRINGS.tabs.history}
           </Text>
         </TouchableOpacity>
       </View>
@@ -421,7 +421,6 @@ interface StatBoxProps {
 }
 
 function StatBox({ value, label, theme }: StatBoxProps) {
-  if (value === '' && label === '') return <View style={styles.statBox} />;
   return (
     <View style={styles.statBox}>
       <Text style={[styles.statValue, theme.text]}>{value}</Text>
@@ -588,7 +587,7 @@ function HistoryCard({ entry, theme }: HistoryCardProps) {
           <Ionicons
             name={entry.won ? 'checkmark-circle' : 'close-circle'}
             size={18}
-            color={entry.won ? colors.correct : '#FF453A'}
+            color={entry.won ? colors.correct : colors.error}
           />
           <Text style={[styles.historyWord, theme.text]}>
             {entry.solution.toUpperCase()}
