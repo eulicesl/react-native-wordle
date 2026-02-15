@@ -69,10 +69,26 @@ export const SETTINGS = {
 
 // Statistics screen
 export const STATISTICS = {
+  title: 'Statistics',
+  played: 'Played',
+  winPercent: 'Win %',
+  currentStreak: 'Current Streak',
+  maxStreak: 'Max Streak',
   avgGuesses: 'Avg. Guesses',
-  stats: 'Stats',
-  trophies: 'Trophies',
-  history: 'History',
+  guessDistribution: 'Guess Distribution',
+  nextWordVibe: 'Next WordVibe',
+  unlocked: 'Unlocked',
+  pointsEarned: 'Points Earned',
+  gameAchievements: 'Game Achievements',
+  streakAchievements: 'Streak Achievements',
+  skillAchievements: 'Skill Achievements',
+  dailyChallenge: 'Daily Challenge',
+  noGamesYet: 'No games played yet',
+  tabs: {
+    stats: 'Stats',
+    trophies: 'Trophies',
+    history: 'History',
+  },
 } as const;
 
 // Achievements
@@ -88,14 +104,19 @@ export const GAME_MODES = {
   speed: 'Speed',
 } as const;
 
+// Game errors
+export const GAME_ERRORS = {
+  notInWordList: 'Not in word list',
+  noMoreHints: 'No more hints available',
+} as const;
+
 // Hints
 export const HINTS = {
   useHint: 'Use hint',
   hint: 'Hint',
   hintsRemaining: 'hints remaining',
   wordContains: (letter: string) => `The word contains "${letter}"`,
-  noMoreHints: 'No more hints available',
-};
+} as const;
 
 // Share card
 export const SHARE_CARD = {
@@ -103,8 +124,3 @@ export const SHARE_CARD = {
   dailyChallenge: 'Daily Challenge',
 } as const;
 
-// Timer
-export const TIMER_COLORS = {
-  critical: '#FF453A',
-  warning: '#FF9500',
-} as const;

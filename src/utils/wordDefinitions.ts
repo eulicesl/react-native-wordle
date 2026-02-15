@@ -1,7 +1,7 @@
 import { getStoreData, setStoreData } from './localStorageFuncs';
 
-const CACHE_KEY = 'wordvibe_word_definitions';
-const MAX_CACHE_ENTRIES = 100;
+const CACHE_KEY = 'wordle_word_definitions';
+const MAX_CACHE_ENTRIES = 200;
 const API_URL = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
 
 export interface WordDefinition {
@@ -31,18 +31,17 @@ async function getCachedDefinitions(): Promise<CachedDefinitions> {
 async function setCachedDefinition(word: string, definition: WordDefinition): Promise<void> {
   try {
     const cache = await getCachedDefinitions();
-    cache[word] = definition;
 
-    // Evict oldest entries by insertion order if cache exceeds limit.
-    // Not a true LRU (no access-time tracking), but sufficient here since
-    // definitions are fetched once per game end and rarely re-accessed.
+    // Evict oldest entries before adding to keep cache within limit
     const keys = Object.keys(cache);
-    if (keys.length > MAX_CACHE_ENTRIES) {
-      const toRemove = keys.slice(0, keys.length - MAX_CACHE_ENTRIES);
+    if (keys.length >= MAX_CACHE_ENTRIES) {
+      const toRemove = keys.slice(0, keys.length - MAX_CACHE_ENTRIES + 1);
       for (const key of toRemove) {
         delete cache[key];
       }
     }
+
+    cache[word] = definition;
 
     await setStoreData(CACHE_KEY, JSON.stringify(cache));
   } catch {

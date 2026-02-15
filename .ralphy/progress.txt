@@ -1,0 +1,8 @@
+# Ralphy Progress Log - WordVibe
+
+## Project: WordVibe (React Native Wordle)
+## Started: 2026-02-14
+## Goal: Apple Design Award candidacy through premium polish
+
+---
+
