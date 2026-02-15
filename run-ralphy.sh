@@ -91,7 +91,7 @@ run_tests() {
     cd "$SCRIPT_DIR"
     npm test 2>&1 || {
         echo -e "${RED}Tests failed! Fix before proceeding to next phase.${NC}"
-        return 1
+        exit 1
     }
     echo -e "${GREEN}Tests passed!${NC}"
 }
@@ -101,7 +101,7 @@ run_lint() {
     cd "$SCRIPT_DIR"
     npm run lint 2>&1 || {
         echo -e "${RED}Lint failed! Fix before proceeding to next phase.${NC}"
-        return 1
+        exit 1
     }
     echo -e "${GREEN}Lint passed!${NC}"
 }
@@ -162,6 +162,7 @@ case $PHASE in
         ;;
     status)
         echo -e "\n${BLUE}Phase Status:${NC}\n"
+        shopt -s nullglob
         for prd in "$PRD_DIR"/*.md; do
             name=$(basename "$prd" .md)
             remaining=$(grep -c '^\- \[ \]' "$prd" 2>/dev/null || echo "0")
@@ -175,6 +176,7 @@ case $PHASE in
                 echo -e "  ${RED}○${NC} $name: $total tasks pending"
             fi
         done
+        shopt -u nullglob
         echo ""
         ;;
     help|*)

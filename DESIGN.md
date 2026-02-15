@@ -141,10 +141,10 @@ Gray 300:   #B0BEC5   (disabled text, light mode)
 Gray 400:   #78909C   (secondary text, light mode)
 Gray 500:   #546E7A   (key default)
 Gray 600:   #455A64   (absent tile)
-Gray 700:   #353560   (surface 3, dark mode)
-Gray 800:   #252542   (surface 2, dark mode)
-Gray 900:   #1A1A2E   (surface 1, dark mode)
-Gray 950:   #0D0D1A   (near-black surface)
+Gray 700:   #353560   (tileFilled, keyDefault — dark mode)
+Gray 800:   #252542   (surface3 — dark mode)
+Gray 900:   #1A1A2E   (surface2 — dark mode)
+Gray 950:   #0D0D1A   (surface1 — dark mode)
 Black:      #000000   (true black, OLED background)
 ```
 
@@ -455,7 +455,7 @@ States:
 └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘
  Border only   Border +      Purple bg    Pink bg       Slate bg
  theme.tile    letter,       white text   white text    white text
- Empty         theme.tile    bold border  bold border   no border
+ Empty         theme.tile    flush border flush border  flush border
                Filled
 ```
 
@@ -628,7 +628,7 @@ Row 3: ENTER  Z  X  C  V  B  N  M  ⌫      (7 keys + 2 wide)
 - **Thumb:** White circle, 27px diameter, centered vertically
 - **Animation:** Thumb slides with spring (damping: 20, stiffness: 300). Track color fades 200ms.
 - **Haptic:** `impactLight` on toggle
-- **Accessibility:** `role="switch"`, `accessibilityState={{ checked: value }}`
+- **Accessibility:** `accessibilityRole="switch"`, `accessibilityState={{ checked: value }}`
 
 ### 7.6 Toast Component
 
