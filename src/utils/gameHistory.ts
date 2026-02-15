@@ -1,7 +1,7 @@
 import { matchStatus } from '../types';
 import { getStoreData, setStoreData } from './localStorageFuncs';
 
-const HISTORY_KEY = 'wordle_game_history';
+const HISTORY_KEY = 'wordvibe_game_history';
 const MAX_ENTRIES = 365;
 
 export interface GameHistoryEntry {
