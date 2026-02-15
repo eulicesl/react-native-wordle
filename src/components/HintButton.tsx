@@ -13,7 +13,7 @@ interface HintButtonProps {
 
 const HINT_COLORS = {
   active: TIMER_COLORS.warning,
-  disabled: '#606060',
+  disabled: '#767577',
 };
 
 export default function HintButton({ hintsUsed, maxHints, disabled, onPress }: HintButtonProps) {

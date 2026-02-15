@@ -70,6 +70,9 @@ export const SETTINGS = {
 // Statistics screen
 export const STATISTICS = {
   avgGuesses: 'Avg. Guesses',
+  stats: 'Stats',
+  trophies: 'Trophies',
+  history: 'History',
 } as const;
 
 // Achievements

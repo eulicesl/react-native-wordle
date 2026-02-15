@@ -25,6 +25,12 @@ import {
 // Mock AsyncStorage (already mocked in jest.setup.js, but we need access for assertions)
 const mockAsyncStorage = require('@react-native-async-storage/async-storage');
 
+// Mock expo-constants
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: { version: '2.0.0' } },
+}));
+
 // Mock react-native Platform
 jest.mock('react-native', () => ({
   Platform: {

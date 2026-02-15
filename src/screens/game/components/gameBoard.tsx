@@ -113,7 +113,7 @@ const GameBoard = ({
   }, [gameEnded, gameWon, fadeAnim, scaleAnim]);
 
   const guessCount = guesses.filter((g) => g.isComplete).length;
-  const winMessage = gameWon ? WIN_MESSAGES[Math.min(guessCount - 1, 5)] : '';
+  const winMessage = gameWon ? WIN_MESSAGES[Math.max(0, Math.min(guessCount - 1, 5))] : '';
 
   const handleDismissAndReset = () => {
     setShowModal(false);
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(106, 170, 100, 0.15)',
+    backgroundColor: `${colors.correct}26`,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -601,7 +601,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   shareButton: {
-    backgroundColor: '#6aaa64',
+    backgroundColor: colors.correct,
   },
   shareImageButton: {
     backgroundColor: '#007AFF',

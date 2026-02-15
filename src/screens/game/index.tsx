@@ -88,6 +88,7 @@ export default function Game() {
   // Refs for timeout cleanup on unmount
   const winTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const usedKeysRef = useRef(usedKeys);
   const [pendingAchievement, setPendingAchievement] = useState<{
     title: string;
@@ -106,6 +107,7 @@ export default function Game() {
     return () => {
       if (winTimeoutRef.current) clearTimeout(winTimeoutRef.current);
       if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
+      if (errorMessageTimeoutRef.current) clearTimeout(errorMessageTimeoutRef.current);
     };
   }, []);
 
@@ -303,7 +305,7 @@ export default function Game() {
         hardMode,
       });
     }
-  }, [guesses, gameWon, gameEnded, dispatch, gameMode, hardMode]);
+  }, [guesses, gameWon, gameEnded, dispatch, gameMode, hardMode, solution]);
 
   useEffect(() => {
     checkGameEnd();
@@ -545,10 +547,10 @@ export default function Game() {
       const hintLetter = unusedSolutionLetters[Math.floor(Math.random() * unusedSolutionLetters.length)];
       if (hintLetter) {
         setErrorMessage(`The word contains "${hintLetter.toUpperCase()}"`);
-        setTimeout(() => setErrorMessage(null), 3000);
+        errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
       } else {
         setErrorMessage('No more hints available');
-        setTimeout(() => setErrorMessage(null), 2000);
+        errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 2000);
       }
 
       dispatch(setHintsUsed(2));

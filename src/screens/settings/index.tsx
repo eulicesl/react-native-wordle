@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -23,7 +23,6 @@ import {
   setHighContrastMode,
   setHapticFeedback,
   setSoundEnabled,
-  setSettings,
 } from '../../store/slices/settingsSlice';
 import { resetStatistics } from '../../store/slices/statisticsSlice';
 import { setLightTheme, setDarkTheme } from '../../store/slices/themeSlice';
@@ -32,7 +31,6 @@ import {
   saveSettings,
   saveTheme,
   clearStatistics,
-  loadSettings,
 } from '../../utils/localStorageFuncs';
 import { toggleSounds } from '../../utils/sounds';
 import { SETTINGS as SETTINGS_STRINGS } from '../../utils/strings';
@@ -47,15 +45,8 @@ export default function Settings() {
     (state) => state.settings
   );
 
-  useEffect(() => {
-    const loadSavedSettings = async () => {
-      const saved = await loadSettings();
-      if (saved) {
-        dispatch(setSettings(saved));
-      }
-    };
-    loadSavedSettings();
-  }, [dispatch]);
+  // Settings are loaded once in main/index.tsx at app startup;
+  // no duplicate load needed here.
 
   const themedStyles = {
     container: {
