@@ -12,6 +12,7 @@
  * and local persistence for debugging.
  */
 
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 // React Native global error handler type
@@ -61,9 +62,9 @@ interface UserContext {
 }
 
 // Configuration
-const ERROR_LOG_KEY = 'wordle_error_log';
+const ERROR_LOG_KEY = 'wordvibe_error_log';
 const MAX_LOG_ENTRIES = 100;
-const APP_VERSION: string = (() => { try { return require('expo-constants').default?.expoConfig?.version ?? 'unknown'; } catch { return 'unknown'; } })();
+const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
 // Session tracking
 let sessionId = generateSessionId();

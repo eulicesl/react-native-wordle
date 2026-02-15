@@ -51,7 +51,7 @@ import { calculateMatches } from '../../utils/gameLogic';
 import { saveGameToHistory } from '../../utils/gameHistory';
 import { maybeRequestReview } from '../../utils/ratingPrompt';
 import { shareResults } from '../../utils/shareResults';
-import { PRE_GAME, GAME_MODES } from '../../utils/strings';
+import { PRE_GAME, GAME_MODES, HINTS } from '../../utils/strings';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
@@ -88,6 +88,7 @@ export default function Game() {
   // Refs for timeout cleanup on unmount
   const winTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const usedKeysRef = useRef(usedKeys);
   const [pendingAchievement, setPendingAchievement] = useState<{
     title: string;
@@ -106,6 +107,7 @@ export default function Game() {
     return () => {
       if (winTimeoutRef.current) clearTimeout(winTimeoutRef.current);
       if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
+      if (errorMessageTimeoutRef.current) clearTimeout(errorMessageTimeoutRef.current);
     };
   }, []);
 
@@ -303,7 +305,7 @@ export default function Game() {
         hardMode,
       });
     }
-  }, [guesses, gameWon, gameEnded, dispatch, gameMode, hardMode]);
+  }, [guesses, gameWon, gameEnded, dispatch, gameMode, hardMode, solution]);
 
   useEffect(() => {
     checkGameEnd();
@@ -543,12 +545,15 @@ export default function Game() {
       );
 
       const hintLetter = unusedSolutionLetters[Math.floor(Math.random() * unusedSolutionLetters.length)];
+      // Clear any existing error message timeout to prevent race conditions on rapid clicks
+      if (errorMessageTimeoutRef.current) clearTimeout(errorMessageTimeoutRef.current);
+
       if (hintLetter) {
-        setErrorMessage(`The word contains "${hintLetter.toUpperCase()}"`);
-        setTimeout(() => setErrorMessage(null), 3000);
+        setErrorMessage(HINTS.wordContains(hintLetter.toUpperCase()));
+        errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
       } else {
-        setErrorMessage('No more hints available');
-        setTimeout(() => setErrorMessage(null), 2000);
+        setErrorMessage(HINTS.noMoreHints);
+        errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 2000);
       }
 
       dispatch(setHintsUsed(2));

@@ -196,7 +196,7 @@ export default function Statistics() {
         <View style={styles.statsRow}>
           <StatBox value={currentStreak} label="Current Streak" theme={themedStyles} />
           <StatBox value={maxStreak} label="Max Streak" theme={themedStyles} />
-          <StatBox value="" label="" theme={themedStyles} />
+          <View style={styles.statBox} />
         </View>
       </View>
 
@@ -359,7 +359,7 @@ export default function Statistics() {
               activeTab === 'stats' ? styles.activeTabText : themedStyles.secondaryText,
             ]}
           >
-            Stats
+            {STATISTICS_STRINGS.stats}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -379,7 +379,7 @@ export default function Statistics() {
               activeTab === 'achievements' ? styles.activeTabText : themedStyles.secondaryText,
             ]}
           >
-            Trophies
+            {STATISTICS_STRINGS.trophies}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -399,7 +399,7 @@ export default function Statistics() {
               activeTab === 'history' ? styles.activeTabText : themedStyles.secondaryText,
             ]}
           >
-            History
+            {STATISTICS_STRINGS.history}
           </Text>
         </TouchableOpacity>
       </View>
