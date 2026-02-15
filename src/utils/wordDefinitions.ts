@@ -33,7 +33,9 @@ async function setCachedDefinition(word: string, definition: WordDefinition): Pr
     const cache = await getCachedDefinitions();
     cache[word] = definition;
 
-    // Evict oldest entries if cache exceeds limit
+    // Evict oldest entries by insertion order if cache exceeds limit.
+    // Not a true LRU (no access-time tracking), but sufficient here since
+    // definitions are fetched once per game end and rarely re-accessed.
     const keys = Object.keys(cache);
     if (keys.length > MAX_CACHE_ENTRIES) {
       const toRemove = keys.slice(0, keys.length - MAX_CACHE_ENTRIES);

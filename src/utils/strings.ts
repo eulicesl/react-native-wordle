@@ -93,7 +93,9 @@ export const HINTS = {
   useHint: 'Use hint',
   hint: 'Hint',
   hintsRemaining: 'hints remaining',
-} as const;
+  wordContains: (letter: string) => `The word contains "${letter}"`,
+  noMoreHints: 'No more hints available',
+};
 
 // Share card
 export const SHARE_CARD = {

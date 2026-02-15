@@ -51,7 +51,7 @@ import { calculateMatches } from '../../utils/gameLogic';
 import { saveGameToHistory } from '../../utils/gameHistory';
 import { maybeRequestReview } from '../../utils/ratingPrompt';
 import { shareResults } from '../../utils/shareResults';
-import { PRE_GAME, GAME_MODES } from '../../utils/strings';
+import { PRE_GAME, GAME_MODES, HINTS } from '../../utils/strings';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
@@ -545,11 +545,14 @@ export default function Game() {
       );
 
       const hintLetter = unusedSolutionLetters[Math.floor(Math.random() * unusedSolutionLetters.length)];
+      // Clear any existing error message timeout to prevent race conditions on rapid clicks
+      if (errorMessageTimeoutRef.current) clearTimeout(errorMessageTimeoutRef.current);
+
       if (hintLetter) {
-        setErrorMessage(`The word contains "${hintLetter.toUpperCase()}"`);
+        setErrorMessage(HINTS.wordContains(hintLetter.toUpperCase()));
         errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
       } else {
-        setErrorMessage('No more hints available');
+        setErrorMessage(HINTS.noMoreHints);
         errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 2000);
       }
 
