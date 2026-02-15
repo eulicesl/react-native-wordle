@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -7,9 +7,15 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Animated,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withDelay,
+} from 'react-native-reanimated';
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
 import {
@@ -23,8 +29,6 @@ import { formatTimeUntilNextWord } from '../../utils/dailyWord';
 import { STATISTICS as STATISTICS_STRINGS } from '../../utils/strings';
 import { loadGameHistory, GameHistoryEntry } from '../../utils/gameHistory';
 import { loadStatistics } from '../../utils/localStorageFuncs';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Icon mapping for achievements.
 // If you add new achievements, either add an entry here or they will fall back to the default icon (see getAchievementIcon).
@@ -88,7 +92,7 @@ export default function Statistics() {
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
 
   // Animation for tab indicator
-  const [tabIndicatorAnim] = useState(new Animated.Value(0));
+  const tabIndicatorAnim = useSharedValue(0);
 
   const loadAchievements = useCallback(async () => {
     const allAchievements = await getAllAchievements();
@@ -137,14 +141,13 @@ export default function Statistics() {
   // Animate tab indicator
   useEffect(() => {
     const tabIndex = activeTab === 'stats' ? 0 : activeTab === 'achievements' ? 1 : 2;
-    Animated.spring(tabIndicatorAnim, {
-      toValue: tabIndex,
-      useNativeDriver: true,
-      tension: 68,
-      friction: 10,
-    }).start();
+    tabIndicatorAnim.value = withSpring(tabIndex, {
+      damping: 10,
+      stiffness: 68,
+    });
   }, [activeTab, tabIndicatorAnim]);
 
+  const { width: screenWidth } = useWindowDimensions();
   const { gamesPlayed, gamesWon, currentStreak, maxStreak, guessDistribution } = statistics;
 
   const winPercentage = gamesPlayed > 0 ? Math.round((gamesWon / gamesPlayed) * 100) : 0;
@@ -177,12 +180,11 @@ export default function Statistics() {
   const tabIndicatorWidth =
     tabContainerWidth > 0
       ? (tabContainerWidth - TAB_CONTAINER_PADDING * 2) / TAB_COUNT
-      : (SCREEN_WIDTH - SCREEN_HORIZONTAL_PADDING * 2 - TAB_CONTAINER_PADDING * 2) / TAB_COUNT;
+      : (screenWidth - SCREEN_HORIZONTAL_PADDING * 2 - TAB_CONTAINER_PADDING * 2) / TAB_COUNT;
 
-  const tabIndicatorTranslate = tabIndicatorAnim.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [0, tabIndicatorWidth, tabIndicatorWidth * 2],
-  });
+  const tabIndicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: tabIndicatorAnim.value * tabIndicatorWidth }],
+  }));
 
   const renderStats = () => (
     <>
@@ -336,10 +338,8 @@ export default function Statistics() {
         <Animated.View
           style={[
             styles.tabIndicator,
-            {
-              transform: [{ translateX: tabIndicatorTranslate }],
-              width: tabIndicatorWidth,
-            },
+            { width: tabIndicatorWidth },
+            tabIndicatorStyle,
           ]}
         />
         <TouchableOpacity
@@ -442,22 +442,19 @@ interface DistributionBarProps {
 function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps) {
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
   const barWidth = Math.max(percentage, count > 0 ? 15 : 8);
-  const widthAnim = useRef(new Animated.Value(0)).current;
+  const widthAnim = useSharedValue(0);
 
   useEffect(() => {
-    widthAnim.setValue(0);
-    Animated.timing(widthAnim, {
-      toValue: barWidth,
-      duration: 500,
-      delay: (guess - 1) * 80,
-      useNativeDriver: false,
-    }).start();
+    widthAnim.value = 0;
+    widthAnim.value = withDelay(
+      (guess - 1) * 80,
+      withTiming(barWidth, { duration: 500 }),
+    );
   }, [barWidth, guess, widthAnim]);
 
-  const animatedWidth = widthAnim.interpolate({
-    inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
-  });
+  const animatedBarStyle = useAnimatedStyle(() => ({
+    width: `${widthAnim.value}%`,
+  }));
 
   return (
     <View style={styles.distributionRow}>
@@ -467,9 +464,9 @@ function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps
           style={[
             styles.bar,
             {
-              width: animatedWidth,
               backgroundColor: count > 0 ? colors.correct : theme.card.backgroundColor,
             },
+            animatedBarStyle,
           ]}
         >
           <Text style={[styles.barCount, count === 0 && theme.text]}>{count}</Text>
