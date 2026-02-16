@@ -36,6 +36,7 @@ import {
 import { playHaptic } from '../../utils/haptics';
 import { toggleSounds } from '../../utils/sounds';
 import { SETTINGS as SETTINGS_STRINGS } from '../../utils/strings';
+import { typography } from '../../utils/typography';
 import Onboarding, { resetOnboarding } from '../../components/Onboarding';
 
 export default function Settings() {
@@ -153,7 +154,7 @@ export default function Settings() {
       <Text style={[styles.title, themedStyles.text]}>{SETTINGS_STRINGS.title}</Text>
 
       {/* Language Section */}
-      <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
+      <Text style={[typography.bodySmall, styles.sectionTitle, themedStyles.secondaryText]}>
         {SETTINGS_STRINGS.language}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
@@ -196,7 +197,7 @@ export default function Settings() {
       </View>
 
       {/* Appearance Section */}
-      <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
+      <Text style={[typography.bodySmall, styles.sectionTitle, themedStyles.secondaryText]}>
         {SETTINGS_STRINGS.appearance}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
@@ -220,7 +221,7 @@ export default function Settings() {
       </View>
 
       {/* Gameplay Section */}
-      <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
+      <Text style={[typography.bodySmall, styles.sectionTitle, themedStyles.secondaryText]}>
         {SETTINGS_STRINGS.gameplay}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
@@ -253,7 +254,7 @@ export default function Settings() {
       </View>
 
       {/* Data Section */}
-      <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
+      <Text style={[typography.bodySmall, styles.sectionTitle, themedStyles.secondaryText]}>
         {SETTINGS_STRINGS.data}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
@@ -357,9 +358,8 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   sectionTitle: {
-    fontSize: 12,
-    fontFamily: 'Montserrat_700Bold',
     textTransform: 'uppercase',
+    letterSpacing: 1.2,
     marginBottom: 10,
     marginTop: 10,
     paddingHorizontal: 4,

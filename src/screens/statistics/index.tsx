@@ -27,6 +27,7 @@ import { setStatistics } from '../../store/slices/statisticsSlice';
 import { colors } from '../../utils/constants';
 import { formatTimeUntilNextWord } from '../../utils/dailyWord';
 import { STATISTICS as STATISTICS_STRINGS } from '../../utils/strings';
+import { typography } from '../../utils/typography';
 import { loadGameHistory, GameHistoryEntry } from '../../utils/gameHistory';
 import { loadStatistics } from '../../utils/localStorageFuncs';
 
@@ -328,7 +329,7 @@ export default function Statistics() {
       style={[styles.container, themedStyles.container]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.title, themedStyles.text]}>{STATISTICS_STRINGS.title}</Text>
+      <Text style={[styles.title, typography.heading1, themedStyles.text]}>{STATISTICS_STRINGS.title}</Text>
 
       {/* Tab Switcher */}
       <View
