@@ -29,6 +29,7 @@ import {
 } from '../../store/slices/statisticsSlice';
 import { guess, matchStatus } from '../../types';
 import { APP_TITLE, colors, initialGuesses } from '../../utils/constants';
+import { spacing, space3, space5, space10 } from '../../utils/spacing';
 import {
   getTodaysDailyWord,
   getRandomWord,
@@ -723,18 +724,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: space5,
   },
   title: {
     fontSize: 48,
     fontFamily: 'Montserrat_800ExtraBold',
     letterSpacing: 8,
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'Montserrat_600SemiBold',
-    marginBottom: 40,
+    marginBottom: space10,
     textAlign: 'center',
   },
   modeContainer: {
@@ -742,9 +743,9 @@ const styles = StyleSheet.create({
     maxWidth: 300,
   },
   modeButton: {
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 16,
+    padding: space5,
+    borderRadius: space3,
+    marginBottom: spacing.md,
     alignItems: 'center',
   },
   dailyButton: {
@@ -764,7 +765,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontFamily: 'Montserrat_700Bold',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   modeButtonSubtext: {
     color: 'rgba(255,255,255,0.8)',
@@ -774,7 +775,7 @@ const styles = StyleSheet.create({
   miniGrid: {
     flexDirection: 'row',
     gap: 6,
-    marginBottom: 20,
+    marginBottom: space5,
   },
   miniTile: {
     width: 28,
@@ -784,11 +785,11 @@ const styles = StyleSheet.create({
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    paddingHorizontal: 20,
+    marginTop: space5,
+    paddingHorizontal: space5,
     paddingVertical: 10,
-    borderRadius: 20,
-    gap: 8,
+    borderRadius: space5,
+    gap: spacing.sm,
   },
   streakValue: {
     fontSize: 20,
@@ -799,10 +800,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat_600SemiBold',
   },
   hardModeBadge: {
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    marginTop: space3,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: space5,
   },
   hardModeText: {
     fontSize: 12,
@@ -810,14 +811,14 @@ const styles = StyleSheet.create({
   },
   timerContainer: {
     position: 'absolute',
-    top: 12,
-    right: 16,
+    top: space3,
+    right: spacing.md,
     zIndex: 10,
   },
   hintContainer: {
     position: 'absolute',
-    top: 12,
-    left: 16,
+    top: space3,
+    left: spacing.md,
     zIndex: 10,
   },
 });

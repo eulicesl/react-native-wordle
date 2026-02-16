@@ -25,6 +25,7 @@ import {
 } from '../../services/gameCenter';
 import { setStatistics } from '../../store/slices/statisticsSlice';
 import { colors } from '../../utils/constants';
+import { spacing, space3, space5, space10 } from '../../utils/spacing';
 import { formatTimeUntilNextWord } from '../../utils/dailyWord';
 import { STATISTICS as STATISTICS_STRINGS } from '../../utils/strings';
 import { typography } from '../../utils/typography';
@@ -630,21 +631,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    padding: space5,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: space10,
   },
   title: {
     fontSize: 24,
     fontFamily: 'Montserrat_700Bold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: space5,
   },
   tabContainer: {
     flexDirection: 'row',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 24,
+    borderRadius: space3,
+    padding: spacing.xs,
+    marginBottom: spacing.lg,
     position: 'relative',
   },
   tabIndicator: {
@@ -672,8 +673,8 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   statsGrid: {
-    marginBottom: 24,
-    gap: 12,
+    marginBottom: spacing.lg,
+    gap: space3,
   },
   statsRow: {
     flexDirection: 'row',
@@ -697,7 +698,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Montserrat_700Bold',
     textAlign: 'left',
-    marginBottom: 12,
+    marginBottom: space3,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
@@ -709,6 +710,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
   },
+
   guessNumber: {
     width: 20,
     fontSize: 14,
@@ -717,14 +719,14 @@ const styles = StyleSheet.create({
   },
   barContainer: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   bar: {
-    height: 24,
-    borderRadius: 4,
+    height: spacing.lg,
+    borderRadius: spacing.xs,
     justifyContent: 'center',
     alignItems: 'flex-end',
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     minWidth: 30,
   },
   barCount: {
@@ -733,8 +735,8 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   countdownCard: {
-    padding: 20,
-    borderRadius: 12,
+    padding: space5,
+    borderRadius: space3,
     alignItems: 'center',
     marginTop: 10,
   },
@@ -742,7 +744,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Montserrat_600SemiBold',
     textTransform: 'uppercase',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   countdown: {
     fontSize: 36,
@@ -750,14 +752,14 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   progressCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
+    padding: spacing.md,
+    borderRadius: space3,
+    marginBottom: spacing.lg,
   },
   progressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: space3,
   },
   progressItem: {
     flex: 1,
@@ -789,12 +791,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   achievementsGrid: {
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
   achievementCard: {
     flexDirection: 'row',
-    padding: 12,
-    borderRadius: 12,
+    padding: space3,
+    borderRadius: space3,
     marginBottom: 10,
     alignItems: 'center',
   },
@@ -802,13 +804,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   achievementIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: spacing.xxl,
+    height: spacing.xxl,
+    borderRadius: spacing.lg,
     backgroundColor: 'rgba(128, 128, 128, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: space3,
   },
   achievementIconUnlocked: {
     backgroundColor: colors.correct,
@@ -849,21 +851,21 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat_500Medium',
   },
   unlockedBadge: {
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   // History styles
   emptyHistory: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
-    gap: 12,
+    gap: space3,
   },
   emptyHistoryText: {
     fontSize: 16,
     fontFamily: 'Montserrat_600SemiBold',
   },
   historyCard: {
-    borderRadius: 12,
+    borderRadius: space3,
     padding: 14,
     marginBottom: 10,
   },

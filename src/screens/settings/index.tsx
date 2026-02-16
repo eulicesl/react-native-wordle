@@ -33,6 +33,7 @@ import {
   saveTheme,
   clearStatistics,
 } from '../../utils/localStorageFuncs';
+import { spacing, space3, space5, space10 } from '../../utils/spacing';
 import { playHaptic } from '../../utils/haptics';
 import { toggleSounds } from '../../utils/sounds';
 import { SETTINGS as SETTINGS_STRINGS } from '../../utils/strings';
@@ -347,9 +348,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    padding: space5,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: space10,
   },
   title: {
     fontSize: 24,
@@ -362,18 +363,18 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     marginBottom: 10,
     marginTop: 10,
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
   },
   card: {
-    borderRadius: 12,
-    padding: 4,
+    borderRadius: space3,
+    padding: spacing.xs,
     marginBottom: 10,
   },
   languageButton: {
-    padding: 16,
-    borderRadius: 8,
+    padding: spacing.md,
+    borderRadius: spacing.sm,
     alignItems: 'center',
-    marginVertical: 4,
+    marginVertical: spacing.xs,
   },
   languageButtonActive: {
     backgroundColor: '#7C4DFF',
@@ -389,11 +390,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
+    padding: space3,
   },
   settingInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   settingTitleRow: {
     flexDirection: 'row',
@@ -409,35 +410,35 @@ const styles = StyleSheet.create({
   settingDescription: {
     fontSize: 12,
     fontFamily: 'Montserrat_600SemiBold',
-    marginTop: 4,
+    marginTop: spacing.xs,
     marginLeft: 30,
   },
   divider: {
     height: 1,
-    marginHorizontal: 12,
+    marginHorizontal: space3,
   },
   dataButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: spacing.md,
   },
   dataButtonText: {
     fontSize: 16,
     fontFamily: 'Montserrat_600SemiBold',
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   dangerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: spacing.md,
   },
   dangerButtonText: {
     color: colors.error,
     fontSize: 16,
     fontFamily: 'Montserrat_600SemiBold',
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   aboutSection: {
     marginTop: 30,
@@ -446,6 +447,6 @@ const styles = StyleSheet.create({
   aboutText: {
     fontSize: 12,
     fontFamily: 'Montserrat_600SemiBold',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
 });
