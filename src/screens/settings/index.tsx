@@ -33,6 +33,7 @@ import {
   saveTheme,
   clearStatistics,
 } from '../../utils/localStorageFuncs';
+import { playHaptic } from '../../utils/haptics';
 import { toggleSounds } from '../../utils/sounds';
 import { SETTINGS as SETTINGS_STRINGS } from '../../utils/strings';
 import Onboarding, { resetOnboarding } from '../../components/Onboarding';
@@ -78,6 +79,7 @@ export default function Settings() {
   };
 
   const handleThemeToggle = () => {
+    playHaptic('toggle');
     const newIsDark = !theme.dark;
     if (newIsDark) {
       dispatch(setDarkTheme());
@@ -88,6 +90,7 @@ export default function Settings() {
   };
 
   const handleHardModeToggle = (value: boolean) => {
+    playHaptic('toggle');
     if (value && gameStarted) {
       Alert.alert(
         SETTINGS_STRINGS.hardMode,
@@ -101,16 +104,19 @@ export default function Settings() {
   };
 
   const handleHighContrastToggle = (value: boolean) => {
+    playHaptic('toggle');
     dispatch(setHighContrastMode(value));
     saveSettings({ hardMode, highContrastMode: value, hapticFeedback, soundEnabled });
   };
 
   const handleHapticToggle = (value: boolean) => {
+    playHaptic('toggle');
     dispatch(setHapticFeedback(value));
     saveSettings({ hardMode, highContrastMode, hapticFeedback: value, soundEnabled });
   };
 
   const handleSoundToggle = (value: boolean) => {
+    playHaptic('toggle');
     dispatch(setSoundEnabled(value));
     toggleSounds(value);
     saveSettings({ hardMode, highContrastMode, hapticFeedback, soundEnabled: value });
