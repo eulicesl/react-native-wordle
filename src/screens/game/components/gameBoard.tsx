@@ -21,8 +21,7 @@ import VibeMeter from '../../../components/VibeMeter';
 import { useAppSelector } from '../../../hooks/storeHooks';
 import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
 import {
-  TILE_FLIP_STAGGER_MS,
-  TILES_PER_ROW,
+  ROW_FLIP_TOTAL_MS,
   WIN_MODAL_EXTRA_DELAY_MS,
   LOSS_MODAL_DELAY_MS,
 } from '../../../utils/animations';
@@ -98,7 +97,7 @@ const GameBoard = ({
   // Show modal after game ends with a delay for animations to complete
   useEffect(() => {
     if (gameEnded) {
-      const delay = gameWon ? TILE_FLIP_STAGGER_MS * TILES_PER_ROW + WIN_MODAL_EXTRA_DELAY_MS : LOSS_MODAL_DELAY_MS;
+      const delay = gameWon ? ROW_FLIP_TOTAL_MS + WIN_MODAL_EXTRA_DELAY_MS : LOSS_MODAL_DELAY_MS;
       const timer = setTimeout(() => {
         setShowModal(true);
         fadeAnim.value = withTiming(1, { duration: 300 });
