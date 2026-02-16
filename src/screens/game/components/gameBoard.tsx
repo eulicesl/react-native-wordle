@@ -17,9 +17,9 @@ import ViewShot from 'react-native-view-shot';
 import Keyboard from './keyboard';
 import LetterSquare from './letterSquare';
 import ShareCard from '../../../components/ShareCard';
+import SolutionReveal from '../../../components/SolutionReveal';
 import VibeMeter from '../../../components/VibeMeter';
 import { useAppSelector } from '../../../hooks/storeHooks';
-import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
 import {
   ROW_FLIP_TOTAL_MS,
   WIN_MODAL_EXTRA_DELAY_MS,
@@ -27,6 +27,7 @@ import {
 } from '../../../utils/animations';
 import { APP_TITLE, colors, SIZE } from '../../../utils/constants';
 import { captureAndShare } from '../../../utils/shareImage';
+import { playSound } from '../../../utils/sounds';
 import { WIN_MESSAGES, GAME_BOARD, GAME_MODES } from '../../../utils/strings';
 import { typography } from '../../../utils/typography';
 import { calculateVibeScore } from '../../../utils/vibeMeter';
@@ -61,6 +62,7 @@ const GameBoard = ({
 
   const [showModal, setShowModal] = useState(false);
   const [wordDef, setWordDef] = useState<WordDefinition | null>(null);
+  const [showLossDefinition, setShowLossDefinition] = useState(false);
   const shareCardRef = useRef<ViewShot>(null);
   const fadeAnim = useSharedValue(0);
   const scaleAnim = useSharedValue(0.85);
@@ -117,6 +119,7 @@ const GameBoard = ({
 
   const handleDismissAndReset = () => {
     setShowModal(false);
+    setShowLossDefinition(false);
     fadeAnim.value = 0;
     scaleAnim.value = 0.85;
     resetGame();
@@ -239,21 +242,26 @@ const GameBoard = ({
               </>
             ) : (
               <>
-                <View style={[styles.modalIconContainer, styles.modalIconLoss]}>
-                  <Ionicons name="close-circle" size={40} color={colors.error} />
-                </View>
-                <Text style={[styles.modalTitle, themedStyles.text]}>{GAME_BOARD.betterLuckNextTime}</Text>
                 <Text style={[styles.modalSolutionLabel, themedStyles.secondaryText]}>
                   {GAME_BOARD.theWordWas}
                 </Text>
-                <Text style={[styles.modalSolutionWord, themedStyles.text]}>
-                  {adjustTextDisplay(solution, gameLanguage)}
+                <SolutionReveal
+                  word={solution}
+                  letterColor={theme.colors.text}
+                  onRevealStart={() => playSound('lose')}
+                  onRevealComplete={() => setShowLossDefinition(true)}
+                />
+                <Text style={[styles.lossEncouragement, themedStyles.secondaryText]}>
+                  {GAME_BOARD.toughOne}
+                </Text>
+                <Text style={[styles.lossNextAction, themedStyles.secondaryText]}>
+                  {gameMode === 'daily' ? GAME_BOARD.tomorrowAwaits : GAME_BOARD.tryAnother}
                 </Text>
               </>
             )}
 
-            {/* Word Definition */}
-            {wordDef && (
+            {/* Word Definition — on loss, wait for typewriter reveal to complete */}
+            {wordDef && (gameWon || showLossDefinition) && (
               <View style={[styles.definitionContainer, { borderTopColor: theme.colors.tertiary }]}>
                 <View style={styles.definitionHeader}>
                   <Text style={[styles.definitionWord, themedStyles.text]}>
@@ -491,8 +499,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 16,
   },
-  modalIconLoss: {
-    backgroundColor: 'rgba(255, 69, 58, 0.15)',
+  lossEncouragement: {
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  lossNextAction: {
+    fontSize: 13,
+    fontFamily: 'Montserrat_600SemiBold',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 24,
@@ -512,13 +529,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  modalSolutionWord: {
-    fontSize: 28,
-    fontFamily: 'Montserrat_800ExtraBold',
-    textTransform: 'uppercase',
-    letterSpacing: 4,
-    marginBottom: 20,
   },
   definitionContainer: {
     width: '100%',
