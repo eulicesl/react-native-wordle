@@ -26,3 +26,16 @@ export const BOUNCE_POST_FLIP_GAP_MS = 200;
 
 /** Stagger between each tile's bounce in the winning row (ms) */
 export const BOUNCE_TILE_STAGGER_MS = 100;
+
+/** Spring config for tile entry "pop" when a letter is typed */
+export const TILE_ENTRY_SPRING = {
+  damping: 12,
+  stiffness: 350,
+  mass: 0.8,
+} as const;
+
+/** Target scale for tile entry pop */
+export const TILE_ENTRY_SCALE = 1.15;
+
+/** Duration the border stays highlighted during tile entry (ms) */
+export const TILE_ENTRY_BORDER_FLASH_MS = 150;
