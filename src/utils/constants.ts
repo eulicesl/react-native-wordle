@@ -11,7 +11,7 @@ export const colors = {
   absent: '#455A64',
   keyDefault: '#546E7A',
   white: '#ffffff',
-  bg: '#1A1A2E',
+  bg: '#000000',
   primary: '#7C4DFF',
   secondary: '#00BFA5',
   error: '#FF453A',
