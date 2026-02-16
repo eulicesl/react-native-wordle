@@ -52,7 +52,8 @@ import { calculateMatches } from '../../utils/gameLogic';
 import { saveGameToHistory } from '../../utils/gameHistory';
 import { maybeRequestReview } from '../../utils/ratingPrompt';
 import { shareResults } from '../../utils/shareResults';
-import { playSound, SoundType } from '../../utils/sounds';
+import { playSound } from '../../utils/sounds';
+import { getWinTier } from '../../utils/winTiers';
 import { PRE_GAME, GAME_MODES, GAME_ERRORS, HINTS } from '../../utils/strings';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
@@ -85,6 +86,7 @@ export default function Game() {
   const [dailyCompleted, setDailyCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiCount, setConfettiCount] = useState(60);
   const [gameStartTime, setGameStartTime] = useState<number | null>(null);
 
   // Refs for timeout cleanup on unmount
@@ -369,18 +371,21 @@ export default function Game() {
         });
         dispatch(setGuesses(updatedGuesses));
         winTimeoutRef.current = setTimeout(() => {
+          // Record win - statistics persistence is handled by the central useEffect
+          const guessCount = currentGuessIndex + 1;
+          const tier = getWinTier(guessCount);
+
+          setConfettiCount(tier.confettiCount);
           setShowConfetti(true);
           dispatch(setGameWon(true));
           dispatch(setGameEnded(true));
           handleFoundKeysOnKeyboard(updatedGuess);
 
-          // Record win - statistics persistence is handled by the central useEffect
-          const guessCount = currentGuessIndex + 1;
           const today = getTodayDateString();
           dispatch(recordGameWin({ guessCount, date: today, isDaily: gameMode === 'daily' }));
 
           // Play tier-based victory sound
-          playSound(`winTier${guessCount}` as SoundType);
+          playSound(tier.soundType);
 
           // Check achievements and show toast for new unlocks
           const timeTaken = gameStartTime ? Date.now() - gameStartTime : null;
@@ -707,7 +712,7 @@ export default function Game() {
       )}
       <ConfettiExplosion
         active={showConfetti}
-        particleCount={60}
+        particleCount={confettiCount}
         duration={2500}
         onComplete={() => setShowConfetti(false)}
       />

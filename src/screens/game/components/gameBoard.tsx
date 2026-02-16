@@ -28,6 +28,7 @@ import {
 import { APP_TITLE, colors, SIZE } from '../../../utils/constants';
 import { captureAndShare } from '../../../utils/shareImage';
 import { WIN_MESSAGES, GAME_BOARD, GAME_MODES } from '../../../utils/strings';
+import { typography } from '../../../utils/typography';
 import { calculateVibeScore } from '../../../utils/vibeMeter';
 import { fetchWordDefinition, WordDefinition } from '../../../utils/wordDefinitions';
 
@@ -231,7 +232,7 @@ const GameBoard = ({
                 <View style={styles.modalIconContainer}>
                   <Ionicons name="trophy" size={40} color={colors.correct} />
                 </View>
-                <Text style={[styles.modalTitle, themedStyles.text]}>{winMessage}</Text>
+                <Text style={[styles.modalTitle, typography.display, themedStyles.text]}>{winMessage}</Text>
                 <Text style={[styles.modalSubtitle, themedStyles.secondaryText]}>
                   {GAME_BOARD.youGotItIn} {guessCount} {guessCount === 1 ? GAME_BOARD.guessSingular : GAME_BOARD.guessPlural}
                 </Text>

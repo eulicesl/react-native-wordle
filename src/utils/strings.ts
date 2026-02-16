@@ -5,12 +5,12 @@
 
 // Game Board
 export const WIN_MESSAGES = [
-  'Genius!',
-  'Magnificent!',
-  'Impressive!',
-  'Splendid!',
-  'Great!',
-  'Phew!',
+  'GENIUS',
+  'MAGNIFICENT',
+  'IMPRESSIVE',
+  'SPLENDID',
+  'GREAT',
+  'PHEW',
 ] as const;
 
 export const GAME_BOARD = {
