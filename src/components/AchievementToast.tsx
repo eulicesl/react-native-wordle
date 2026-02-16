@@ -26,6 +26,9 @@ interface AchievementToastProps {
   points: number;
   category: AchievementCategory;
   onDismiss: () => void;
+  accentColor?: string;
+  icon?: React.ComponentProps<typeof Ionicons>['name'];
+  label?: string;
 }
 
 const CATEGORY_ICONS: Record<AchievementCategory, React.ComponentProps<typeof Ionicons>['name']> = {
@@ -50,6 +53,9 @@ export default function AchievementToast({
   points,
   category,
   onDismiss,
+  accentColor: accentColorOverride,
+  icon: iconOverride,
+  label: labelOverride,
 }: AchievementToastProps) {
   const { theme } = useAppSelector((state) => state.theme);
   const translateY = useSharedValue(-120);
@@ -87,8 +93,8 @@ export default function AchievementToast({
     opacity: opacity.value,
   }));
 
-  const accentColor = CATEGORY_COLORS[category];
-  const iconName = CATEGORY_ICONS[category];
+  const accentColor = accentColorOverride ?? CATEGORY_COLORS[category];
+  const iconName = iconOverride ?? CATEGORY_ICONS[category];
 
   return (
     <Animated.View
@@ -108,7 +114,7 @@ export default function AchievementToast({
         <Ionicons name={iconName} size={24} color={accentColor} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={[styles.label, { color: accentColor }]}>{ACHIEVEMENTS.unlocked}</Text>
+        <Text style={[styles.label, { color: accentColor }]}>{labelOverride ?? ACHIEVEMENTS.unlocked}</Text>
         <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
         <Text style={[styles.description, { color: theme.colors.secondary }]}>{description}</Text>
       </View>

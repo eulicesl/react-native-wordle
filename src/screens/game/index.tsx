@@ -52,9 +52,11 @@ import { calculateMatches } from '../../utils/gameLogic';
 import { saveGameToHistory } from '../../utils/gameHistory';
 import { maybeRequestReview } from '../../utils/ratingPrompt';
 import { shareResults } from '../../utils/shareResults';
+import { playHaptic } from '../../utils/haptics';
 import { playSound } from '../../utils/sounds';
 import { getWinTier } from '../../utils/winTiers';
 import { PRE_GAME, GAME_MODES, GAME_ERRORS, HINTS } from '../../utils/strings';
+import { checkStreakMilestone } from '../../utils/streakMilestones';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
@@ -100,6 +102,10 @@ export default function Game() {
     points: number;
     category: AchievementCategory;
   } | null>(null);
+  const [pendingStreakMilestone, setPendingStreakMilestone] = useState<{
+    streak: number;
+  } | null>(null);
+  const streakMilestoneTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep usedKeys ref in sync to avoid stale closures
   useEffect(() => {
@@ -112,6 +118,7 @@ export default function Game() {
       if (winTimeoutRef.current) clearTimeout(winTimeoutRef.current);
       if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
       if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+      if (streakMilestoneTimeoutRef.current) clearTimeout(streakMilestoneTimeoutRef.current);
     };
   }, []);
 
@@ -389,19 +396,41 @@ export default function Game() {
 
           // Check achievements and show toast for new unlocks
           const timeTaken = gameStartTime ? Date.now() - gameStartTime : null;
-          checkAchievements(true, guessCount, hardMode, gameMode === 'daily', timeTaken).then(
-            (newAchievements) => {
-              const first = newAchievements[0];
-              if (first) {
-                setPendingAchievement({
-                  title: first.achievement.title,
-                  description: first.achievement.description,
-                  points: first.achievement.points,
-                  category: first.achievement.category,
-                });
+          const achievementPromise = checkAchievements(true, guessCount, hardMode, gameMode === 'daily', timeTaken);
+
+          // Check streak milestone (daily games only, streak increments by 1)
+          const newStreak = gameMode === 'daily' ? statistics.currentStreak + 1 : null;
+          const milestone = newStreak !== null ? checkStreakMilestone(newStreak) : null;
+
+          achievementPromise.then((newAchievements) => {
+            const first = newAchievements[0];
+            const hasAchievement = !!first;
+
+            if (hasAchievement) {
+              setPendingAchievement({
+                title: first.achievement.title,
+                description: first.achievement.description,
+                points: first.achievement.points,
+                category: first.achievement.category,
+              });
+            }
+
+            if (milestone !== null) {
+              if (hasAchievement) {
+                // Queue streak milestone after achievement toast (4 second delay)
+                streakMilestoneTimeoutRef.current = setTimeout(() => {
+                  playSound('streak');
+                  playHaptic('streakMilestone');
+                  setPendingStreakMilestone({ streak: milestone });
+                }, 4000);
+              } else {
+                // Show immediately
+                playSound('streak');
+                playHaptic('streakMilestone');
+                setPendingStreakMilestone({ streak: milestone });
               }
             }
-          );
+          });
 
           // Announce for screen readers
           announceGameResult(true, solution, guessCount);
@@ -478,6 +507,11 @@ export default function Game() {
   const startGame = (mode: GameMode) => {
     setShowConfetti(false);
     setPendingAchievement(null);
+    setPendingStreakMilestone(null);
+    if (streakMilestoneTimeoutRef.current) {
+      clearTimeout(streakMilestoneTimeoutRef.current);
+      streakMilestoneTimeoutRef.current = null;
+    }
     setGameMode(mode);
     setErrorMessage(null);
     setGameStartTime(Date.now());
@@ -708,6 +742,18 @@ export default function Game() {
           points={pendingAchievement.points}
           category={pendingAchievement.category}
           onDismiss={() => setPendingAchievement(null)}
+        />
+      )}
+      {pendingStreakMilestone && (
+        <AchievementToast
+          title={`🔥 ${pendingStreakMilestone.streak}-Day Streak!`}
+          description="You're on fire! Keep it going."
+          points={pendingStreakMilestone.streak}
+          category="streak"
+          accentColor="#FFD700"
+          icon="flame"
+          label="STREAK MILESTONE"
+          onDismiss={() => setPendingStreakMilestone(null)}
         />
       )}
       <ConfettiExplosion
