@@ -51,6 +51,7 @@ import { calculateMatches } from '../../utils/gameLogic';
 import { saveGameToHistory } from '../../utils/gameHistory';
 import { maybeRequestReview } from '../../utils/ratingPrompt';
 import { shareResults } from '../../utils/shareResults';
+import { playSound, SoundType } from '../../utils/sounds';
 import { PRE_GAME, GAME_MODES, GAME_ERRORS, HINTS } from '../../utils/strings';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
@@ -376,6 +377,9 @@ export default function Game() {
           const guessCount = currentGuessIndex + 1;
           const today = getTodayDateString();
           dispatch(recordGameWin({ guessCount, date: today, isDaily: gameMode === 'daily' }));
+
+          // Play tier-based victory sound
+          playSound(`winTier${guessCount}` as SoundType);
 
           // Check achievements and show toast for new unlocks
           const timeTaken = gameStartTime ? Date.now() - gameStartTime : null;

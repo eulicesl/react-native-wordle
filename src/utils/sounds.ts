@@ -10,6 +10,12 @@ export type SoundType =
   | 'flipPresent'
   | 'flipAbsent'
   | 'win'
+  | 'winTier1'
+  | 'winTier2'
+  | 'winTier3'
+  | 'winTier4'
+  | 'winTier5'
+  | 'winTier6'
   | 'lose'
   | 'error'
   | 'streak'
@@ -18,10 +24,11 @@ export type SoundType =
   | 'newDay';
 
 // All sound types for iteration
-const ALL_SOUND_TYPES: SoundType[] = [
+export const ALL_SOUND_TYPES: SoundType[] = [
   'keyPress', 'keyDelete', 'submit',
   'flipCorrect', 'flipPresent', 'flipAbsent',
-  'win', 'lose', 'error',
+  'win', 'winTier1', 'winTier2', 'winTier3', 'winTier4', 'winTier5', 'winTier6',
+  'lose', 'error',
   'streak', 'achievement', 'countdown', 'newDay',
 ];
 
@@ -74,7 +81,7 @@ interface ProfessionalSoundConfig {
   detune?: number; // Slight detuning for richness
 }
 
-const PROFESSIONAL_SOUNDS: Record<SoundType, ProfessionalSoundConfig> = {
+export const PROFESSIONAL_SOUNDS: Record<SoundType, ProfessionalSoundConfig> = {
   keyPress: {
     notes: [7], // G
     durations: [40],
@@ -119,6 +126,55 @@ const PROFESSIONAL_SOUNDS: Record<SoundType, ProfessionalSoundConfig> = {
     envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.3 },
     reverb: 0.4,
     detune: 3,
+  },
+  winTier1: {
+    // Genius! Most elaborate: full arpeggio + triumphant extension
+    notes: [0, 4, 7, 12, 16, 19, 24, 28, 31, 36],
+    durations: [100, 100, 100, 120, 120, 150, 180, 200, 250, 500],
+    type: 'sine',
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.7, release: 0.5 },
+    reverb: 0.6,
+    detune: 8,
+  },
+  winTier2: {
+    // Magnificent: arpeggio with bright finish
+    notes: [0, 4, 7, 12, 16, 19, 24, 28],
+    durations: [100, 100, 120, 130, 150, 180, 250, 400],
+    type: 'sine',
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.6, release: 0.4 },
+    reverb: 0.5,
+    detune: 5,
+  },
+  winTier3: {
+    // Impressive: standard ascending arpeggio
+    notes: [0, 4, 7, 12, 16, 19, 24],
+    durations: [120, 120, 120, 150, 150, 180, 300],
+    type: 'sine',
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.3 },
+    reverb: 0.4,
+    detune: 3,
+  },
+  winTier4: {
+    // Splendid: shorter ascending phrase
+    notes: [0, 4, 7, 12, 16],
+    durations: [120, 120, 150, 180, 300],
+    type: 'sine',
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.4, release: 0.25 },
+    reverb: 0.3,
+  },
+  winTier5: {
+    // Great: simple major chord resolution
+    notes: [0, 4, 7, 12],
+    durations: [150, 150, 180, 300],
+    type: 'sine',
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.35, release: 0.2 },
+  },
+  winTier6: {
+    // Phew: relieved two-note resolution
+    notes: [5, 0, 7],
+    durations: [150, 200, 350],
+    type: 'triangle',
+    envelope: { attack: 0.03, decay: 0.15, sustain: 0.3, release: 0.2 },
   },
   lose: {
     notes: [12, 11, 7, 5, 0], // Descending melancholic
@@ -565,23 +621,19 @@ export async function playFlipSounds(
   }
 }
 
-// Play victory fanfare based on performance
+// Play victory fanfare based on performance tier
 export async function playVictorySound(
   guessCount: number,
   isStreak: boolean
 ): Promise<void> {
   if (!soundConfig.enabled) return;
 
-  await playSound('win');
+  const tier = Math.max(1, Math.min(6, guessCount)) as 1 | 2 | 3 | 4 | 5 | 6;
+  await playSound(`winTier${tier}` as SoundType);
 
   // Play additional streak sound for streaks
   if (isStreak) {
     setTimeout(() => playSound('streak'), 800);
-  }
-
-  // Extra fanfare for first-try wins
-  if (guessCount === 1) {
-    setTimeout(() => playSound('achievement'), 1200);
   }
 }
 
