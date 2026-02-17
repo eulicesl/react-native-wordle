@@ -1,4 +1,7 @@
-import { ONBOARDING_COMPLETE_KEY, TOTAL_STEPS, getVibeColor } from '../components/Onboarding';
+import * as fs from 'fs';
+import * as path from 'path';
+
+import { ONBOARDING_COMPLETE_KEY, TOTAL_STEPS, getVibeColor, AnimatedLetter, AnimatedTileCell } from '../components/Onboarding';
 import { colors } from '../utils/constants';
 
 describe('Onboarding constants', () => {
@@ -79,5 +82,64 @@ describe('Onboarding tile color mapping', () => {
     expect(colors.correct).toBe('#7C4DFF');
     expect(colors.present).toBe('#FF6B9D');
     expect(colors.absent).toBe('#455A64');
+  });
+});
+
+describe('Onboarding extracted components', () => {
+  it('exports AnimatedLetter as a function component', () => {
+    expect(typeof AnimatedLetter).toBe('function');
+  });
+
+  it('exports AnimatedTileCell as a function component', () => {
+    expect(typeof AnimatedTileCell).toBe('function');
+  });
+});
+
+describe('Onboarding Rules of Hooks compliance', () => {
+  const source = fs.readFileSync(
+    path.resolve(__dirname, '../components/Onboarding.tsx'),
+    'utf-8'
+  );
+
+  // Extract all .map() callback bodies from the source
+  function findMapCallbackBodies(src: string): string[] {
+    const bodies: string[] = [];
+    // Match .map( and capture everything until the matching closing paren
+    const mapStart = /\.map\(\s*\(/g;
+    let match;
+    while ((match = mapStart.exec(src)) !== null) {
+      let depth = 1;
+      let pos = match.index + match[0].length;
+      const start = pos;
+      while (pos < src.length && depth > 0) {
+        if (src[pos] === '(') depth++;
+        if (src[pos] === ')') depth--;
+        pos++;
+      }
+      bodies.push(src.slice(start, pos - 1));
+    }
+    return bodies;
+  }
+
+  const hookPattern = /\b(useSharedValue|useAnimatedStyle|useState|useEffect|useCallback|useMemo|useRef|useContext)\s*\(/;
+
+  it('does not call hooks inside .map() callbacks', () => {
+    const mapBodies = findMapCallbackBodies(source);
+    expect(mapBodies.length).toBeGreaterThan(0);
+
+    for (const body of mapBodies) {
+      const hookMatch = hookPattern.exec(body);
+      expect(hookMatch).toBeNull();
+    }
+  });
+
+  it('uses AnimatedLetter component inside WelcomeStep .map()', () => {
+    // Verify the .map() in WelcomeStep renders AnimatedLetter, not inline hooks
+    expect(source).toContain('letters.map((letter, i) => (\n          <AnimatedLetter');
+  });
+
+  it('uses AnimatedTileCell component inside TileExample .map()', () => {
+    // Verify the .map() in TileExample renders AnimatedTileCell, not inline hooks
+    expect(source).toContain('letters.map((letter, i) => (\n          <AnimatedTileCell');
   });
 });

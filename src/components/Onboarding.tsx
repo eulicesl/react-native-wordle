@@ -39,38 +39,70 @@ interface OnboardingProps {
 
 // --- Step 1: Welcome ---
 
+function AnimatedLetter({
+  letter,
+  index,
+  active,
+  reduceMotion,
+}: {
+  letter: string;
+  index: number;
+  active: boolean;
+  reduceMotion: boolean;
+}) {
+  const opacity = useSharedValue(reduceMotion ? 1 : 0);
+  const scale = useSharedValue(reduceMotion ? 1 : 0.5);
+
+  useEffect(() => {
+    if (!active) return;
+    if (reduceMotion) {
+      opacity.value = 1;
+      scale.value = 1;
+      return;
+    }
+    opacity.value = withDelay(index * 120, withTiming(1, { duration: 350 }));
+    scale.value = withDelay(
+      index * 120,
+      withSpring(1, { damping: 12, stiffness: 150 })
+    );
+  }, [active, index, reduceMotion, opacity, scale]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.Text
+      style={[
+        stepStyles.logoLetter,
+        { color: index % 2 === 0 ? colors.correct : colors.present },
+        animStyle,
+      ]}
+    >
+      {letter}
+    </Animated.Text>
+  );
+}
+
 function WelcomeStep({ active }: { active: boolean }) {
   const { theme } = useAppSelector((state) => state.theme);
   const reduceMotion = isReduceMotionEnabled();
   const letters = 'WORDVIBE'.split('');
 
-  const letterOpacities = letters.map(() => useSharedValue(reduceMotion ? 1 : 0));
-  const letterScales = letters.map(() => useSharedValue(reduceMotion ? 1 : 0.5));
   const taglineOpacity = useSharedValue(reduceMotion ? 1 : 0);
 
   useEffect(() => {
     if (!active) return;
     if (reduceMotion) {
-      letterOpacities.forEach((o) => { o.value = 1; });
-      letterScales.forEach((s) => { s.value = 1; });
       taglineOpacity.value = 1;
       return;
     }
-
-    letterOpacities.forEach((opacity, i) => {
-      opacity.value = withDelay(i * 120, withTiming(1, { duration: 350 }));
-    });
-    letterScales.forEach((scale, i) => {
-      scale.value = withDelay(
-        i * 120,
-        withSpring(1, { damping: 12, stiffness: 150 })
-      );
-    });
     taglineOpacity.value = withDelay(
       letters.length * 120 + 200,
       withTiming(1, { duration: 500 })
     );
-  }, [active]);
+  }, [active, reduceMotion, letters.length, taglineOpacity]);
 
   const taglineStyle = useAnimatedStyle(() => ({
     opacity: taglineOpacity.value,
@@ -83,24 +115,15 @@ function WelcomeStep({ active }: { active: boolean }) {
         accessibilityLabel="WordVibe logo"
         accessibilityRole="header"
       >
-        {letters.map((letter, i) => {
-          const animStyle = useAnimatedStyle(() => ({
-            opacity: letterOpacities[i].value,
-            transform: [{ scale: letterScales[i].value }],
-          }));
-          return (
-            <Animated.Text
-              key={i}
-              style={[
-                stepStyles.logoLetter,
-                { color: i % 2 === 0 ? colors.correct : colors.present },
-                animStyle,
-              ]}
-            >
-              {letter}
-            </Animated.Text>
-          );
-        })}
+        {letters.map((letter, i) => (
+          <AnimatedLetter
+            key={i}
+            letter={letter}
+            index={i}
+            active={active}
+            reduceMotion={reduceMotion}
+          />
+        ))}
       </View>
 
       <Animated.Text
@@ -127,32 +150,106 @@ interface TileExampleProps {
   active: boolean;
 }
 
+function AnimatedTileCell({
+  letter,
+  status,
+  index,
+  delay,
+  active,
+  reduceMotion,
+  tileSize,
+  textColor,
+}: {
+  letter: string;
+  status: 'correct' | 'present' | 'absent' | '';
+  index: number;
+  delay: number;
+  active: boolean;
+  reduceMotion: boolean;
+  tileSize: number;
+  textColor: string;
+}) {
+  const flipProgress = useSharedValue(0);
+
+  const bgColor =
+    status === 'correct'
+      ? colors.correct
+      : status === 'present'
+        ? colors.present
+        : status === 'absent'
+          ? colors.absent
+          : 'transparent';
+
+  useEffect(() => {
+    if (!active) return;
+    if (reduceMotion) {
+      flipProgress.value = 1;
+      return;
+    }
+    flipProgress.value = withDelay(
+      delay + index * 150,
+      withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) })
+    );
+  }, [active, reduceMotion, delay, index, flipProgress]);
+
+  const animStyle = useAnimatedStyle(() => {
+    const progress = flipProgress.value;
+    const borderColor =
+      progress > 0.5 ? 'transparent' : 'rgba(128, 128, 128, 0.3)';
+    const backgroundColor = progress > 0.5 ? bgColor : 'transparent';
+    const rotateX =
+      progress < 0.5
+        ? `${progress * 180}deg`
+        : `${(1 - progress) * 180}deg`;
+
+    return {
+      width: tileSize,
+      height: tileSize,
+      backgroundColor,
+      borderWidth: progress > 0.5 ? 0 : 2,
+      borderColor,
+      transform: [{ perspective: 400 }, { rotateX }],
+      opacity: progress > 0.4 && progress < 0.6 ? 0.3 : 1,
+    };
+  });
+
+  const textAnimStyle = useAnimatedStyle(() => {
+    const progress = flipProgress.value;
+    return {
+      color: progress > 0.5 && status ? '#fff' : textColor,
+    };
+  });
+
+  return (
+    <Animated.View
+      style={[stepStyles.tile, animStyle]}
+      accessibilityLabel={`Letter ${letter}, ${status || 'empty'}`}
+      accessibilityRole="text"
+    >
+      <Animated.Text style={[stepStyles.tileLetter, textAnimStyle]}>
+        {letter}
+      </Animated.Text>
+    </Animated.View>
+  );
+}
+
 function TileExample({ letters, statuses, label, delay, active }: TileExampleProps) {
   const { theme } = useAppSelector((state) => state.theme);
   const reduceMotion = isReduceMotionEnabled();
 
-  const flipProgress = letters.map(() => useSharedValue(0));
   const labelOpacity = useSharedValue(reduceMotion ? 1 : 0);
 
   useEffect(() => {
     if (!active) return;
     if (reduceMotion) {
-      flipProgress.forEach((f) => { f.value = 1; });
       labelOpacity.value = 1;
       return;
     }
-
-    flipProgress.forEach((flip, i) => {
-      flip.value = withDelay(
-        delay + i * 150,
-        withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) })
-      );
-    });
     labelOpacity.value = withDelay(
       delay + letters.length * 150 + 200,
       withTiming(1, { duration: 400 })
     );
-  }, [active]);
+  }, [active, reduceMotion, delay, letters.length, labelOpacity]);
 
   const labelStyle = useAnimatedStyle(() => ({
     opacity: labelOpacity.value,
@@ -163,62 +260,19 @@ function TileExample({ letters, statuses, label, delay, active }: TileExamplePro
   return (
     <View style={stepStyles.tileExampleBlock}>
       <View style={stepStyles.tilesRow}>
-        {letters.map((letter, i) => {
-          const status = statuses[i];
-          const bgColor =
-            status === 'correct'
-              ? colors.correct
-              : status === 'present'
-                ? colors.present
-                : status === 'absent'
-                  ? colors.absent
-                  : 'transparent';
-
-          const animStyle = useAnimatedStyle(() => {
-            const progress = flipProgress[i].value;
-            const borderColor =
-              progress > 0.5
-                ? 'transparent'
-                : 'rgba(128, 128, 128, 0.3)';
-            const backgroundColor =
-              progress > 0.5 ? bgColor : 'transparent';
-            // Flip: 0->90° first half, 90°->0° second half
-            const rotateX = progress < 0.5
-              ? `${progress * 180}deg`
-              : `${(1 - progress) * 180}deg`;
-
-            return {
-              width: tileSize,
-              height: tileSize,
-              backgroundColor,
-              borderWidth: progress > 0.5 ? 0 : 2,
-              borderColor,
-              transform: [{ perspective: 400 }, { rotateX }],
-              // Hide letter during mid-flip
-              opacity: progress > 0.4 && progress < 0.6 ? 0.3 : 1,
-            };
-          });
-
-          const textAnimStyle = useAnimatedStyle(() => {
-            const progress = flipProgress[i].value;
-            return {
-              color: progress > 0.5 && status ? '#fff' : theme.colors.text,
-            };
-          });
-
-          return (
-            <Animated.View
-              key={i}
-              style={[stepStyles.tile, animStyle]}
-              accessibilityLabel={`Letter ${letter}, ${status || 'empty'}`}
-              accessibilityRole="text"
-            >
-              <Animated.Text style={[stepStyles.tileLetter, textAnimStyle]}>
-                {letter}
-              </Animated.Text>
-            </Animated.View>
-          );
-        })}
+        {letters.map((letter, i) => (
+          <AnimatedTileCell
+            key={i}
+            letter={letter}
+            status={statuses[i]}
+            index={i}
+            delay={delay}
+            active={active}
+            reduceMotion={reduceMotion}
+            tileSize={tileSize}
+            textColor={theme.colors.text}
+          />
+        ))}
       </View>
       <Animated.Text
         style={[stepStyles.tileLabel, { color: theme.colors.text }, labelStyle]}
@@ -628,7 +682,7 @@ export async function resetOnboarding(): Promise<void> {
 }
 
 // Export for testing
-export { ONBOARDING_COMPLETE_KEY, TOTAL_STEPS, getVibeColor };
+export { ONBOARDING_COMPLETE_KEY, TOTAL_STEPS, getVibeColor, AnimatedLetter, AnimatedTileCell };
 
 // --- Styles ---
 
