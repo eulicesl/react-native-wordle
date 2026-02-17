@@ -86,6 +86,7 @@ export const STATISTICS = {
   skillAchievements: 'Skill Achievements',
   dailyChallenge: 'Daily Challenge',
   noGamesYet: 'No games played yet',
+  playHistory: 'Last 30 Days',
   tabs: {
     stats: 'Stats',
     trophies: 'Trophies',

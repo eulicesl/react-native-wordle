@@ -180,6 +180,12 @@ export default function Statistics() {
     },
   };
 
+  // Determine which guess count was the most recent win
+  const lastWinGuess = useMemo(() => {
+    const lastWin = gameHistory.find((entry) => entry.won);
+    return lastWin ? lastWin.guessCount : null;
+  }, [gameHistory]);
+
   const TAB_COUNT = 3;
   const TAB_CONTAINER_PADDING = 4;
   const SCREEN_HORIZONTAL_PADDING = 20;
@@ -230,10 +236,16 @@ export default function Statistics() {
             guess={index + 1}
             count={count}
             maxCount={maxGuesses}
+            isLastWin={lastWinGuess === index + 1}
+            inactiveBarColor={theme.colors.background3}
             theme={themedStyles}
           />
         ))}
       </View>
+
+      {/* Calendar Heatmap */}
+      <Text style={[styles.sectionTitle, themedStyles.text]}>{STATISTICS_STRINGS.playHistory}</Text>
+      <CalendarHeatmap gameHistory={gameHistory} theme={themedStyles} />
 
       {/* Next WordVibe Countdown */}
       <View style={[styles.countdownCard, themedStyles.card]}>
@@ -526,13 +538,15 @@ interface DistributionBarProps {
   guess: number;
   count: number;
   maxCount: number;
+  isLastWin: boolean;
+  inactiveBarColor: string;
   theme: {
     text: { color: string };
     card: { backgroundColor: string };
   };
 }
 
-function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps) {
+function DistributionBar({ guess, count, maxCount, isLastWin, inactiveBarColor, theme }: DistributionBarProps) {
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
   const barWidth = Math.max(percentage, count > 0 ? 15 : 8);
   const widthAnim = useSharedValue(0);
@@ -549,6 +563,10 @@ function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps
     width: `${widthAnim.value}%`,
   }));
 
+  const barColor = count > 0
+    ? isLastWin ? colors.correct : inactiveBarColor
+    : theme.card.backgroundColor;
+
   return (
     <View style={styles.distributionRow}>
       <Text style={[styles.guessNumber, theme.text]}>{guess}</Text>
@@ -556,14 +574,160 @@ function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps
         <Animated.View
           style={[
             styles.bar,
-            {
-              backgroundColor: count > 0 ? colors.correct : theme.card.backgroundColor,
-            },
+            { backgroundColor: barColor },
             animatedBarStyle,
           ]}
         >
-          <Text style={[styles.barCount, count === 0 && theme.text]}>{count}</Text>
+          <Text style={[styles.barCount, (!isLastWin || count === 0) && theme.text]}>{count}</Text>
         </Animated.View>
+      </View>
+    </View>
+  );
+}
+
+// Day labels for the heatmap
+const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const HEATMAP_CELL_SIZE = 12;
+const HEATMAP_GAP = 3;
+
+type DayStatus = 'won' | 'lost' | 'none';
+
+/**
+ * Build a map of YYYY-MM-DD → DayStatus from game history.
+ * If multiple games exist on the same date, won takes priority over lost.
+ */
+export function buildDayStatusMap(history: GameHistoryEntry[]): Map<string, DayStatus> {
+  const map = new Map<string, DayStatus>();
+  for (const entry of history) {
+    const dateKey = entry.date.slice(0, 10); // YYYY-MM-DD
+    const existing = map.get(dateKey);
+    if (existing === 'won') continue; // won already, keep it
+    map.set(dateKey, entry.won ? 'won' : 'lost');
+  }
+  return map;
+}
+
+/**
+ * Generate an array of the last 30 days as YYYY-MM-DD strings, oldest first.
+ */
+export function getLast30Days(): string[] {
+  const days: string[] = [];
+  const now = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+  return days;
+}
+
+interface CalendarHeatmapProps {
+  gameHistory: GameHistoryEntry[];
+  theme: {
+    text: { color: string };
+    secondaryText: { color: string };
+    card: { backgroundColor: string };
+  };
+}
+
+function CalendarHeatmap({ gameHistory, theme }: CalendarHeatmapProps) {
+  const days = useMemo(() => getLast30Days(), []);
+  const statusMap = useMemo(() => buildDayStatusMap(gameHistory), [gameHistory]);
+
+  // Organize days into columns (weeks), each column has up to 7 rows (Mon=0..Sun=6)
+  const weeks = useMemo(() => {
+    const result: { date: string; dayOfWeek: number }[][] = [];
+    let currentWeek: { date: string; dayOfWeek: number }[] = [];
+
+    for (const dateStr of days) {
+      const d = new Date(dateStr + 'T12:00:00'); // noon to avoid timezone edge cases
+      // JS getDay: 0=Sun, convert to Mon=0..Sun=6
+      const jsDay = d.getDay();
+      const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+
+      if (currentWeek.length > 0) {
+        const prevDow = currentWeek[currentWeek.length - 1].dayOfWeek;
+        // Start new week when dayOfWeek wraps around (new Monday)
+        if (dayOfWeek <= prevDow && dayOfWeek === 0) {
+          result.push(currentWeek);
+          currentWeek = [];
+        }
+      }
+      currentWeek.push({ date: dateStr, dayOfWeek });
+    }
+    if (currentWeek.length > 0) {
+      result.push(currentWeek);
+    }
+    return result;
+  }, [days]);
+
+  const getCellColor = (status: DayStatus): string => {
+    switch (status) {
+      case 'won':
+        return colors.correct;
+      case 'lost':
+        return colors.error;
+      default:
+        return theme.card.backgroundColor;
+    }
+  };
+
+  return (
+    <View
+      style={[styles.heatmapContainer, theme.card]}
+      accessibilityLabel="Calendar heatmap showing play history for the last 30 days"
+      accessibilityRole="image"
+    >
+      <View style={styles.heatmapContent}>
+        {/* Day labels column */}
+        <View style={styles.heatmapLabels}>
+          {DAY_LABELS.map((label, i) => (
+            <View key={i} style={styles.heatmapLabelCell}>
+              <Text style={[styles.heatmapLabelText, theme.secondaryText]}>{label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Weeks columns */}
+        {weeks.map((week, weekIdx) => (
+          <View key={weekIdx} style={styles.heatmapWeek}>
+            {/* Offset cells for the first week if it doesn't start on Monday */}
+            {weekIdx === 0 && week[0].dayOfWeek > 0 &&
+              Array.from({ length: week[0].dayOfWeek }).map((_, i) => (
+                <View key={`empty-${i}`} style={styles.heatmapCell} />
+              ))
+            }
+            {week.map(({ date, dayOfWeek }) => {
+              const status = statusMap.get(date) || 'none';
+              return (
+                <View
+                  key={date}
+                  style={[
+                    styles.heatmapCell,
+                    { backgroundColor: getCellColor(status) },
+                  ]}
+                  accessibilityLabel={`${DAY_LABELS[dayOfWeek]} ${date}: ${status === 'none' ? 'not played' : status}`}
+                />
+              );
+            })}
+          </View>
+        ))}
+      </View>
+
+      {/* Legend */}
+      <View style={styles.heatmapLegend}>
+        <View style={styles.heatmapLegendItem}>
+          <View style={[styles.heatmapLegendDot, { backgroundColor: colors.correct }]} />
+          <Text style={[styles.heatmapLegendText, theme.secondaryText]}>Won</Text>
+        </View>
+        <View style={styles.heatmapLegendItem}>
+          <View style={[styles.heatmapLegendDot, { backgroundColor: colors.error }]} />
+          <Text style={[styles.heatmapLegendText, theme.secondaryText]}>Lost</Text>
+        </View>
+        <View style={styles.heatmapLegendItem}>
+          <View style={[styles.heatmapLegendDot, { backgroundColor: theme.card.backgroundColor }]} />
+          <Text style={[styles.heatmapLegendText, theme.secondaryText]}>—</Text>
+        </View>
       </View>
     </View>
   );
@@ -1035,5 +1199,57 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 2,
+  },
+  // Calendar Heatmap styles
+  heatmapContainer: {
+    borderRadius: space3,
+    padding: spacing.md,
+    marginBottom: 30,
+  },
+  heatmapContent: {
+    flexDirection: 'row',
+    gap: HEATMAP_GAP,
+  },
+  heatmapLabels: {
+    gap: HEATMAP_GAP,
+    marginRight: spacing.xs,
+  },
+  heatmapLabelCell: {
+    width: HEATMAP_CELL_SIZE,
+    height: HEATMAP_CELL_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heatmapLabelText: {
+    fontSize: 8,
+    fontFamily: 'Montserrat_600SemiBold',
+  },
+  heatmapWeek: {
+    gap: HEATMAP_GAP,
+  },
+  heatmapCell: {
+    width: HEATMAP_CELL_SIZE,
+    height: HEATMAP_CELL_SIZE,
+    borderRadius: 2,
+  },
+  heatmapLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  heatmapLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  heatmapLegendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 2,
+  },
+  heatmapLegendText: {
+    fontSize: 10,
+    fontFamily: 'Montserrat_600SemiBold',
   },
 });
