@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, useWindowDimensions } from 'react-native';
@@ -140,9 +140,13 @@ const GameBoard = ({
   }, [guesses]);
 
   // Compute the vibe score — incremental during reveal, final otherwise
-  const vibeScore = revealProgress >= 0 && revealingRowIdx >= 0
-    ? calculatePartialVibeScore(guesses, solution, revealingRowIdx, revealProgress)
-    : calculateVibeScore(guesses, solution);
+  const vibeScore = useMemo(
+    () =>
+      revealProgress >= 0 && revealingRowIdx >= 0
+        ? calculatePartialVibeScore(guesses, solution, revealingRowIdx, revealProgress)
+        : calculateVibeScore(guesses, solution),
+    [guesses, solution, revealProgress, revealingRowIdx],
+  );
 
   // Haptic feedback when vibe score crosses threshold boundaries
   useEffect(() => {
