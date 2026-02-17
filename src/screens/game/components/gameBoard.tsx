@@ -86,6 +86,13 @@ const GameBoard = ({
     const currentCompleted = guesses.filter((g) => g.isComplete).length;
     const prevCompleted = completedCountRef.current;
 
+    // Reset refs when a new game starts (no completed guesses)
+    if (currentCompleted === 0) {
+      prevVibeScoreRef.current = 0;
+      completedCountRef.current = 0;
+      return;
+    }
+
     if (currentCompleted > prevCompleted && currentCompleted > 0) {
       const newRowIdx = currentCompleted - 1;
       const reduceMotion = isReduceMotionEnabled();
