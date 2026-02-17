@@ -30,7 +30,8 @@ import {
   TILES_PER_ROW,
 } from '../../../utils/animations';
 import { APP_TITLE, colors, SIZE } from '../../../utils/constants';
-import { captureAndShare } from '../../../utils/shareImage';
+import { captureAndShare, SHARE_CAPTURE_OPTIONS } from '../../../utils/shareImage';
+import { getDayNumber } from '../../../utils/dailyWord';
 import { playSound } from '../../../utils/sounds';
 import { WIN_MESSAGES, GAME_BOARD, GAME_MODES } from '../../../utils/strings';
 import { typography } from '../../../utils/typography';
@@ -60,7 +61,7 @@ const GameBoard = ({
     (state) => state.gameState
   );
   const { theme } = useAppSelector((state) => state.theme);
-  const { hardMode, hapticFeedback } = useAppSelector((state) => state.settings);
+  const { hardMode, hapticFeedback, highContrastMode } = useAppSelector((state) => state.settings);
   const { statistics } = useAppSelector((state) => state.statistics);
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -440,7 +441,7 @@ const GameBoard = ({
       </Modal>
 
       {/* Hidden share card for image capture */}
-      <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 1 }} style={styles.hiddenCard}>
+      <ViewShot ref={shareCardRef} options={SHARE_CAPTURE_OPTIONS} style={styles.hiddenCard}>
         <ShareCard
           guesses={guesses}
           gameWon={gameWon}
@@ -448,6 +449,11 @@ const GameBoard = ({
           streak={statistics.currentStreak}
           isDaily={gameMode === 'daily'}
           hardMode={hardMode}
+          vibeScore={vibeScore.score}
+          dayNumber={getDayNumber()}
+          highContrastMode={highContrastMode}
+          theme={theme}
+          gameMode={gameMode}
         />
       </ViewShot>
     </View>
