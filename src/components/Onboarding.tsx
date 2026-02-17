@@ -265,7 +265,7 @@ function TileExample({ letters, statuses, label, delay, active }: TileExamplePro
           <AnimatedTileCell
             key={i}
             letter={letter}
-            status={statuses[i]}
+            status={statuses[i] ?? ''}
             index={i}
             delay={delay}
             active={active}

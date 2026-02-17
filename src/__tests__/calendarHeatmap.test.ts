@@ -153,7 +153,7 @@ describe('getLast30Days', () => {
   it('returns dates in ascending order (oldest first)', () => {
     const days = getLast30Days();
     for (let i = 1; i < days.length; i++) {
-      expect(days[i] > days[i - 1]).toBe(true);
+      expect(days[i]! > days[i - 1]!).toBe(true);
     }
   });
 

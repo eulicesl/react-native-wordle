@@ -655,7 +655,7 @@ function CalendarHeatmap({ gameHistory, theme }: CalendarHeatmapProps) {
       const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
 
       if (currentWeek.length > 0) {
-        const prevDow = currentWeek[currentWeek.length - 1].dayOfWeek;
+        const prevDow = currentWeek[currentWeek.length - 1]!.dayOfWeek;
         // Start new week when dayOfWeek wraps around (new Monday)
         if (dayOfWeek <= prevDow && dayOfWeek === 0) {
           result.push(currentWeek);
@@ -701,8 +701,8 @@ function CalendarHeatmap({ gameHistory, theme }: CalendarHeatmapProps) {
         {weeks.map((week, weekIdx) => (
           <View key={weekIdx} style={styles.heatmapWeek}>
             {/* Offset cells for the first week if it doesn't start on Monday */}
-            {weekIdx === 0 && week[0].dayOfWeek > 0 &&
-              Array.from({ length: week[0].dayOfWeek }).map((_, i) => (
+            {weekIdx === 0 && week[0]!.dayOfWeek > 0 &&
+              Array.from({ length: week[0]!.dayOfWeek }).map((_, i) => (
                 <View key={`empty-${i}`} style={styles.heatmapCell} />
               ))
             }

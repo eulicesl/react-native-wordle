@@ -21,5 +21,5 @@ const WIN_TIERS: readonly WinTier[] = [
  */
 export function getWinTier(guessCount: number): WinTier {
   const index = Math.max(0, Math.min(5, guessCount - 1));
-  return WIN_TIERS[index];
+  return WIN_TIERS[index]!;
 }

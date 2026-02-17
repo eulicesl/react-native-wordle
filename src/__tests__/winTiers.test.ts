@@ -68,7 +68,7 @@ describe('getWinTier', () => {
   it('should return decreasing confetti counts for higher guess counts', () => {
     const counts = [1, 2, 3, 4, 5, 6].map((n) => getWinTier(n).confettiCount);
     for (let i = 1; i < counts.length; i++) {
-      expect(counts[i]).toBeLessThan(counts[i - 1]);
+      expect(counts[i]!).toBeLessThan(counts[i - 1]!);
     }
   });
 });

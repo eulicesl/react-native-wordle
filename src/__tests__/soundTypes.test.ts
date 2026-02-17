@@ -77,11 +77,11 @@ describe('win tier sounds', () => {
     );
 
     // Tier 1 should have the most notes
-    expect(noteCounts[0]).toBeGreaterThanOrEqual(noteCounts[5]);
+    expect(noteCounts[0]!).toBeGreaterThanOrEqual(noteCounts[5]!);
 
     // Each tier should have >= notes as the next tier (non-strictly decreasing)
     for (let i = 0; i < noteCounts.length - 1; i++) {
-      expect(noteCounts[i]).toBeGreaterThanOrEqual(noteCounts[i + 1]);
+      expect(noteCounts[i]!).toBeGreaterThanOrEqual(noteCounts[i + 1]!);
     }
   });
 

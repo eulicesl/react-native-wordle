@@ -231,9 +231,9 @@ export function bytesToBase64(bytes: Uint8Array): string {
   let result = '';
   const len = bytes.length;
   for (let i = 0; i < len; i += 3) {
-    const b0 = bytes[i];
-    const b1 = i + 1 < len ? bytes[i + 1] : 0;
-    const b2 = i + 2 < len ? bytes[i + 2] : 0;
+    const b0 = bytes[i]!;
+    const b1 = i + 1 < len ? bytes[i + 1]! : 0;
+    const b2 = i + 2 < len ? bytes[i + 2]! : 0;
     result += B64_CHARS[(b0 >> 2) & 0x3f];
     result += B64_CHARS[((b0 << 4) | (b1 >> 4)) & 0x3f];
     result += i + 1 < len ? B64_CHARS[((b1 << 2) | (b2 >> 6)) & 0x3f] : '=';
@@ -301,10 +301,10 @@ export function generateSamples(config: ProfessionalSoundConfig): Float32Array {
   const samples = new Float32Array(totalSamples);
 
   for (let i = 0; i < config.notes.length; i++) {
-    const semitone = config.notes[i];
+    const semitone = config.notes[i]!;
     const duration = config.durations[i] ?? 100;
     const freq = semitoneToFreq(semitone);
-    const startSample = Math.floor((noteStarts[i] / 1000) * SAMPLE_RATE);
+    const startSample = Math.floor((noteStarts[i]! / 1000) * SAMPLE_RATE);
     const noteSamples = Math.ceil((duration / 1000) * SAMPLE_RATE);
 
     for (let s = 0; s < noteSamples; s++) {
@@ -325,13 +325,13 @@ export function generateSamples(config: ProfessionalSoundConfig): Float32Array {
         sample /= 1.5; // Normalize
       }
 
-      samples[idx] += sample;
+      samples[idx] = (samples[idx] ?? 0) + sample;
     }
   }
 
   // Clamp to [-1, 1]
   for (let i = 0; i < totalSamples; i++) {
-    samples[i] = Math.max(-1, Math.min(1, samples[i]));
+    samples[i] = Math.max(-1, Math.min(1, samples[i] ?? 0));
   }
 
   return samples;
@@ -394,7 +394,7 @@ export function samplesToWavDataUri(samples: Float32Array, volume: number): stri
   // Write PCM samples
   const clampedVolume = Math.max(0, Math.min(1, volume));
   for (let i = 0; i < samples.length; i++) {
-    const s = Math.max(-1, Math.min(1, samples[i] * clampedVolume));
+    const s = Math.max(-1, Math.min(1, (samples[i] ?? 0) * clampedVolume));
     const val = s < 0 ? s * 0x8000 : s * 0x7fff;
     view.setInt16(headerSize + i * 2, Math.round(val), true);
   }

@@ -21,7 +21,7 @@ describe('checkStreakMilestone', () => {
 
   it('should have thresholds in ascending order', () => {
     for (let i = 1; i < MILESTONE_THRESHOLDS.length; i++) {
-      expect(MILESTONE_THRESHOLDS[i]).toBeGreaterThan(MILESTONE_THRESHOLDS[i - 1]);
+      expect(MILESTONE_THRESHOLDS[i]!).toBeGreaterThan(MILESTONE_THRESHOLDS[i - 1]!);
     }
   });
 

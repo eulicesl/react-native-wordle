@@ -51,7 +51,7 @@ describe('calculatePartialVibeScore', () => {
 
     // Score should monotonically increase (each tile is correct = +20)
     for (let i = 1; i < scores.length; i++) {
-      expect(scores[i]).toBeGreaterThanOrEqual(scores[i - 1]);
+      expect(scores[i]!).toBeGreaterThanOrEqual(scores[i - 1]!);
     }
 
     // 5 correct tiles = 100 score
@@ -145,7 +145,7 @@ describe('VIBE_THRESHOLDS', () => {
 
   it('thresholds are in ascending order', () => {
     for (let i = 1; i < VIBE_THRESHOLDS.length; i++) {
-      expect(VIBE_THRESHOLDS[i]).toBeGreaterThan(VIBE_THRESHOLDS[i - 1]);
+      expect(VIBE_THRESHOLDS[i]!).toBeGreaterThan(VIBE_THRESHOLDS[i - 1]!);
     }
   });
 });
