@@ -12,10 +12,15 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedProps,
   withSpring,
   withTiming,
   withDelay,
+  Easing,
+  FadeInDown,
 } from 'react-native-reanimated';
+
+import { isReduceMotionEnabled } from '../../utils/accessibility';
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
 import {
@@ -188,21 +193,33 @@ export default function Statistics() {
     transform: [{ translateX: tabIndicatorAnim.value * tabIndicatorWidth }],
   }));
 
+  const statsCards = useMemo(() => [
+    { value: gamesPlayed, label: STATISTICS_STRINGS.played },
+    { value: winPercentage, label: STATISTICS_STRINGS.winPercent },
+    { value: currentStreak, label: STATISTICS_STRINGS.currentStreak },
+    { value: maxStreak, label: STATISTICS_STRINGS.maxStreak },
+  ], [gamesPlayed, winPercentage, currentStreak, maxStreak]);
+
   const renderStats = () => (
     <>
-      {/* Stats Grid */}
+      {/* Stats Grid — 2×2 */}
       <View style={styles.statsGrid}>
-        <View style={styles.statsRow}>
-          <StatBox value={gamesPlayed} label={STATISTICS_STRINGS.played} theme={themedStyles} />
-          <StatBox value={winPercentage} label={STATISTICS_STRINGS.winPercent} theme={themedStyles} />
-          <StatBox value={averageGuesses} label={STATISTICS_STRINGS.avgGuesses} theme={themedStyles} />
-        </View>
-        <View style={styles.statsRow}>
-          <StatBox value={currentStreak} label={STATISTICS_STRINGS.currentStreak} theme={themedStyles} />
-          <StatBox value={maxStreak} label={STATISTICS_STRINGS.maxStreak} theme={themedStyles} />
-          <View style={styles.statBox} />
-        </View>
+        {statsCards.map((card, index) => (
+          <StatCard
+            key={card.label}
+            value={card.value}
+            label={card.label}
+            index={index}
+            isActive={activeTab === 'stats'}
+            theme={themedStyles}
+          />
+        ))}
       </View>
+
+      {/* Average guesses — secondary detail */}
+      <Text style={[styles.avgGuessesText, themedStyles.secondaryText]}>
+        {STATISTICS_STRINGS.avgGuesses}: {averageGuesses}
+      </Text>
 
       {/* Guess Distribution */}
       <Text style={[styles.sectionTitle, themedStyles.text]}>{STATISTICS_STRINGS.guessDistribution}</Text>
@@ -413,22 +430,96 @@ export default function Statistics() {
   );
 }
 
-interface StatBoxProps {
-  value: number | string;
+interface StatCardProps {
+  value: number;
   label: string;
+  index: number;
+  isActive: boolean;
   theme: {
     text: { color: string };
     secondaryText: { color: string };
+    card: { backgroundColor: string };
   };
 }
 
-function StatBox({ value, label, theme }: StatBoxProps) {
+const STAT_CARD_COUNT_UP_DURATION = 800;
+const STAT_CARD_STAGGER_DELAY = 80;
+
+function StatCard({ value, label, index, isActive, theme }: StatCardProps) {
+  const animValue = useSharedValue(0);
+  const reduceMotion = isReduceMotionEnabled();
+
+  useEffect(() => {
+    if (!isActive) {
+      animValue.value = 0;
+      return;
+    }
+
+    if (reduceMotion) {
+      animValue.value = value;
+      return;
+    }
+
+    animValue.value = 0;
+    animValue.value = withDelay(
+      index * STAT_CARD_STAGGER_DELAY,
+      withTiming(value, {
+        duration: STAT_CARD_COUNT_UP_DURATION,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+  }, [isActive, value, index, animValue, reduceMotion]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    text: `${Math.round(animValue.value)}`,
+  }));
+
+  const enteringAnimation = reduceMotion
+    ? undefined
+    : FadeInDown.delay(index * STAT_CARD_STAGGER_DELAY).duration(400);
+
   return (
-    <View style={styles.statBox}>
-      <Text style={[styles.statValue, theme.text]}>{value}</Text>
-      <Text style={[styles.statLabel, theme.secondaryText]}>{label}</Text>
-    </View>
+    <Animated.View
+      entering={enteringAnimation}
+      style={[styles.statCard, theme.card]}
+      accessibilityLabel={`${label}: ${value}`}
+      accessibilityRole="text"
+    >
+      <AnimatedStatText
+        animatedProps={animatedProps}
+        style={[styles.statCardValue, theme.text]}
+      />
+      <Text style={[styles.statCardLabel, theme.secondaryText]}>{label}</Text>
+    </Animated.View>
   );
+}
+
+/**
+ * Animated text component that displays a count-up number.
+ * Uses useAnimatedProps to update text content on the UI thread.
+ */
+const AnimatedText = Animated.createAnimatedComponent(
+  React.forwardRef<
+    Text,
+    React.ComponentProps<typeof Text> & { text?: string }
+  >(function AnimatedTextInner(props, ref) {
+    const { text, style, ...rest } = props;
+    return (
+      <Text ref={ref} style={style} {...rest}>
+        {text}
+      </Text>
+    );
+  }),
+);
+
+function AnimatedStatText({
+  animatedProps,
+  style,
+}: {
+  animatedProps: Partial<{ text: string }>;
+  style: React.ComponentProps<typeof Text>['style'];
+}) {
+  return <AnimatedText animatedProps={animatedProps} style={style} />;
 }
 
 interface DistributionBarProps {
@@ -673,26 +764,36 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   statsGrid: {
-    marginBottom: spacing.lg,
-    gap: space3,
-  },
-  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+    gap: space3,
+    marginBottom: spacing.sm,
   },
-  statBox: {
+  statCard: {
+    width: '47%',
+    flexGrow: 1,
     alignItems: 'center',
-    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: space3,
   },
-  statValue: {
-    fontSize: 32,
-    fontFamily: 'Montserrat_700Bold',
+  statCardValue: {
+    fontSize: 28,
+    fontFamily: 'Montserrat_800ExtraBold',
   },
-  statLabel: {
+  statCardLabel: {
     fontSize: 11,
     fontFamily: 'Montserrat_600SemiBold',
     textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginTop: 4,
+  },
+  avgGuessesText: {
+    fontSize: 12,
+    fontFamily: 'Montserrat_600SemiBold',
+    textAlign: 'center',
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     fontSize: 14,
