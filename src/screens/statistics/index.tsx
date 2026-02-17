@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -550,14 +550,23 @@ function DistributionBar({ guess, count, maxCount, isLastWin, inactiveBarColor, 
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
   const barWidth = Math.max(percentage, count > 0 ? 15 : 8);
   const widthAnim = useSharedValue(0);
+  const hasAnimated = useRef(false);
+  const reduceMotion = isReduceMotionEnabled();
 
   useEffect(() => {
+    if (reduceMotion || hasAnimated.current) {
+      widthAnim.value = barWidth;
+      hasAnimated.current = true;
+      return;
+    }
+
     widthAnim.value = 0;
     widthAnim.value = withDelay(
       (guess - 1) * 80,
       withTiming(barWidth, { duration: 500 }),
     );
-  }, [barWidth, guess, widthAnim]);
+    hasAnimated.current = true;
+  }, [barWidth, guess, widthAnim, reduceMotion]);
 
   const animatedBarStyle = useAnimatedStyle(() => ({
     width: `${widthAnim.value}%`,

@@ -228,3 +228,113 @@ describe('StatCard count-up animation logic', () => {
     });
   });
 });
+
+describe('DistributionBar reduce motion and hasAnimated guard', () => {
+  /**
+   * Mirrors the animation decision logic in DistributionBar:
+   * - If reduceMotion is true OR hasAnimated is true → set value directly (no animation)
+   * - Otherwise → animate with withDelay + withTiming, then mark hasAnimated = true
+   *
+   * Returns { animated: boolean, value: number, hasAnimated: boolean }
+   */
+  function distributionBarAnimationDecision(
+    barWidth: number,
+    _guess: number,
+    reduceMotion: boolean,
+    hasAnimated: boolean,
+  ): { animated: boolean; value: number; hasAnimatedAfter: boolean } {
+    if (reduceMotion || hasAnimated) {
+      return { animated: false, value: barWidth, hasAnimatedAfter: true };
+    }
+    return { animated: true, value: barWidth, hasAnimatedAfter: true };
+  }
+
+  describe('reduce motion enabled', () => {
+    it('sets value directly without animation', () => {
+      const result = distributionBarAnimationDecision(50, 1, true, false);
+      expect(result.animated).toBe(false);
+      expect(result.value).toBe(50);
+    });
+
+    it('marks hasAnimated as true after first render', () => {
+      const result = distributionBarAnimationDecision(50, 1, true, false);
+      expect(result.hasAnimatedAfter).toBe(true);
+    });
+
+    it('still skips animation on subsequent renders', () => {
+      const result = distributionBarAnimationDecision(75, 2, true, true);
+      expect(result.animated).toBe(false);
+      expect(result.value).toBe(75);
+    });
+  });
+
+  describe('reduce motion disabled', () => {
+    it('animates on first mount', () => {
+      const result = distributionBarAnimationDecision(50, 1, false, false);
+      expect(result.animated).toBe(true);
+      expect(result.value).toBe(50);
+    });
+
+    it('marks hasAnimated as true after first animation', () => {
+      const result = distributionBarAnimationDecision(50, 1, false, false);
+      expect(result.hasAnimatedAfter).toBe(true);
+    });
+
+    it('skips animation on subsequent renders when hasAnimated is true', () => {
+      const result = distributionBarAnimationDecision(75, 2, false, true);
+      expect(result.animated).toBe(false);
+      expect(result.value).toBe(75);
+    });
+
+    it('sets value directly on re-render even with different barWidth', () => {
+      const result = distributionBarAnimationDecision(100, 3, false, true);
+      expect(result.animated).toBe(false);
+      expect(result.value).toBe(100);
+    });
+  });
+
+  describe('stagger delay for distribution bars', () => {
+    function distributionBarDelay(guess: number): number {
+      return (guess - 1) * 80;
+    }
+
+    it('returns 0ms for guess 1', () => {
+      expect(distributionBarDelay(1)).toBe(0);
+    });
+
+    it('returns 80ms for guess 2', () => {
+      expect(distributionBarDelay(2)).toBe(80);
+    });
+
+    it('returns 400ms for guess 6', () => {
+      expect(distributionBarDelay(6)).toBe(400);
+    });
+  });
+
+  describe('full lifecycle simulation', () => {
+    it('animates on mount, then skips on re-renders', () => {
+      let hasAnimated = false;
+
+      // First render (mount)
+      const first = distributionBarAnimationDecision(50, 1, false, hasAnimated);
+      expect(first.animated).toBe(true);
+      hasAnimated = first.hasAnimatedAfter;
+
+      // Second render (data change)
+      const second = distributionBarAnimationDecision(75, 1, false, hasAnimated);
+      expect(second.animated).toBe(false);
+      expect(second.value).toBe(75);
+    });
+
+    it('never animates when reduce motion is always on', () => {
+      let hasAnimated = false;
+
+      const first = distributionBarAnimationDecision(50, 1, true, hasAnimated);
+      expect(first.animated).toBe(false);
+      hasAnimated = first.hasAnimatedAfter;
+
+      const second = distributionBarAnimationDecision(75, 1, true, hasAnimated);
+      expect(second.animated).toBe(false);
+    });
+  });
+});
