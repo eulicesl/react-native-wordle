@@ -50,7 +50,8 @@ function getTileColor(
 ): string {
   if (match === 'correct') return highContrast ? HIGH_CONTRAST_TILE.correct : colors.correct;
   if (match === 'present') return highContrast ? HIGH_CONTRAST_TILE.present : colors.present;
-  return isDark ? '#3a3a3c' : (highContrast ? HIGH_CONTRAST_TILE.absent : '#78909C');
+  if (highContrast) return HIGH_CONTRAST_TILE.absent;
+  return isDark ? '#3a3a3c' : '#78909C';
 }
 
 function getModeLabel(isDaily: boolean, dayNumber: number, gameMode: string): string {
