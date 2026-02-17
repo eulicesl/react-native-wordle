@@ -1,5 +1,6 @@
 import { guess, matchStatus } from '../types';
 import { colors } from '../utils/constants';
+import { getArcColor } from '../components/VibeMeter';
 
 /**
  * Tests for ShareCard helper logic.
@@ -196,5 +197,29 @@ describe('tile color high contrast rules', () => {
     expect(colors.correct).toBe('#7C4DFF');
     expect(colors.present).toBe('#FF6B9D');
     expect(colors.absent).toBe('#455A64');
+  });
+});
+
+describe('score text color uses arcColor (not hardcoded white)', () => {
+  it.each([
+    { score: 95, expected: '#7C4DFF', label: 'purple for score >= 80' },
+    { score: 80, expected: '#7C4DFF', label: 'purple at boundary 80' },
+    { score: 65, expected: '#FF9100', label: 'orange for score >= 60' },
+    { score: 45, expected: '#FFD600', label: 'yellow for score >= 40' },
+    { score: 25, expected: '#00BFA5', label: 'teal for score >= 20' },
+    { score: 10, expected: '#40C4FF', label: 'cyan for score < 20' },
+  ])('returns $label (score=$score)', ({ score, expected }) => {
+    expect(getArcColor(score)).toBe(expected);
+  });
+
+  it('all arc colors are vivid (not white), ensuring visibility on light and dark cards', () => {
+    const scores = [0, 10, 20, 40, 60, 80, 100];
+    for (const score of scores) {
+      const color = getArcColor(score);
+      expect(color).not.toBe('#fff');
+      expect(color).not.toBe('#ffffff');
+      expect(color).not.toBe('#FFFFFF');
+      expect(color).not.toBe('#FFF');
+    }
   });
 });

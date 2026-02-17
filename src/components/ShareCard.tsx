@@ -94,7 +94,7 @@ function StaticVibeArc({ score, trackColor }: { score: number; trackColor: strin
         />
       </Svg>
       <View style={[arcStyles.scoreContainer, { top: svgHeight * 0.3, width: diameter }]}>
-        <Text style={arcStyles.scoreText}>{score}%</Text>
+        <Text style={[arcStyles.scoreText, { color: arcColor }]}>{score}%</Text>
       </View>
       <Text style={[arcStyles.vibeLabel, { color: arcColor }]}>VIBE</Text>
     </View>
@@ -113,7 +113,6 @@ const arcStyles = StyleSheet.create({
   scoreText: {
     fontSize: 18,
     fontFamily: 'Montserrat_800ExtraBold',
-    color: '#fff',
   },
   vibeLabel: {
     fontSize: 9,
