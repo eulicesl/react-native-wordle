@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useAppSelector } from '../../hooks/storeHooks';
 import { colors, SIZE } from '../../utils/constants';
 import { dynamicFontSize } from '../../utils/responsive';
+import { typography } from '../../utils/typography';
 
 export default function Help() {
   const { theme } = useAppSelector((state) => state.theme);
@@ -32,7 +33,7 @@ export default function Help() {
       style={[styles.container, themedStyles.container]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.title, themedStyles.text, { fontSize: dynamicFontSize(24, 1.3) }]} allowFontScaling={false}>How To Play</Text>
+      <Text style={[styles.title, typography.heading1, themedStyles.text, { fontSize: dynamicFontSize(26, 1.3) }]} allowFontScaling={false}>How To Play</Text>
       <Text style={[styles.subtitle, themedStyles.secondaryText, { fontSize: dynamicFontSize(16) }]} allowFontScaling={false}>
         Guess the word in 6 tries.
       </Text>

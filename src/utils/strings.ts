@@ -5,20 +5,22 @@
 
 // Game Board
 export const WIN_MESSAGES = [
-  'Genius!',
-  'Magnificent!',
-  'Impressive!',
-  'Splendid!',
-  'Great!',
-  'Phew!',
+  'GENIUS',
+  'MAGNIFICENT',
+  'IMPRESSIVE',
+  'SPLENDID',
+  'GREAT',
+  'PHEW',
 ] as const;
 
 export const GAME_BOARD = {
   guessSingular: 'guess',
   guessPlural: 'guesses',
   youGotItIn: 'You got it in',
-  betterLuckNextTime: 'Better Luck Next Time',
   theWordWas: 'The word was',
+  toughOne: 'That was a tough one',
+  tomorrowAwaits: "Tomorrow's puzzle awaits",
+  tryAnother: 'Try another?',
   streak: 'Streak',
   winRate: 'Win Rate',
   played: 'Played',
@@ -84,6 +86,7 @@ export const STATISTICS = {
   skillAchievements: 'Skill Achievements',
   dailyChallenge: 'Daily Challenge',
   noGamesYet: 'No games played yet',
+  playHistory: 'Last 30 Days',
   tabs: {
     stats: 'Stats',
     trophies: 'Trophies',

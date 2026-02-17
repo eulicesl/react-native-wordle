@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 
+import { useRoute, RouteProp } from '@react-navigation/native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ReAnimated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
@@ -29,6 +30,7 @@ import {
 } from '../../store/slices/statisticsSlice';
 import { guess, matchStatus } from '../../types';
 import { APP_TITLE, colors, initialGuesses } from '../../utils/constants';
+import { spacing, space3, space5, space10 } from '../../utils/spacing';
 import {
   getTodaysDailyWord,
   getRandomWord,
@@ -51,17 +53,26 @@ import { calculateMatches } from '../../utils/gameLogic';
 import { saveGameToHistory } from '../../utils/gameHistory';
 import { maybeRequestReview } from '../../utils/ratingPrompt';
 import { shareResults } from '../../utils/shareResults';
+import { playHaptic } from '../../utils/haptics';
+import { playSound } from '../../utils/sounds';
+import { getWinTier } from '../../utils/winTiers';
 import { PRE_GAME, GAME_MODES, GAME_ERRORS, HINTS } from '../../utils/strings';
+import { checkStreakMilestone } from '../../utils/streakMilestones';
 import { calculateVibeScore } from '../../utils/vibeMeter';
 import { answersEN, answersTR, wordsEN, wordsTR } from '../../words';
 import GameBoard from './components/gameBoard';
 
 type GameMode = 'daily' | 'unlimited' | 'speed';
 
+type GameRouteParams = {
+  Game: { initialMode?: 'daily' | 'unlimited' } | undefined;
+};
+
 const SPEED_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 const SPEED_HARD_DURATION_MS = 2 * 60 * 1000; // 2 minutes in hard mode
 
 export default function Game() {
+  const route = useRoute<RouteProp<GameRouteParams, 'Game'>>();
   const {
     guesses,
     usedKeys,
@@ -83,6 +94,7 @@ export default function Game() {
   const [dailyCompleted, setDailyCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiCount, setConfettiCount] = useState(60);
   const [gameStartTime, setGameStartTime] = useState<number | null>(null);
 
   // Refs for timeout cleanup on unmount
@@ -96,6 +108,10 @@ export default function Game() {
     points: number;
     category: AchievementCategory;
   } | null>(null);
+  const [pendingStreakMilestone, setPendingStreakMilestone] = useState<{
+    streak: number;
+  } | null>(null);
+  const streakMilestoneTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep usedKeys ref in sync to avoid stale closures
   useEffect(() => {
@@ -108,6 +124,7 @@ export default function Game() {
       if (winTimeoutRef.current) clearTimeout(winTimeoutRef.current);
       if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
       if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+      if (streakMilestoneTimeoutRef.current) clearTimeout(streakMilestoneTimeoutRef.current);
     };
   }, []);
 
@@ -367,31 +384,59 @@ export default function Game() {
         });
         dispatch(setGuesses(updatedGuesses));
         winTimeoutRef.current = setTimeout(() => {
+          // Record win - statistics persistence is handled by the central useEffect
+          const guessCount = currentGuessIndex + 1;
+          const tier = getWinTier(guessCount);
+
+          setConfettiCount(tier.confettiCount);
           setShowConfetti(true);
           dispatch(setGameWon(true));
           dispatch(setGameEnded(true));
           handleFoundKeysOnKeyboard(updatedGuess);
 
-          // Record win - statistics persistence is handled by the central useEffect
-          const guessCount = currentGuessIndex + 1;
           const today = getTodayDateString();
           dispatch(recordGameWin({ guessCount, date: today, isDaily: gameMode === 'daily' }));
 
+          // Play tier-based victory sound
+          playSound(tier.soundType);
+
           // Check achievements and show toast for new unlocks
           const timeTaken = gameStartTime ? Date.now() - gameStartTime : null;
-          checkAchievements(true, guessCount, hardMode, gameMode === 'daily', timeTaken).then(
-            (newAchievements) => {
-              const first = newAchievements[0];
-              if (first) {
-                setPendingAchievement({
-                  title: first.achievement.title,
-                  description: first.achievement.description,
-                  points: first.achievement.points,
-                  category: first.achievement.category,
-                });
+          const achievementPromise = checkAchievements(true, guessCount, hardMode, gameMode === 'daily', timeTaken);
+
+          // Check streak milestone (daily games only, streak increments by 1)
+          const newStreak = gameMode === 'daily' ? statistics.currentStreak + 1 : null;
+          const milestone = newStreak !== null ? checkStreakMilestone(newStreak) : null;
+
+          achievementPromise.then((newAchievements) => {
+            const first = newAchievements[0];
+            const hasAchievement = !!first;
+
+            if (hasAchievement) {
+              setPendingAchievement({
+                title: first.achievement.title,
+                description: first.achievement.description,
+                points: first.achievement.points,
+                category: first.achievement.category,
+              });
+            }
+
+            if (milestone !== null) {
+              if (hasAchievement) {
+                // Queue streak milestone after achievement toast (4 second delay)
+                streakMilestoneTimeoutRef.current = setTimeout(() => {
+                  playSound('streak');
+                  playHaptic('streakMilestone');
+                  setPendingStreakMilestone({ streak: milestone });
+                }, 4000);
+              } else {
+                // Show immediately
+                playSound('streak');
+                playHaptic('streakMilestone');
+                setPendingStreakMilestone({ streak: milestone });
               }
             }
-          );
+          });
 
           // Announce for screen readers
           announceGameResult(true, solution, guessCount);
@@ -468,6 +513,11 @@ export default function Game() {
   const startGame = (mode: GameMode) => {
     setShowConfetti(false);
     setPendingAchievement(null);
+    setPendingStreakMilestone(null);
+    if (streakMilestoneTimeoutRef.current) {
+      clearTimeout(streakMilestoneTimeoutRef.current);
+      streakMilestoneTimeoutRef.current = null;
+    }
     setGameMode(mode);
     setErrorMessage(null);
     setGameStartTime(Date.now());
@@ -487,6 +537,16 @@ export default function Game() {
       dispatch(setSolution(getRandomWord(language)));
     }
   };
+
+  // Auto-start game if onboarding passed a mode selection via route params
+  const initialModeHandledRef = useRef(false);
+  useEffect(() => {
+    const initialMode = route.params?.initialMode;
+    if (initialMode && !gameStarted && !initialModeHandledRef.current) {
+      initialModeHandledRef.current = true;
+      startGame(initialMode);
+    }
+  }, [route.params?.initialMode, gameStarted]);
 
   const handleTimerExpire = useCallback(() => {
     if (gameEnded) return;
@@ -700,9 +760,21 @@ export default function Game() {
           onDismiss={() => setPendingAchievement(null)}
         />
       )}
+      {pendingStreakMilestone && (
+        <AchievementToast
+          title={`🔥 ${pendingStreakMilestone.streak}-Day Streak!`}
+          description="You're on fire! Keep it going."
+          points={pendingStreakMilestone.streak}
+          category="streak"
+          accentColor="#FFD700"
+          icon="flame"
+          label="STREAK MILESTONE"
+          onDismiss={() => setPendingStreakMilestone(null)}
+        />
+      )}
       <ConfettiExplosion
         active={showConfetti}
-        particleCount={60}
+        particleCount={confettiCount}
         duration={2500}
         onComplete={() => setShowConfetti(false)}
       />
@@ -719,18 +791,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: space5,
   },
   title: {
     fontSize: 48,
     fontFamily: 'Montserrat_800ExtraBold',
     letterSpacing: 8,
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'Montserrat_600SemiBold',
-    marginBottom: 40,
+    marginBottom: space10,
     textAlign: 'center',
   },
   modeContainer: {
@@ -738,9 +810,9 @@ const styles = StyleSheet.create({
     maxWidth: 300,
   },
   modeButton: {
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 16,
+    padding: space5,
+    borderRadius: space3,
+    marginBottom: spacing.md,
     alignItems: 'center',
   },
   dailyButton: {
@@ -760,7 +832,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontFamily: 'Montserrat_700Bold',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   modeButtonSubtext: {
     color: 'rgba(255,255,255,0.8)',
@@ -770,7 +842,7 @@ const styles = StyleSheet.create({
   miniGrid: {
     flexDirection: 'row',
     gap: 6,
-    marginBottom: 20,
+    marginBottom: space5,
   },
   miniTile: {
     width: 28,
@@ -780,11 +852,11 @@ const styles = StyleSheet.create({
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    paddingHorizontal: 20,
+    marginTop: space5,
+    paddingHorizontal: space5,
     paddingVertical: 10,
-    borderRadius: 20,
-    gap: 8,
+    borderRadius: space5,
+    gap: spacing.sm,
   },
   streakValue: {
     fontSize: 20,
@@ -795,10 +867,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat_600SemiBold',
   },
   hardModeBadge: {
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    marginTop: space3,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: space5,
   },
   hardModeText: {
     fontSize: 12,
@@ -806,14 +878,14 @@ const styles = StyleSheet.create({
   },
   timerContainer: {
     position: 'absolute',
-    top: 12,
-    right: 16,
+    top: space3,
+    right: spacing.md,
     zIndex: 10,
   },
   hintContainer: {
     position: 'absolute',
-    top: 12,
-    left: 16,
+    top: space3,
+    left: spacing.md,
     zIndex: 10,
   },
 });

@@ -12,7 +12,27 @@ export type HapticType =
   | 'absent'
   | 'win'
   | 'lose'
-  | 'error';
+  | 'error'
+  | 'streakMilestone'
+  | 'achievementUnlock'
+  | 'toggle';
+
+// All haptic types as a runtime array for exhaustiveness testing
+export const ALL_HAPTIC_TYPES: HapticType[] = [
+  'keyPress',
+  'keyDelete',
+  'submit',
+  'tileFlip',
+  'correct',
+  'present',
+  'absent',
+  'win',
+  'lose',
+  'error',
+  'streakMilestone',
+  'achievementUnlock',
+  'toggle',
+];
 
 let hapticsEnabled = true;
 
@@ -38,7 +58,7 @@ export async function playHaptic(type: HapticType): Promise<void> {
         break;
 
       case 'keyDelete':
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await Haptics.selectionAsync();
         break;
 
       case 'submit':
@@ -62,24 +82,36 @@ export async function playHaptic(type: HapticType): Promise<void> {
         break;
 
       case 'win':
-        // Play a victory pattern: success + success + success
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        await delay(150);
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        await delay(150);
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Ascending triple impact: light → medium → heavy
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await delay(100);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        await delay(100);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         break;
 
       case 'lose':
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        break;
-
-      case 'error':
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         break;
 
-      default:
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      case 'error':
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        break;
+
+      case 'streakMilestone':
+        // Double success with gap for milestone celebration
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await delay(200);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        break;
+
+      case 'achievementUnlock':
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        break;
+
+      case 'toggle':
+        await Haptics.selectionAsync();
+        break;
     }
   } catch (_error) {
     // Silently fail - haptics are non-critical

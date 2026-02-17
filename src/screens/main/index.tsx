@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 import {
   DarkTheme,
   DefaultTheme,
   NavigationContainer,
+  NavigationContainerRef,
 } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 
@@ -24,6 +25,7 @@ export default function MainScreen() {
   const { theme } = useAppSelector((state) => state.theme);
   const { soundEnabled } = useAppSelector((state) => state.settings);
   const dispatch = useAppDispatch();
+  const navigationRef = useRef<NavigationContainerRef<Record<string, object | undefined>>>(null);
 
   // Load persisted sound settings at app startup
   useEffect(() => {
@@ -46,9 +48,13 @@ export default function MainScreen() {
     initializeNotifications();
   }, []);
 
+  const handleModeSelect = useCallback((mode: 'daily' | 'unlimited') => {
+    navigationRef.current?.navigate('Game', { initialMode: mode });
+  }, []);
+
   return (
-    <NavigationContainer theme={theme.dark ? DarkTheme : DefaultTheme}>
-      <Onboarding onComplete={handleOnboardingComplete} />
+    <NavigationContainer ref={navigationRef} theme={theme.dark ? DarkTheme : DefaultTheme}>
+      <Onboarding onComplete={handleOnboardingComplete} onModeSelect={handleModeSelect} />
       <MainNavigator />
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
     </NavigationContainer>

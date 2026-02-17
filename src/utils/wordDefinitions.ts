@@ -1,6 +1,6 @@
 import { getStoreData, setStoreData } from './localStorageFuncs';
 
-const CACHE_KEY = 'wordle_word_definitions';
+const CACHE_KEY = 'wordvibe_word_definitions';
 const MAX_CACHE_ENTRIES = 200;
 const API_URL = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
 

@@ -33,8 +33,11 @@ import {
   saveTheme,
   clearStatistics,
 } from '../../utils/localStorageFuncs';
+import { spacing, space3, space5, space10 } from '../../utils/spacing';
+import { playHaptic } from '../../utils/haptics';
 import { toggleSounds } from '../../utils/sounds';
 import { SETTINGS as SETTINGS_STRINGS } from '../../utils/strings';
+import { typography } from '../../utils/typography';
 import Onboarding, { resetOnboarding } from '../../components/Onboarding';
 
 export default function Settings() {
@@ -78,6 +81,7 @@ export default function Settings() {
   };
 
   const handleThemeToggle = () => {
+    playHaptic('toggle');
     const newIsDark = !theme.dark;
     if (newIsDark) {
       dispatch(setDarkTheme());
@@ -88,6 +92,7 @@ export default function Settings() {
   };
 
   const handleHardModeToggle = (value: boolean) => {
+    playHaptic('toggle');
     if (value && gameStarted) {
       Alert.alert(
         SETTINGS_STRINGS.hardMode,
@@ -101,16 +106,19 @@ export default function Settings() {
   };
 
   const handleHighContrastToggle = (value: boolean) => {
+    playHaptic('toggle');
     dispatch(setHighContrastMode(value));
     saveSettings({ hardMode, highContrastMode: value, hapticFeedback, soundEnabled });
   };
 
   const handleHapticToggle = (value: boolean) => {
+    playHaptic('toggle');
     dispatch(setHapticFeedback(value));
     saveSettings({ hardMode, highContrastMode, hapticFeedback: value, soundEnabled });
   };
 
   const handleSoundToggle = (value: boolean) => {
+    playHaptic('toggle');
     dispatch(setSoundEnabled(value));
     toggleSounds(value);
     saveSettings({ hardMode, highContrastMode, hapticFeedback, soundEnabled: value });
@@ -147,7 +155,7 @@ export default function Settings() {
       <Text style={[styles.title, themedStyles.text]}>{SETTINGS_STRINGS.title}</Text>
 
       {/* Language Section */}
-      <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
+      <Text style={[typography.bodySmall, styles.sectionTitle, themedStyles.secondaryText]}>
         {SETTINGS_STRINGS.language}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
@@ -190,7 +198,7 @@ export default function Settings() {
       </View>
 
       {/* Appearance Section */}
-      <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
+      <Text style={[typography.bodySmall, styles.sectionTitle, themedStyles.secondaryText]}>
         {SETTINGS_STRINGS.appearance}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
@@ -214,7 +222,7 @@ export default function Settings() {
       </View>
 
       {/* Gameplay Section */}
-      <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
+      <Text style={[typography.bodySmall, styles.sectionTitle, themedStyles.secondaryText]}>
         {SETTINGS_STRINGS.gameplay}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
@@ -247,7 +255,7 @@ export default function Settings() {
       </View>
 
       {/* Data Section */}
-      <Text style={[styles.sectionTitle, themedStyles.secondaryText]}>
+      <Text style={[typography.bodySmall, styles.sectionTitle, themedStyles.secondaryText]}>
         {SETTINGS_STRINGS.data}
       </Text>
       <View style={[styles.card, themedStyles.card]}>
@@ -340,9 +348,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    padding: space5,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: space10,
   },
   title: {
     fontSize: 24,
@@ -351,23 +359,22 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   sectionTitle: {
-    fontSize: 12,
-    fontFamily: 'Montserrat_700Bold',
     textTransform: 'uppercase',
+    letterSpacing: 1.2,
     marginBottom: 10,
     marginTop: 10,
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
   },
   card: {
-    borderRadius: 12,
-    padding: 4,
+    borderRadius: space3,
+    padding: spacing.xs,
     marginBottom: 10,
   },
   languageButton: {
-    padding: 16,
-    borderRadius: 8,
+    padding: spacing.md,
+    borderRadius: spacing.sm,
     alignItems: 'center',
-    marginVertical: 4,
+    marginVertical: spacing.xs,
   },
   languageButtonActive: {
     backgroundColor: '#7C4DFF',
@@ -383,11 +390,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
+    padding: space3,
   },
   settingInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   settingTitleRow: {
     flexDirection: 'row',
@@ -403,35 +410,35 @@ const styles = StyleSheet.create({
   settingDescription: {
     fontSize: 12,
     fontFamily: 'Montserrat_600SemiBold',
-    marginTop: 4,
+    marginTop: spacing.xs,
     marginLeft: 30,
   },
   divider: {
     height: 1,
-    marginHorizontal: 12,
+    marginHorizontal: space3,
   },
   dataButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: spacing.md,
   },
   dataButtonText: {
     fontSize: 16,
     fontFamily: 'Montserrat_600SemiBold',
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   dangerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: spacing.md,
   },
   dangerButtonText: {
     color: colors.error,
     fontSize: 16,
     fontFamily: 'Montserrat_600SemiBold',
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   aboutSection: {
     marginTop: 30,
@@ -440,6 +447,6 @@ const styles = StyleSheet.create({
   aboutText: {
     fontSize: 12,
     fontFamily: 'Montserrat_600SemiBold',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
 });

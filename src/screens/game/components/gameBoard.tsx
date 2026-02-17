@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, useWindowDimensions } from 'react-native';
@@ -17,19 +17,27 @@ import ViewShot from 'react-native-view-shot';
 import Keyboard from './keyboard';
 import LetterSquare from './letterSquare';
 import ShareCard from '../../../components/ShareCard';
+import SolutionReveal from '../../../components/SolutionReveal';
 import VibeMeter from '../../../components/VibeMeter';
 import { useAppSelector } from '../../../hooks/storeHooks';
-import { adjustTextDisplay } from '../../../utils/adjustLetterDisplay';
 import {
-  TILE_FLIP_STAGGER_MS,
-  TILES_PER_ROW,
+  ROW_FLIP_TOTAL_MS,
   WIN_MODAL_EXTRA_DELAY_MS,
   LOSS_MODAL_DELAY_MS,
+  TILE_FLIP_INITIAL_DELAY_MS,
+  TILE_FLIP_STAGGER_MS,
+  TILE_FLIP_DURATION_MS,
+  TILES_PER_ROW,
 } from '../../../utils/animations';
 import { APP_TITLE, colors, SIZE } from '../../../utils/constants';
-import { captureAndShare } from '../../../utils/shareImage';
+import { captureAndShare, SHARE_CAPTURE_OPTIONS } from '../../../utils/shareImage';
+import { getDayNumber } from '../../../utils/dailyWord';
+import { playSound } from '../../../utils/sounds';
 import { WIN_MESSAGES, GAME_BOARD, GAME_MODES } from '../../../utils/strings';
-import { calculateVibeScore } from '../../../utils/vibeMeter';
+import { typography } from '../../../utils/typography';
+import { calculateVibeScore, calculatePartialVibeScore, VIBE_THRESHOLDS } from '../../../utils/vibeMeter';
+import { playHaptic } from '../../../utils/haptics';
+import { isReduceMotionEnabled } from '../../../utils/accessibility';
 import { fetchWordDefinition, WordDefinition } from '../../../utils/wordDefinitions';
 
 interface GameBoardProps {
@@ -53,7 +61,7 @@ const GameBoard = ({
     (state) => state.gameState
   );
   const { theme } = useAppSelector((state) => state.theme);
-  const { hardMode } = useAppSelector((state) => state.settings);
+  const { hardMode, hapticFeedback, highContrastMode } = useAppSelector((state) => state.settings);
   const { statistics } = useAppSelector((state) => state.statistics);
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -61,9 +69,105 @@ const GameBoard = ({
 
   const [showModal, setShowModal] = useState(false);
   const [wordDef, setWordDef] = useState<WordDefinition | null>(null);
+  const [showLossDefinition, setShowLossDefinition] = useState(false);
   const shareCardRef = useRef<ViewShot>(null);
   const fadeAnim = useSharedValue(0);
   const scaleAnim = useSharedValue(0.85);
+
+  // --- Incremental Vibe Meter reveal ---
+  const [revealProgress, setRevealProgress] = useState<number>(-1); // -1 = not revealing
+  const [revealingRowIdx, setRevealingRowIdx] = useState<number>(-1);
+  const completedCountRef = useRef(guesses.filter((g) => g.isComplete).length);
+  const revealTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const prevVibeScoreRef = useRef(0);
+
+  // Detect when a new row completes and start staggered reveal
+  useEffect(() => {
+    const currentCompleted = guesses.filter((g) => g.isComplete).length;
+    const prevCompleted = completedCountRef.current;
+
+    // Reset refs when a new game starts (no completed guesses)
+    if (currentCompleted === 0) {
+      prevVibeScoreRef.current = 0;
+      completedCountRef.current = 0;
+      return;
+    }
+
+    if (currentCompleted > prevCompleted && currentCompleted > 0) {
+      const newRowIdx = currentCompleted - 1;
+      const reduceMotion = isReduceMotionEnabled();
+
+      if (reduceMotion) {
+        // Skip incremental reveal — jump straight to final score
+        completedCountRef.current = currentCompleted;
+        setRevealProgress(-1);
+        setRevealingRowIdx(-1);
+        return;
+      }
+
+      setRevealingRowIdx(newRowIdx);
+      setRevealProgress(0);
+
+      // Clear any previous timers
+      revealTimersRef.current.forEach(clearTimeout);
+      revealTimersRef.current = [];
+
+      // Schedule reveal increments matching tile flip stagger
+      for (let i = 0; i < TILES_PER_ROW; i++) {
+        // Each tile's color is visible at its flip midpoint
+        const delay = TILE_FLIP_INITIAL_DELAY_MS + TILE_FLIP_STAGGER_MS * i + TILE_FLIP_DURATION_MS / 2;
+        const timer = setTimeout(() => {
+          setRevealProgress(i + 1);
+        }, delay);
+        revealTimersRef.current.push(timer);
+      }
+
+      // After full row reveal, clear the revealing state
+      const finalTimer = setTimeout(() => {
+        setRevealProgress(-1);
+        setRevealingRowIdx(-1);
+        revealTimersRef.current = [];
+      }, ROW_FLIP_TOTAL_MS + 50);
+      revealTimersRef.current.push(finalTimer);
+    }
+
+    completedCountRef.current = currentCompleted;
+
+    return () => {
+      revealTimersRef.current.forEach(clearTimeout);
+      revealTimersRef.current = [];
+    };
+  }, [guesses]);
+
+  // Compute the vibe score — incremental during reveal, final otherwise
+  const vibeScore = useMemo(
+    () =>
+      revealProgress >= 0 && revealingRowIdx >= 0
+        ? calculatePartialVibeScore(guesses, solution, revealingRowIdx, revealProgress)
+        : calculateVibeScore(guesses, solution),
+    [guesses, solution, revealProgress, revealingRowIdx],
+  );
+
+  // Haptic feedback when vibe score crosses threshold boundaries
+  useEffect(() => {
+    if (!hapticFeedback || revealProgress < 0) return;
+
+    const prevScore = prevVibeScoreRef.current;
+    const newScore = vibeScore.score;
+
+    if (prevScore !== newScore) {
+      for (const threshold of VIBE_THRESHOLDS) {
+        const crossed = (prevScore < threshold && newScore >= threshold) ||
+                        (prevScore >= threshold && newScore < threshold);
+        if (crossed) {
+          playHaptic('tileFlip');
+          break; // One haptic per update is enough
+        }
+      }
+    }
+
+    prevVibeScoreRef.current = newScore;
+  }, [vibeScore.score, revealProgress, hapticFeedback]);
 
   // Physical keyboard support (web + external keyboards)
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -98,7 +202,7 @@ const GameBoard = ({
   // Show modal after game ends with a delay for animations to complete
   useEffect(() => {
     if (gameEnded) {
-      const delay = gameWon ? TILE_FLIP_STAGGER_MS * TILES_PER_ROW + WIN_MODAL_EXTRA_DELAY_MS : LOSS_MODAL_DELAY_MS;
+      const delay = gameWon ? ROW_FLIP_TOTAL_MS + WIN_MODAL_EXTRA_DELAY_MS : LOSS_MODAL_DELAY_MS;
       const timer = setTimeout(() => {
         setShowModal(true);
         fadeAnim.value = withTiming(1, { duration: 300 });
@@ -117,6 +221,7 @@ const GameBoard = ({
 
   const handleDismissAndReset = () => {
     setShowModal(false);
+    setShowLossDefinition(false);
     fadeAnim.value = 0;
     scaleAnim.value = 0.85;
     resetGame();
@@ -186,7 +291,7 @@ const GameBoard = ({
           </View>
 
           {/* Vibe Meter */}
-          <VibeMeter vibeScore={calculateVibeScore(guesses, solution)} />
+          <VibeMeter vibeScore={vibeScore} />
 
           {/* Message Area */}
           <View style={styles.messageArea}>
@@ -232,28 +337,33 @@ const GameBoard = ({
                 <View style={styles.modalIconContainer}>
                   <Ionicons name="trophy" size={40} color={colors.correct} />
                 </View>
-                <Text style={[styles.modalTitle, themedStyles.text]}>{winMessage}</Text>
+                <Text style={[styles.modalTitle, typography.display, themedStyles.text]}>{winMessage}</Text>
                 <Text style={[styles.modalSubtitle, themedStyles.secondaryText]}>
                   {GAME_BOARD.youGotItIn} {guessCount} {guessCount === 1 ? GAME_BOARD.guessSingular : GAME_BOARD.guessPlural}
                 </Text>
               </>
             ) : (
               <>
-                <View style={[styles.modalIconContainer, styles.modalIconLoss]}>
-                  <Ionicons name="close-circle" size={40} color={colors.error} />
-                </View>
-                <Text style={[styles.modalTitle, themedStyles.text]}>{GAME_BOARD.betterLuckNextTime}</Text>
                 <Text style={[styles.modalSolutionLabel, themedStyles.secondaryText]}>
                   {GAME_BOARD.theWordWas}
                 </Text>
-                <Text style={[styles.modalSolutionWord, themedStyles.text]}>
-                  {adjustTextDisplay(solution, gameLanguage)}
+                <SolutionReveal
+                  word={solution}
+                  letterColor={theme.colors.text}
+                  onRevealStart={() => playSound('lose')}
+                  onRevealComplete={() => setShowLossDefinition(true)}
+                />
+                <Text style={[styles.lossEncouragement, themedStyles.secondaryText]}>
+                  {GAME_BOARD.toughOne}
+                </Text>
+                <Text style={[styles.lossNextAction, themedStyles.secondaryText]}>
+                  {gameMode === 'daily' ? GAME_BOARD.tomorrowAwaits : GAME_BOARD.tryAnother}
                 </Text>
               </>
             )}
 
-            {/* Word Definition */}
-            {wordDef && (
+            {/* Word Definition — on loss, wait for typewriter reveal to complete */}
+            {wordDef && (gameWon || showLossDefinition) && (
               <View style={[styles.definitionContainer, { borderTopColor: theme.colors.tertiary }]}>
                 <View style={styles.definitionHeader}>
                   <Text style={[styles.definitionWord, themedStyles.text]}>
@@ -342,7 +452,7 @@ const GameBoard = ({
       </Modal>
 
       {/* Hidden share card for image capture */}
-      <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 1 }} style={styles.hiddenCard}>
+      <ViewShot ref={shareCardRef} options={SHARE_CAPTURE_OPTIONS} style={styles.hiddenCard}>
         <ShareCard
           guesses={guesses}
           gameWon={gameWon}
@@ -350,6 +460,11 @@ const GameBoard = ({
           streak={statistics.currentStreak}
           isDaily={gameMode === 'daily'}
           hardMode={hardMode}
+          vibeScore={vibeScore.score}
+          dayNumber={getDayNumber()}
+          highContrastMode={highContrastMode}
+          theme={theme}
+          gameMode={gameMode}
         />
       </ViewShot>
     </View>
@@ -491,8 +606,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 16,
   },
-  modalIconLoss: {
-    backgroundColor: 'rgba(255, 69, 58, 0.15)',
+  lossEncouragement: {
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  lossNextAction: {
+    fontSize: 13,
+    fontFamily: 'Montserrat_600SemiBold',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 24,
@@ -512,13 +636,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  modalSolutionWord: {
-    fontSize: 28,
-    fontFamily: 'Montserrat_800ExtraBold',
-    textTransform: 'uppercase',
-    letterSpacing: 4,
-    marginBottom: 20,
   },
   definitionContainer: {
     width: '100%',

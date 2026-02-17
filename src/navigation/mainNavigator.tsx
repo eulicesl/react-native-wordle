@@ -40,7 +40,7 @@ export default function MainNavigator() {
         tabBarActiveTintColor: '#7C4DFF',
         tabBarInactiveTintColor: theme.dark ? '#808080' : '#a0a0a0',
         tabBarStyle: {
-          backgroundColor: theme.colors.background,
+          backgroundColor: theme.dark ? theme.colors.surface1 : theme.colors.background,
           borderTopColor: theme.colors.background2,
         },
         animation: 'fade',

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -7,9 +7,20 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Animated,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedProps,
+  withSpring,
+  withTiming,
+  withDelay,
+  Easing,
+  FadeInDown,
+} from 'react-native-reanimated';
+
+import { isReduceMotionEnabled } from '../../utils/accessibility';
 
 import { useAppSelector, useAppDispatch } from '../../hooks/storeHooks';
 import {
@@ -19,12 +30,12 @@ import {
 } from '../../services/gameCenter';
 import { setStatistics } from '../../store/slices/statisticsSlice';
 import { colors } from '../../utils/constants';
+import { spacing, space3, space5, space10 } from '../../utils/spacing';
 import { formatTimeUntilNextWord } from '../../utils/dailyWord';
 import { STATISTICS as STATISTICS_STRINGS } from '../../utils/strings';
+import { typography } from '../../utils/typography';
 import { loadGameHistory, GameHistoryEntry } from '../../utils/gameHistory';
 import { loadStatistics } from '../../utils/localStorageFuncs';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Icon mapping for achievements.
 // If you add new achievements, either add an entry here or they will fall back to the default icon (see getAchievementIcon).
@@ -88,7 +99,7 @@ export default function Statistics() {
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
 
   // Animation for tab indicator
-  const [tabIndicatorAnim] = useState(new Animated.Value(0));
+  const tabIndicatorAnim = useSharedValue(0);
 
   const loadAchievements = useCallback(async () => {
     const allAchievements = await getAllAchievements();
@@ -137,14 +148,13 @@ export default function Statistics() {
   // Animate tab indicator
   useEffect(() => {
     const tabIndex = activeTab === 'stats' ? 0 : activeTab === 'achievements' ? 1 : 2;
-    Animated.spring(tabIndicatorAnim, {
-      toValue: tabIndex,
-      useNativeDriver: true,
-      tension: 68,
-      friction: 10,
-    }).start();
+    tabIndicatorAnim.value = withSpring(tabIndex, {
+      damping: 10,
+      stiffness: 68,
+    });
   }, [activeTab, tabIndicatorAnim]);
 
+  const { width: screenWidth } = useWindowDimensions();
   const { gamesPlayed, gamesWon, currentStreak, maxStreak, guessDistribution } = statistics;
 
   const winPercentage = gamesPlayed > 0 ? Math.round((gamesWon / gamesPlayed) * 100) : 0;
@@ -170,6 +180,12 @@ export default function Statistics() {
     },
   };
 
+  // Determine which guess count was the most recent win
+  const lastWinGuess = useMemo(() => {
+    const lastWin = gameHistory.find((entry) => entry.won);
+    return lastWin ? lastWin.guessCount : null;
+  }, [gameHistory]);
+
   const TAB_COUNT = 3;
   const TAB_CONTAINER_PADDING = 4;
   const SCREEN_HORIZONTAL_PADDING = 20;
@@ -177,28 +193,39 @@ export default function Statistics() {
   const tabIndicatorWidth =
     tabContainerWidth > 0
       ? (tabContainerWidth - TAB_CONTAINER_PADDING * 2) / TAB_COUNT
-      : (SCREEN_WIDTH - SCREEN_HORIZONTAL_PADDING * 2 - TAB_CONTAINER_PADDING * 2) / TAB_COUNT;
+      : (screenWidth - SCREEN_HORIZONTAL_PADDING * 2 - TAB_CONTAINER_PADDING * 2) / TAB_COUNT;
 
-  const tabIndicatorTranslate = tabIndicatorAnim.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [0, tabIndicatorWidth, tabIndicatorWidth * 2],
-  });
+  const tabIndicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: tabIndicatorAnim.value * tabIndicatorWidth }],
+  }));
+
+  const statsCards = useMemo(() => [
+    { value: gamesPlayed, label: STATISTICS_STRINGS.played },
+    { value: winPercentage, label: STATISTICS_STRINGS.winPercent },
+    { value: currentStreak, label: STATISTICS_STRINGS.currentStreak },
+    { value: maxStreak, label: STATISTICS_STRINGS.maxStreak },
+  ], [gamesPlayed, winPercentage, currentStreak, maxStreak]);
 
   const renderStats = () => (
     <>
-      {/* Stats Grid */}
+      {/* Stats Grid — 2×2 */}
       <View style={styles.statsGrid}>
-        <View style={styles.statsRow}>
-          <StatBox value={gamesPlayed} label={STATISTICS_STRINGS.played} theme={themedStyles} />
-          <StatBox value={winPercentage} label={STATISTICS_STRINGS.winPercent} theme={themedStyles} />
-          <StatBox value={averageGuesses} label={STATISTICS_STRINGS.avgGuesses} theme={themedStyles} />
-        </View>
-        <View style={styles.statsRow}>
-          <StatBox value={currentStreak} label={STATISTICS_STRINGS.currentStreak} theme={themedStyles} />
-          <StatBox value={maxStreak} label={STATISTICS_STRINGS.maxStreak} theme={themedStyles} />
-          <View style={styles.statBox} />
-        </View>
+        {statsCards.map((card, index) => (
+          <StatCard
+            key={card.label}
+            value={card.value}
+            label={card.label}
+            index={index}
+            isActive={activeTab === 'stats'}
+            theme={themedStyles}
+          />
+        ))}
       </View>
+
+      {/* Average guesses — secondary detail */}
+      <Text style={[styles.avgGuessesText, themedStyles.secondaryText]}>
+        {STATISTICS_STRINGS.avgGuesses}: {averageGuesses}
+      </Text>
 
       {/* Guess Distribution */}
       <Text style={[styles.sectionTitle, themedStyles.text]}>{STATISTICS_STRINGS.guessDistribution}</Text>
@@ -209,10 +236,16 @@ export default function Statistics() {
             guess={index + 1}
             count={count}
             maxCount={maxGuesses}
+            isLastWin={lastWinGuess === index + 1}
+            inactiveBarColor={theme.colors.background3}
             theme={themedStyles}
           />
         ))}
       </View>
+
+      {/* Calendar Heatmap */}
+      <Text style={[styles.sectionTitle, themedStyles.text]}>{STATISTICS_STRINGS.playHistory}</Text>
+      <CalendarHeatmap gameHistory={gameHistory} theme={themedStyles} />
 
       {/* Next WordVibe Countdown */}
       <View style={[styles.countdownCard, themedStyles.card]}>
@@ -326,7 +359,7 @@ export default function Statistics() {
       style={[styles.container, themedStyles.container]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.title, themedStyles.text]}>{STATISTICS_STRINGS.title}</Text>
+      <Text style={[styles.title, typography.heading1, themedStyles.text]}>{STATISTICS_STRINGS.title}</Text>
 
       {/* Tab Switcher */}
       <View
@@ -336,10 +369,8 @@ export default function Statistics() {
         <Animated.View
           style={[
             styles.tabIndicator,
-            {
-              transform: [{ translateX: tabIndicatorTranslate }],
-              width: tabIndicatorWidth,
-            },
+            { width: tabIndicatorWidth },
+            tabIndicatorStyle,
           ]}
         />
         <TouchableOpacity
@@ -411,53 +442,139 @@ export default function Statistics() {
   );
 }
 
-interface StatBoxProps {
-  value: number | string;
+interface StatCardProps {
+  value: number;
   label: string;
+  index: number;
+  isActive: boolean;
   theme: {
     text: { color: string };
     secondaryText: { color: string };
+    card: { backgroundColor: string };
   };
 }
 
-function StatBox({ value, label, theme }: StatBoxProps) {
+const STAT_CARD_COUNT_UP_DURATION = 800;
+const STAT_CARD_STAGGER_DELAY = 80;
+
+function StatCard({ value, label, index, isActive, theme }: StatCardProps) {
+  const animValue = useSharedValue(0);
+  const reduceMotion = isReduceMotionEnabled();
+
+  useEffect(() => {
+    if (!isActive) {
+      animValue.value = 0;
+      return;
+    }
+
+    if (reduceMotion) {
+      animValue.value = value;
+      return;
+    }
+
+    animValue.value = 0;
+    animValue.value = withDelay(
+      index * STAT_CARD_STAGGER_DELAY,
+      withTiming(value, {
+        duration: STAT_CARD_COUNT_UP_DURATION,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+  }, [isActive, value, index, animValue, reduceMotion]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    text: `${Math.round(animValue.value)}`,
+  }));
+
+  const enteringAnimation = reduceMotion
+    ? undefined
+    : FadeInDown.delay(index * STAT_CARD_STAGGER_DELAY).duration(400);
+
   return (
-    <View style={styles.statBox}>
-      <Text style={[styles.statValue, theme.text]}>{value}</Text>
-      <Text style={[styles.statLabel, theme.secondaryText]}>{label}</Text>
-    </View>
+    <Animated.View
+      entering={enteringAnimation}
+      style={[styles.statCard, theme.card]}
+      accessibilityLabel={`${label}: ${value}`}
+      accessibilityRole="text"
+    >
+      <AnimatedStatText
+        animatedProps={animatedProps}
+        style={[styles.statCardValue, theme.text]}
+      />
+      <Text style={[styles.statCardLabel, theme.secondaryText]}>{label}</Text>
+    </Animated.View>
   );
+}
+
+/**
+ * Animated text component that displays a count-up number.
+ * Uses useAnimatedProps to update text content on the UI thread.
+ */
+const AnimatedText = Animated.createAnimatedComponent(
+  React.forwardRef<
+    Text,
+    React.ComponentProps<typeof Text> & { text?: string }
+  >(function AnimatedTextInner(props, ref) {
+    const { text, style, ...rest } = props;
+    return (
+      <Text ref={ref} style={style} {...rest}>
+        {text}
+      </Text>
+    );
+  }),
+);
+
+function AnimatedStatText({
+  animatedProps,
+  style,
+}: {
+  animatedProps: Partial<{ text: string }>;
+  style: React.ComponentProps<typeof Text>['style'];
+}) {
+  return <AnimatedText animatedProps={animatedProps} style={style} />;
 }
 
 interface DistributionBarProps {
   guess: number;
   count: number;
   maxCount: number;
+  isLastWin: boolean;
+  inactiveBarColor: string;
   theme: {
     text: { color: string };
     card: { backgroundColor: string };
   };
 }
 
-function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps) {
+function DistributionBar({ guess, count, maxCount, isLastWin, inactiveBarColor, theme }: DistributionBarProps) {
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
   const barWidth = Math.max(percentage, count > 0 ? 15 : 8);
-  const widthAnim = useRef(new Animated.Value(0)).current;
+  const widthAnim = useSharedValue(0);
+  const hasAnimated = useRef(false);
+  const reduceMotion = isReduceMotionEnabled();
 
   useEffect(() => {
-    widthAnim.setValue(0);
-    Animated.timing(widthAnim, {
-      toValue: barWidth,
-      duration: 500,
-      delay: (guess - 1) * 80,
-      useNativeDriver: false,
-    }).start();
-  }, [barWidth, guess, widthAnim]);
+    if (reduceMotion || hasAnimated.current) {
+      widthAnim.value = barWidth;
+      hasAnimated.current = true;
+      return;
+    }
 
-  const animatedWidth = widthAnim.interpolate({
-    inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
-  });
+    widthAnim.value = 0;
+    widthAnim.value = withDelay(
+      (guess - 1) * 80,
+      withTiming(barWidth, { duration: 500 }),
+    );
+    hasAnimated.current = true;
+  }, [barWidth, guess, widthAnim, reduceMotion]);
+
+  const animatedBarStyle = useAnimatedStyle(() => ({
+    width: `${widthAnim.value}%`,
+  }));
+
+  const barColor = count > 0
+    ? isLastWin ? colors.correct : inactiveBarColor
+    : theme.card.backgroundColor;
 
   return (
     <View style={styles.distributionRow}>
@@ -466,14 +583,160 @@ function DistributionBar({ guess, count, maxCount, theme }: DistributionBarProps
         <Animated.View
           style={[
             styles.bar,
-            {
-              width: animatedWidth,
-              backgroundColor: count > 0 ? colors.correct : theme.card.backgroundColor,
-            },
+            { backgroundColor: barColor },
+            animatedBarStyle,
           ]}
         >
-          <Text style={[styles.barCount, count === 0 && theme.text]}>{count}</Text>
+          <Text style={[styles.barCount, (!isLastWin || count === 0) && theme.text]}>{count}</Text>
         </Animated.View>
+      </View>
+    </View>
+  );
+}
+
+// Day labels for the heatmap
+const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const HEATMAP_CELL_SIZE = 12;
+const HEATMAP_GAP = 3;
+
+type DayStatus = 'won' | 'lost' | 'none';
+
+/**
+ * Build a map of YYYY-MM-DD → DayStatus from game history.
+ * If multiple games exist on the same date, won takes priority over lost.
+ */
+export function buildDayStatusMap(history: GameHistoryEntry[]): Map<string, DayStatus> {
+  const map = new Map<string, DayStatus>();
+  for (const entry of history) {
+    const dateKey = entry.date.slice(0, 10); // YYYY-MM-DD
+    const existing = map.get(dateKey);
+    if (existing === 'won') continue; // won already, keep it
+    map.set(dateKey, entry.won ? 'won' : 'lost');
+  }
+  return map;
+}
+
+/**
+ * Generate an array of the last 30 days as YYYY-MM-DD strings, oldest first.
+ */
+export function getLast30Days(): string[] {
+  const days: string[] = [];
+  const now = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+  return days;
+}
+
+interface CalendarHeatmapProps {
+  gameHistory: GameHistoryEntry[];
+  theme: {
+    text: { color: string };
+    secondaryText: { color: string };
+    card: { backgroundColor: string };
+  };
+}
+
+function CalendarHeatmap({ gameHistory, theme }: CalendarHeatmapProps) {
+  const days = useMemo(() => getLast30Days(), []);
+  const statusMap = useMemo(() => buildDayStatusMap(gameHistory), [gameHistory]);
+
+  // Organize days into columns (weeks), each column has up to 7 rows (Mon=0..Sun=6)
+  const weeks = useMemo(() => {
+    const result: { date: string; dayOfWeek: number }[][] = [];
+    let currentWeek: { date: string; dayOfWeek: number }[] = [];
+
+    for (const dateStr of days) {
+      const d = new Date(dateStr + 'T12:00:00'); // noon to avoid timezone edge cases
+      // JS getDay: 0=Sun, convert to Mon=0..Sun=6
+      const jsDay = d.getDay();
+      const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+
+      if (currentWeek.length > 0) {
+        const prevDow = currentWeek[currentWeek.length - 1]!.dayOfWeek;
+        // Start new week when dayOfWeek wraps around (new Monday)
+        if (dayOfWeek <= prevDow && dayOfWeek === 0) {
+          result.push(currentWeek);
+          currentWeek = [];
+        }
+      }
+      currentWeek.push({ date: dateStr, dayOfWeek });
+    }
+    if (currentWeek.length > 0) {
+      result.push(currentWeek);
+    }
+    return result;
+  }, [days]);
+
+  const getCellColor = (status: DayStatus): string => {
+    switch (status) {
+      case 'won':
+        return colors.correct;
+      case 'lost':
+        return colors.error;
+      default:
+        return theme.card.backgroundColor;
+    }
+  };
+
+  return (
+    <View
+      style={[styles.heatmapContainer, theme.card]}
+      accessibilityLabel="Calendar heatmap showing play history for the last 30 days"
+      accessibilityRole="image"
+    >
+      <View style={styles.heatmapContent}>
+        {/* Day labels column */}
+        <View style={styles.heatmapLabels}>
+          {DAY_LABELS.map((label, i) => (
+            <View key={i} style={styles.heatmapLabelCell}>
+              <Text style={[styles.heatmapLabelText, theme.secondaryText]}>{label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Weeks columns */}
+        {weeks.map((week, weekIdx) => (
+          <View key={weekIdx} style={styles.heatmapWeek}>
+            {/* Offset cells for the first week if it doesn't start on Monday */}
+            {weekIdx === 0 && week[0]!.dayOfWeek > 0 &&
+              Array.from({ length: week[0]!.dayOfWeek }).map((_, i) => (
+                <View key={`empty-${i}`} style={styles.heatmapCell} />
+              ))
+            }
+            {week.map(({ date, dayOfWeek }) => {
+              const status = statusMap.get(date) || 'none';
+              return (
+                <View
+                  key={date}
+                  style={[
+                    styles.heatmapCell,
+                    { backgroundColor: getCellColor(status) },
+                  ]}
+                  accessibilityLabel={`${DAY_LABELS[dayOfWeek]} ${date}: ${status === 'none' ? 'not played' : status}`}
+                />
+              );
+            })}
+          </View>
+        ))}
+      </View>
+
+      {/* Legend */}
+      <View style={styles.heatmapLegend}>
+        <View style={styles.heatmapLegendItem}>
+          <View style={[styles.heatmapLegendDot, { backgroundColor: colors.correct }]} />
+          <Text style={[styles.heatmapLegendText, theme.secondaryText]}>Won</Text>
+        </View>
+        <View style={styles.heatmapLegendItem}>
+          <View style={[styles.heatmapLegendDot, { backgroundColor: colors.error }]} />
+          <Text style={[styles.heatmapLegendText, theme.secondaryText]}>Lost</Text>
+        </View>
+        <View style={styles.heatmapLegendItem}>
+          <View style={[styles.heatmapLegendDot, { backgroundColor: theme.card.backgroundColor }]} />
+          <Text style={[styles.heatmapLegendText, theme.secondaryText]}>—</Text>
+        </View>
       </View>
     </View>
   );
@@ -632,21 +895,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    padding: space5,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: space10,
   },
   title: {
     fontSize: 24,
     fontFamily: 'Montserrat_700Bold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: space5,
   },
   tabContainer: {
     flexDirection: 'row',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 24,
+    borderRadius: space3,
+    padding: spacing.xs,
+    marginBottom: spacing.lg,
     position: 'relative',
   },
   tabIndicator: {
@@ -674,32 +937,42 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   statsGrid: {
-    marginBottom: 24,
-    gap: 12,
-  },
-  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+    gap: space3,
+    marginBottom: spacing.sm,
   },
-  statBox: {
+  statCard: {
+    width: '47%',
+    flexGrow: 1,
     alignItems: 'center',
-    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: space3,
   },
-  statValue: {
-    fontSize: 32,
-    fontFamily: 'Montserrat_700Bold',
+  statCardValue: {
+    fontSize: 28,
+    fontFamily: 'Montserrat_800ExtraBold',
   },
-  statLabel: {
+  statCardLabel: {
     fontSize: 11,
     fontFamily: 'Montserrat_600SemiBold',
     textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginTop: 4,
+  },
+  avgGuessesText: {
+    fontSize: 12,
+    fontFamily: 'Montserrat_600SemiBold',
+    textAlign: 'center',
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     fontSize: 14,
     fontFamily: 'Montserrat_700Bold',
     textAlign: 'left',
-    marginBottom: 12,
+    marginBottom: space3,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
@@ -711,6 +984,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
   },
+
   guessNumber: {
     width: 20,
     fontSize: 14,
@@ -719,14 +993,14 @@ const styles = StyleSheet.create({
   },
   barContainer: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   bar: {
-    height: 24,
-    borderRadius: 4,
+    height: spacing.lg,
+    borderRadius: spacing.xs,
     justifyContent: 'center',
     alignItems: 'flex-end',
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     minWidth: 30,
   },
   barCount: {
@@ -735,8 +1009,8 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   countdownCard: {
-    padding: 20,
-    borderRadius: 12,
+    padding: space5,
+    borderRadius: space3,
     alignItems: 'center',
     marginTop: 10,
   },
@@ -744,7 +1018,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Montserrat_600SemiBold',
     textTransform: 'uppercase',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   countdown: {
     fontSize: 36,
@@ -752,14 +1026,14 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   progressCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
+    padding: spacing.md,
+    borderRadius: space3,
+    marginBottom: spacing.lg,
   },
   progressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: space3,
   },
   progressItem: {
     flex: 1,
@@ -791,12 +1065,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   achievementsGrid: {
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
   achievementCard: {
     flexDirection: 'row',
-    padding: 12,
-    borderRadius: 12,
+    padding: space3,
+    borderRadius: space3,
     marginBottom: 10,
     alignItems: 'center',
   },
@@ -804,13 +1078,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   achievementIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: spacing.xxl,
+    height: spacing.xxl,
+    borderRadius: spacing.lg,
     backgroundColor: 'rgba(128, 128, 128, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: space3,
   },
   achievementIconUnlocked: {
     backgroundColor: colors.correct,
@@ -851,21 +1125,21 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat_500Medium',
   },
   unlockedBadge: {
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   // History styles
   emptyHistory: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
-    gap: 12,
+    gap: space3,
   },
   emptyHistoryText: {
     fontSize: 16,
     fontFamily: 'Montserrat_600SemiBold',
   },
   historyCard: {
-    borderRadius: 12,
+    borderRadius: space3,
     padding: 14,
     marginBottom: 10,
   },
@@ -934,5 +1208,57 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 2,
+  },
+  // Calendar Heatmap styles
+  heatmapContainer: {
+    borderRadius: space3,
+    padding: spacing.md,
+    marginBottom: 30,
+  },
+  heatmapContent: {
+    flexDirection: 'row',
+    gap: HEATMAP_GAP,
+  },
+  heatmapLabels: {
+    gap: HEATMAP_GAP,
+    marginRight: spacing.xs,
+  },
+  heatmapLabelCell: {
+    width: HEATMAP_CELL_SIZE,
+    height: HEATMAP_CELL_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heatmapLabelText: {
+    fontSize: 8,
+    fontFamily: 'Montserrat_600SemiBold',
+  },
+  heatmapWeek: {
+    gap: HEATMAP_GAP,
+  },
+  heatmapCell: {
+    width: HEATMAP_CELL_SIZE,
+    height: HEATMAP_CELL_SIZE,
+    borderRadius: 2,
+  },
+  heatmapLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  heatmapLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  heatmapLegendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 2,
+  },
+  heatmapLegendText: {
+    fontSize: 10,
+    fontFamily: 'Montserrat_600SemiBold',
   },
 });

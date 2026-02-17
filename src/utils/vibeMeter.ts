@@ -58,3 +58,44 @@ export function calculateVibeScore(guesses: guess[], _solution: string): VibeSco
 
   return { score, trend, label };
 }
+
+/**
+ * Calculate vibe score with only a partial reveal of the current row.
+ * Used to animate the Vibe Meter in sync with tile flip stagger.
+ *
+ * @param guesses - Full guesses array from Redux state
+ * @param solution - Current solution word (unused, kept for API symmetry)
+ * @param revealedRowIdx - Index of the row currently being revealed
+ * @param tilesRevealed - Number of tiles revealed so far in that row (0-5)
+ */
+export function calculatePartialVibeScore(
+  guesses: guess[],
+  solution: string,
+  revealedRowIdx: number,
+  tilesRevealed: number,
+): VibeScore {
+  if (tilesRevealed <= 0) {
+    // Nothing revealed yet in this row — score from all prior completed rows
+    const priorGuesses = guesses.filter((g, i) => g.isComplete && i < revealedRowIdx);
+    if (priorGuesses.length === 0) {
+      return { score: 0, trend: 'same', label: 'Start guessing!' };
+    }
+    return calculateVibeScore(
+      [...priorGuesses, ...guesses.filter((g, i) => !g.isComplete || i >= revealedRowIdx)],
+      solution,
+    );
+  }
+
+  // Build a modified guesses array where the current row is partially revealed
+  const modified: guess[] = guesses.map((g, i) => {
+    if (i !== revealedRowIdx) return g;
+    // Partial reveal: only include matches for revealed tiles
+    const partialMatches = g.matches.map((m, j) => (j < tilesRevealed ? m : '')) as guess['matches'];
+    return { ...g, matches: partialMatches, isComplete: true };
+  });
+
+  return calculateVibeScore(modified, solution);
+}
+
+/** Vibe score threshold boundaries for haptic feedback */
+export const VIBE_THRESHOLDS = [20, 40, 60, 80] as const;

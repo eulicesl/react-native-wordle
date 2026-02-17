@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,124 +8,519 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
-  Animated,
   Dimensions,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  withSpring,
+  runOnJS,
+  Easing,
+} from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 
 import { useAppSelector } from '../hooks/storeHooks';
 import { colors } from '../utils/constants';
 import { playHaptic } from '../utils/haptics';
 import { getStoreData, setStoreData } from '../utils/localStorageFuncs';
+import { isReduceMotionEnabled } from '../utils/accessibility';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ONBOARDING_COMPLETE_KEY = 'wordvibe_onboarding_v2_complete';
+const TOTAL_STEPS = 4;
 
 interface OnboardingProps {
   onComplete: () => void;
+  onModeSelect?: (mode: 'daily' | 'unlimited') => void;
   forceShow?: boolean;
 }
 
-interface OnboardingStep {
-  title: string;
-  description: string;
-  icon?: React.ComponentProps<typeof Ionicons>['name'];
-  example: {
-    letters: string[];
-    highlights: ('correct' | 'present' | 'absent' | '')[];
-    highlightIndex: number;
-  } | null;
-  tip?: string;
+// --- Step 1: Welcome ---
+
+function AnimatedLetter({
+  letter,
+  index,
+  active,
+  reduceMotion,
+}: {
+  letter: string;
+  index: number;
+  active: boolean;
+  reduceMotion: boolean;
+}) {
+  const opacity = useSharedValue(reduceMotion ? 1 : 0);
+  const scale = useSharedValue(reduceMotion ? 1 : 0.5);
+
+  useEffect(() => {
+    if (!active) return;
+    if (reduceMotion) {
+      opacity.value = 1;
+      scale.value = 1;
+      return;
+    }
+    opacity.value = withDelay(index * 120, withTiming(1, { duration: 350 }));
+    scale.value = withDelay(
+      index * 120,
+      withSpring(1, { damping: 12, stiffness: 150 })
+    );
+  }, [active, index, reduceMotion, opacity, scale]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.Text
+      style={[
+        stepStyles.logoLetter,
+        { color: index % 2 === 0 ? colors.correct : colors.present },
+        animStyle,
+      ]}
+    >
+      {letter}
+    </Animated.Text>
+  );
 }
 
-const STEPS: OnboardingStep[] = [
-  {
-    title: 'Welcome to WordVibe!',
-    description: 'Feel the vibe as you guess the hidden word in 6 tries.\nEach guess must be a valid 5-letter word.',
-    icon: 'game-controller',
-    example: null,
-    tip: 'A new puzzle is available every day!',
-  },
-  {
-    title: 'Purple = Locked In',
-    description: 'The letter is in the word and in the correct spot.',
-    example: {
-      letters: ['V', 'I', 'B', 'E', 'S'],
-      highlights: ['correct', '', '', '', ''],
-      highlightIndex: 0,
-    },
-    tip: 'Purple letters are locked in place for Hard Mode.',
-  },
-  {
-    title: 'Pink = Close Vibe',
-    description: 'The letter is in the word but in the wrong spot.',
-    example: {
-      letters: ['W', 'O', 'R', 'D', 'S'],
-      highlights: ['', 'present', '', '', ''],
-      highlightIndex: 1,
-    },
-    tip: 'Try moving pink letters to different spots.',
-  },
-  {
-    title: 'Slate = No Vibe',
-    description: 'The letter is not in the word at all.',
-    example: {
-      letters: ['G', 'L', 'O', 'W', 'S'],
-      highlights: ['', '', 'absent', '', ''],
-      highlightIndex: 2,
-    },
-    tip: 'Slate letters are removed from the keyboard.',
-  },
-  {
-    title: 'Multiple Letters',
-    description:
-      'Words can have repeating letters.\nThe hints account for duplicates.',
-    example: {
-      letters: ['S', 'P', 'E', 'E', 'D'],
-      highlights: ['correct', 'present', 'correct', 'correct', 'absent'],
-      highlightIndex: -1,
-    },
-    tip: 'Watch for words like SPEED, GEESE, or VIVID!',
-  },
-  {
-    title: 'Your Vibe Meter',
-    description: 'Watch your Vibe score grow as you get closer.\nThe meter shows how warm your guesses are!',
-    icon: 'pulse',
-    example: null,
-  },
-  {
-    title: 'Daily Challenge',
-    description:
-      'Everyone gets the same word each day.\nShare your results with friends!',
-    icon: 'calendar',
-    example: null,
-    tip: 'Build your streak by playing every day.',
-  },
-  {
-    title: 'Hard Mode',
-    description:
-      'Enable Hard Mode in Settings for an extra challenge.\n\nYou must use revealed hints in subsequent guesses.',
-    icon: 'skull',
-    example: null,
-    tip: 'Hard Mode is marked with a * when sharing results.',
-  },
-  {
-    title: "Let's Play!",
-    description:
-      'Start with a word that has common letters like:\nADIEU, CRANE, or SLATE',
-    icon: 'rocket',
-    example: null,
-    tip: 'Good luck! 🍀',
-  },
-];
+function WelcomeStep({ active }: { active: boolean }) {
+  const { theme } = useAppSelector((state) => state.theme);
+  const reduceMotion = isReduceMotionEnabled();
+  const letters = 'WORDVIBE'.split('');
 
-export default function Onboarding({ onComplete, forceShow = false }: OnboardingProps) {
+  const taglineOpacity = useSharedValue(reduceMotion ? 1 : 0);
+
+  useEffect(() => {
+    if (!active) return;
+    if (reduceMotion) {
+      taglineOpacity.value = 1;
+      return;
+    }
+    taglineOpacity.value = withDelay(
+      letters.length * 120 + 200,
+      withTiming(1, { duration: 500 })
+    );
+  }, [active, reduceMotion, letters.length, taglineOpacity]);
+
+  const taglineStyle = useAnimatedStyle(() => ({
+    opacity: taglineOpacity.value,
+  }));
+
+  return (
+    <View style={stepStyles.welcomeContainer}>
+      <View
+        style={stepStyles.logoRow}
+        accessibilityLabel="WordVibe logo"
+        accessibilityRole="header"
+      >
+        {letters.map((letter, i) => (
+          <AnimatedLetter
+            key={i}
+            letter={letter}
+            index={i}
+            active={active}
+            reduceMotion={reduceMotion}
+          />
+        ))}
+      </View>
+
+      <Animated.Text
+        style={[
+          stepStyles.tagline,
+          { color: theme.colors.secondary },
+          taglineStyle,
+        ]}
+        accessibilityLabel="Feel the word"
+      >
+        Feel the word.
+      </Animated.Text>
+    </View>
+  );
+}
+
+// --- Step 2: How It Works ---
+
+interface TileExampleProps {
+  letters: string[];
+  statuses: ('correct' | 'present' | 'absent' | '')[];
+  label: string;
+  delay: number;
+  active: boolean;
+}
+
+function AnimatedTileCell({
+  letter,
+  status,
+  index,
+  delay,
+  active,
+  reduceMotion,
+  tileSize,
+  textColor,
+}: {
+  letter: string;
+  status: 'correct' | 'present' | 'absent' | '';
+  index: number;
+  delay: number;
+  active: boolean;
+  reduceMotion: boolean;
+  tileSize: number;
+  textColor: string;
+}) {
+  const flipProgress = useSharedValue(0);
+
+  const bgColor =
+    status === 'correct'
+      ? colors.correct
+      : status === 'present'
+        ? colors.present
+        : status === 'absent'
+          ? colors.absent
+          : 'transparent';
+
+  useEffect(() => {
+    if (!active) return;
+    if (reduceMotion) {
+      flipProgress.value = 1;
+      return;
+    }
+    flipProgress.value = withDelay(
+      delay + index * 150,
+      withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) })
+    );
+  }, [active, reduceMotion, delay, index, flipProgress]);
+
+  const animStyle = useAnimatedStyle(() => {
+    const progress = flipProgress.value;
+    const borderColor =
+      progress > 0.5 ? 'transparent' : 'rgba(128, 128, 128, 0.3)';
+    const backgroundColor = progress > 0.5 ? bgColor : 'transparent';
+    const rotateX =
+      progress < 0.5
+        ? `${progress * 180}deg`
+        : `${(1 - progress) * 180}deg`;
+
+    return {
+      width: tileSize,
+      height: tileSize,
+      backgroundColor,
+      borderWidth: progress > 0.5 ? 0 : 2,
+      borderColor,
+      transform: [{ perspective: 400 }, { rotateX }],
+      opacity: progress > 0.4 && progress < 0.6 ? 0.3 : 1,
+    };
+  });
+
+  const textAnimStyle = useAnimatedStyle(() => {
+    const progress = flipProgress.value;
+    return {
+      color: progress > 0.5 && status ? '#fff' : textColor,
+    };
+  });
+
+  return (
+    <Animated.View
+      style={[stepStyles.tile, animStyle]}
+      accessibilityLabel={`Letter ${letter}, ${status || 'empty'}`}
+      accessibilityRole="text"
+    >
+      <Animated.Text style={[stepStyles.tileLetter, textAnimStyle]}>
+        {letter}
+      </Animated.Text>
+    </Animated.View>
+  );
+}
+
+function TileExample({ letters, statuses, label, delay, active }: TileExampleProps) {
+  const { theme } = useAppSelector((state) => state.theme);
+  const reduceMotion = isReduceMotionEnabled();
+
+  const labelOpacity = useSharedValue(reduceMotion ? 1 : 0);
+
+  useEffect(() => {
+    if (!active) return;
+    if (reduceMotion) {
+      labelOpacity.value = 1;
+      return;
+    }
+    labelOpacity.value = withDelay(
+      delay + letters.length * 150 + 200,
+      withTiming(1, { duration: 400 })
+    );
+  }, [active, reduceMotion, delay, letters.length, labelOpacity]);
+
+  const labelStyle = useAnimatedStyle(() => ({
+    opacity: labelOpacity.value,
+  }));
+
+  const tileSize = Math.min((SCREEN_WIDTH - 100) / 5, 50);
+
+  return (
+    <View style={stepStyles.tileExampleBlock}>
+      <View style={stepStyles.tilesRow}>
+        {letters.map((letter, i) => (
+          <AnimatedTileCell
+            key={i}
+            letter={letter}
+            status={statuses[i] ?? ''}
+            index={i}
+            delay={delay}
+            active={active}
+            reduceMotion={reduceMotion}
+            tileSize={tileSize}
+            textColor={theme.colors.text}
+          />
+        ))}
+      </View>
+      <Animated.Text
+        style={[stepStyles.tileLabel, { color: theme.colors.text }, labelStyle]}
+      >
+        {label}
+      </Animated.Text>
+    </View>
+  );
+}
+
+function HowItWorksStep({ active }: { active: boolean }) {
+  return (
+    <View
+      style={stepStyles.howItWorksContainer}
+      accessibilityLabel="How it works: learn tile colors"
+      accessibilityRole="text"
+    >
+      <TileExample
+        letters={['W', 'E', 'A', 'R', 'Y']}
+        statuses={['correct', '', '', '', '']}
+        label="Purple = locked in. The letter is exactly right."
+        delay={0}
+        active={active}
+      />
+      <TileExample
+        letters={['S', 'T', 'O', 'R', 'M']}
+        statuses={['', '', 'present', '', '']}
+        label="Pink = close vibe. Right letter, wrong spot."
+        delay={1200}
+        active={active}
+      />
+      <TileExample
+        letters={['G', 'L', 'O', 'W', 'S']}
+        statuses={['', '', 'absent', '', '']}
+        label="Slate = no vibe. Not in the word."
+        delay={2400}
+        active={active}
+      />
+    </View>
+  );
+}
+
+// --- Step 3: Vibe Meter ---
+
+function VibeMeterStep({ active }: { active: boolean }) {
+  const { theme } = useAppSelector((state) => state.theme);
+  const reduceMotion = isReduceMotionEnabled();
+
+  const diameter = 140;
+  const strokeWidth = 10;
+  const radius = (diameter - strokeWidth) / 2;
+  const arcLength = Math.PI * radius;
+  const cx = diameter / 2;
+  const cy = diameter / 2;
+
+  const startX = cx - radius;
+  const endX = cx + radius;
+  const arcPath = `M ${startX} ${cy} A ${radius} ${radius} 0 0 1 ${endX} ${cy}`;
+
+  const textOpacity = useSharedValue(reduceMotion ? 1 : 0);
+  const [displayNum, setDisplayNum] = useState(0);
+
+  useEffect(() => {
+    if (!active) return;
+    if (reduceMotion) {
+      setDisplayNum(75);
+      textOpacity.value = 1;
+      return;
+    }
+
+    textOpacity.value = withDelay(2100, withTiming(1, { duration: 500 }));
+
+    let frame: number;
+    const startTime = Date.now();
+    const duration = 1500;
+    const delayMs = 400;
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime - delayMs;
+      if (elapsed < 0) {
+        frame = requestAnimationFrame(animate);
+        return;
+      }
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayNum(Math.round(eased * 75));
+      if (progress < 1) {
+        frame = requestAnimationFrame(animate);
+      }
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [active, reduceMotion]);
+
+  const dashOffset = arcLength * (1 - displayNum / 100);
+
+  const descriptionStyle = useAnimatedStyle(() => ({
+    opacity: textOpacity.value,
+  }));
+
+  const svgHeight = diameter / 2 + strokeWidth;
+
+  return (
+    <View
+      style={stepStyles.vibeMeterContainer}
+      accessibilityLabel="Vibe Meter demo showing 75% score"
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: displayNum }}
+    >
+      <View style={[stepStyles.meterWrapper, { width: diameter }]}>
+        <Svg width={diameter} height={svgHeight} viewBox={`0 0 ${diameter} ${svgHeight}`}>
+          <Path
+            d={arcPath}
+            stroke={theme.colors.background2}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+          />
+          <Path
+            d={arcPath}
+            stroke={getVibeColor(displayNum)}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${arcLength}`}
+            strokeDashoffset={`${dashOffset}`}
+          />
+        </Svg>
+        <View style={[stepStyles.meterScore, { top: svgHeight * 0.3, width: diameter }]}>
+          <Text style={[stepStyles.meterScoreText, { color: theme.colors.text }]}>
+            {displayNum}
+          </Text>
+        </View>
+        <Text style={[stepStyles.meterLabel, { color: theme.colors.secondary }]}>
+          VIBE
+        </Text>
+      </View>
+
+      <Animated.Text
+        style={[
+          stepStyles.vibeMeterDescription,
+          { color: theme.colors.text },
+          descriptionStyle,
+        ]}
+      >
+        Watch your vibe rise as you get closer!
+      </Animated.Text>
+    </View>
+  );
+}
+
+function getVibeColor(score: number): string {
+  if (score >= 80) return '#7C4DFF';
+  if (score >= 60) return '#FF9100';
+  if (score >= 40) return '#FFD600';
+  if (score >= 20) return '#00BFA5';
+  return '#40C4FF';
+}
+
+// --- Step 4: Ready ---
+
+function ReadyStep({
+  active,
+  onSelectMode,
+}: {
+  active: boolean;
+  onSelectMode: (mode: 'daily' | 'unlimited') => void;
+}) {
+  const { theme } = useAppSelector((state) => state.theme);
+  const reduceMotion = isReduceMotionEnabled();
+  const buttonsOpacity = useSharedValue(reduceMotion ? 1 : 0);
+  const buttonsTranslateY = useSharedValue(reduceMotion ? 0 : 30);
+
+  useEffect(() => {
+    if (!active) return;
+    if (reduceMotion) {
+      buttonsOpacity.value = 1;
+      buttonsTranslateY.value = 0;
+      return;
+    }
+    buttonsOpacity.value = withDelay(300, withTiming(1, { duration: 500 }));
+    buttonsTranslateY.value = withDelay(
+      300,
+      withSpring(0, { damping: 15, stiffness: 120 })
+    );
+  }, [active]);
+
+  const buttonsStyle = useAnimatedStyle(() => ({
+    opacity: buttonsOpacity.value,
+    transform: [{ translateY: buttonsTranslateY.value }],
+  }));
+
+  return (
+    <View style={stepStyles.readyContainer}>
+      <Ionicons
+        name="rocket"
+        size={56}
+        color={colors.correct}
+        style={stepStyles.readyIcon}
+      />
+      <Text
+        style={[stepStyles.readyTitle, { color: theme.colors.text }]}
+        accessibilityRole="header"
+      >
+        Ready?
+      </Text>
+      <Text style={[stepStyles.readySubtitle, { color: theme.colors.secondary }]}>
+        Choose your challenge
+      </Text>
+
+      <Animated.View style={[stepStyles.modeButtons, buttonsStyle]}>
+        <TouchableOpacity
+          style={[stepStyles.modeButton, { backgroundColor: colors.correct }]}
+          onPress={() => onSelectMode('daily')}
+          accessibilityLabel="Start Daily Challenge"
+          accessibilityRole="button"
+        >
+          <Ionicons name="calendar" size={24} color="#fff" />
+          <Text style={stepStyles.modeButtonText}>Daily Challenge</Text>
+          <Text style={stepStyles.modeButtonSub}>Same word for everyone</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[stepStyles.modeButton, { backgroundColor: colors.present }]}
+          onPress={() => onSelectMode('unlimited')}
+          accessibilityLabel="Start Unlimited mode"
+          accessibilityRole="button"
+        >
+          <Ionicons name="infinite" size={24} color="#fff" />
+          <Text style={stepStyles.modeButtonText}>Unlimited</Text>
+          <Text style={stepStyles.modeButtonSub}>Play as many as you want</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+}
+
+// --- Main Onboarding ---
+
+export default function Onboarding({ onComplete, onModeSelect, forceShow = false }: OnboardingProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [visible, setVisible] = useState(forceShow);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const { theme } = useAppSelector((state) => state.theme);
+  const reduceMotion = isReduceMotionEnabled();
+
+  const contentOpacity = useSharedValue(1);
+  const contentTranslateY = useSharedValue(0);
 
   useEffect(() => {
     if (!forceShow) {
@@ -134,34 +529,6 @@ export default function Onboarding({ onComplete, forceShow = false }: Onboarding
       setVisible(true);
     }
   }, [forceShow]);
-
-  useEffect(() => {
-    if (visible) {
-      fadeAnim.setValue(0);
-      slideAnim.setValue(50);
-      scaleAnim.setValue(0.9);
-
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 350,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 65,
-          friction: 10,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 65,
-          friction: 10,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible, currentStep, fadeAnim, slideAnim, scaleAnim]);
 
   const checkOnboardingStatus = async () => {
     const completed = await getStoreData(ONBOARDING_COMPLETE_KEY);
@@ -172,197 +539,136 @@ export default function Onboarding({ onComplete, forceShow = false }: Onboarding
     }
   };
 
-  const animateOut = (callback: () => void) => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: -50,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      slideAnim.setValue(50);
-      callback();
-    });
-  };
-
-  const handleNext = () => {
-    playHaptic('keyPress');
-    if (currentStep < STEPS.length - 1) {
-      animateOut(() => setCurrentStep(currentStep + 1));
-    } else {
-      handleComplete();
-    }
-  };
-
-  const handlePrevious = () => {
-    playHaptic('keyPress');
-    if (currentStep > 0) {
-      animateOut(() => setCurrentStep(currentStep - 1));
-    }
-  };
-
-  const handleSkip = () => {
-    playHaptic('keyPress');
-    handleComplete();
-  };
-
-  const handleComplete = async () => {
+  const handleComplete = useCallback(async () => {
     if (!forceShow) {
       await setStoreData(ONBOARDING_COMPLETE_KEY, 'true');
     }
     playHaptic('correct');
     setVisible(false);
     onComplete();
-  };
+  }, [forceShow, onComplete]);
 
-  const step = STEPS[currentStep];
+  const handleSkip = useCallback(() => {
+    playHaptic('keyPress');
+    handleComplete();
+  }, [handleComplete]);
 
-  const themedStyles = {
-    overlay: {
-      backgroundColor: theme.dark ? 'rgba(0,0,0,0.95)' : 'rgba(255,255,255,0.98)',
+  const handleNext = useCallback(() => {
+    playHaptic('keyPress');
+    if (currentStep < TOTAL_STEPS - 1) {
+      if (reduceMotion) {
+        setCurrentStep((s) => s + 1);
+        return;
+      }
+      contentOpacity.value = withTiming(0, { duration: 200 });
+      contentTranslateY.value = withTiming(-30, { duration: 200 }, () => {
+        runOnJS(setCurrentStep)(currentStep + 1);
+        contentTranslateY.value = 30;
+        contentOpacity.value = withTiming(1, { duration: 300 });
+        contentTranslateY.value = withSpring(0, { damping: 15, stiffness: 120 });
+      });
+    }
+  }, [currentStep, reduceMotion, contentOpacity, contentTranslateY]);
+
+  const handleModeSelect = useCallback(
+    (mode: 'daily' | 'unlimited') => {
+      onModeSelect?.(mode);
+      playHaptic('correct');
+      handleComplete();
     },
-    text: { color: theme.colors.text },
-    secondaryText: { color: theme.colors.secondary },
-    card: { backgroundColor: theme.colors.background2 },
+    [onModeSelect, handleComplete]
+  );
+
+  const contentAnimStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+    transform: [{ translateY: contentTranslateY.value }],
+  }));
+
+  const themedOverlay = {
+    backgroundColor: theme.dark ? 'rgba(0,0,0,0.95)' : 'rgba(255,255,255,0.98)',
   };
 
-  if (!visible || !step) return null;
+  if (!visible) return null;
+
+  const isLastStep = currentStep === TOTAL_STEPS - 1;
 
   return (
     <Modal transparent visible={visible} animationType="fade">
-      <View style={[styles.overlay, themedStyles.overlay]}>
-        <Animated.View
-          style={[
-            styles.content,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-            },
-          ]}
+      <View style={[styles.overlay, themedOverlay]}>
+        {/* Skip button - top right, not on last step */}
+        {!isLastStep && (
+          <TouchableOpacity
+            style={styles.skipButton}
+            onPress={handleSkip}
+            accessibilityLabel="Skip tutorial"
+            accessibilityRole="button"
+          >
+            <Text style={[styles.skipText, { color: theme.colors.secondary }]}>Skip</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Progress dots */}
+        <View
+          style={styles.dotsContainer}
+          accessibilityLabel={`Step ${currentStep + 1} of ${TOTAL_STEPS}`}
+          accessibilityRole="text"
         >
-          {/* Progress bar */}
-          <View style={styles.progressContainer}>
-            <View style={[styles.progressBackground, themedStyles.card]}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${((currentStep + 1) / STEPS.length) * 100}%` },
-                ]}
-              />
-            </View>
-            <Text style={[styles.progressText, themedStyles.secondaryText]}>
-              {currentStep + 1} / {STEPS.length}
-            </Text>
-          </View>
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                i === currentStep
+                  ? { backgroundColor: colors.correct, width: 24 }
+                  : { backgroundColor: theme.colors.background2 },
+              ]}
+            />
+          ))}
+        </View>
 
-          {/* Icon or Example tiles */}
-          {step.icon && !step.example && (
-            <View style={[styles.iconContainer, themedStyles.card]}>
-              <Ionicons name={step.icon} size={48} color={colors.correct} />
-            </View>
+        {/* Step content */}
+        <Animated.View style={[styles.content, contentAnimStyle]}>
+          {currentStep === 0 && <WelcomeStep active={currentStep === 0} />}
+          {currentStep === 1 && <HowItWorksStep active={currentStep === 1} />}
+          {currentStep === 2 && <VibeMeterStep active={currentStep === 2} />}
+          {currentStep === 3 && (
+            <ReadyStep active={currentStep === 3} onSelectMode={handleModeSelect} />
           )}
-
-          {step.example !== null && (
-            <View style={styles.exampleContainer}>
-              <View style={styles.tilesRow}>
-                {step.example.letters.map((letter, index) => {
-                  const currentExample = step.example;
-                  if (!currentExample) return null;
-                  const highlight = currentExample.highlights[index];
-                  const isHighlighted = index === currentExample.highlightIndex;
-
-                  return (
-                    <Animated.View
-                      key={index}
-                      style={[
-                        styles.tile,
-                        highlight === 'correct' && styles.tileCorrect,
-                        highlight === 'present' && styles.tilePresent,
-                        highlight === 'absent' && styles.tileAbsent,
-                        !highlight && [styles.tileBorder, themedStyles.card],
-                        isHighlighted && styles.tileHighlighted,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.tileLetter,
-                          highlight ? styles.tileLetterWhite : themedStyles.text,
-                        ]}
-                      >
-                        {letter}
-                      </Text>
-                    </Animated.View>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* Title */}
-          <Text style={[styles.title, themedStyles.text]}>{step.title}</Text>
-
-          {/* Description */}
-          <Text style={[styles.description, themedStyles.secondaryText]}>{step.description}</Text>
-
-          {/* Tip */}
-          {step.tip && (
-            <View style={[styles.tipContainer, themedStyles.card]}>
-              <Ionicons
-                name="bulb"
-                size={16}
-                color={colors.present}
-                style={styles.tipIcon}
-              />
-              <Text style={[styles.tipText, themedStyles.secondaryText]}>{step.tip}</Text>
-            </View>
-          )}
-
-          {/* Navigation Buttons */}
-          <View style={styles.buttonContainer}>
-            {currentStep > 0 && (
-              <TouchableOpacity
-                style={[styles.navButton, themedStyles.card]}
-                onPress={handlePrevious}
-                accessibilityLabel="Previous step"
-                accessibilityRole="button"
-              >
-                <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
-              </TouchableOpacity>
-            )}
-
-            <View style={styles.buttonSpacer} />
-
-            {currentStep < STEPS.length - 1 && (
-              <TouchableOpacity
-                style={styles.skipButton}
-                onPress={handleSkip}
-                accessibilityLabel="Skip tutorial"
-                accessibilityRole="button"
-              >
-                <Text style={[styles.skipButtonText, themedStyles.secondaryText]}>Skip</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={styles.nextButton}
-              onPress={handleNext}
-              accessibilityLabel={currentStep === STEPS.length - 1 ? 'Start playing' : 'Next step'}
-              accessibilityRole="button"
-            >
-              <Text style={styles.nextButtonText}>
-                {currentStep === STEPS.length - 1 ? "Let's Play!" : 'Next'}
-              </Text>
-              {currentStep < STEPS.length - 1 && (
-                <Ionicons name="chevron-forward" size={20} color="#fff" />
-              )}
-            </TouchableOpacity>
-          </View>
         </Animated.View>
+
+        {/* Step title for steps 1 and 2 */}
+        {(currentStep === 1 || currentStep === 2) && (
+          <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
+            {currentStep === 1 ? 'How it works' : 'Your Vibe Meter'}
+          </Text>
+        )}
+
+        {/* Next button - not on last step (Ready has its own buttons) */}
+        {!isLastStep && (
+          <View style={styles.bottomContainer}>
+            {currentStep === 0 ? (
+              <TouchableOpacity
+                style={styles.letsPlayButton}
+                onPress={handleNext}
+                accessibilityLabel="Let's Play - continue to tutorial"
+                accessibilityRole="button"
+              >
+                <Text style={styles.letsPlayText}>Let&apos;s Play</Text>
+                <Ionicons name="chevron-forward" size={20} color="#fff" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.nextButton}
+                onPress={handleNext}
+                accessibilityLabel="Next step"
+                accessibilityRole="button"
+              >
+                <Text style={styles.nextButtonText}>Next</Text>
+                <Ionicons name="chevron-forward" size={20} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
     </Modal>
   );
@@ -377,151 +683,81 @@ export async function resetOnboarding(): Promise<void> {
   }
 }
 
-const tileSize = Math.min((SCREEN_WIDTH - 120) / 5, 56);
+// Export for testing
+export { ONBOARDING_COMPLETE_KEY, TOTAL_STEPS, getVibeColor, AnimatedLetter, AnimatedTileCell };
+
+// --- Styles ---
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     padding: 24,
+  },
+  skipButton: {
+    position: 'absolute',
+    top: 60,
+    right: 24,
+    zIndex: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  skipText: {
+    fontSize: 15,
+    fontFamily: 'Montserrat_600SemiBold',
+  },
+  dotsContainer: {
+    position: 'absolute',
+    top: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   content: {
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
-  },
-  progressContainer: {
-    width: '100%',
-    marginBottom: 32,
-    alignItems: 'center',
-  },
-  progressBackground: {
-    width: '80%',
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.correct,
-    borderRadius: 3,
-  },
-  progressText: {
-    fontSize: 12,
-    fontFamily: 'Montserrat_600SemiBold',
-  },
-  iconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
+    flex: 1,
   },
-  title: {
-    fontSize: 26,
-    fontFamily: 'Montserrat_800ExtraBold',
-    textAlign: 'center',
+  stepTitle: {
+    fontSize: 14,
+    fontFamily: 'Montserrat_600SemiBold',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
     marginBottom: 16,
   },
-  exampleContainer: {
-    marginBottom: 24,
-  },
-  tilesRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  tile: {
-    width: tileSize,
-    height: tileSize,
-    justifyContent: 'center',
+  bottomContainer: {
+    paddingBottom: 48,
     alignItems: 'center',
-    marginHorizontal: 3,
-    borderRadius: 8,
   },
-  tileBorder: {
-    borderWidth: 2,
-    borderColor: 'rgba(128, 128, 128, 0.3)',
-  },
-  tileCorrect: {
+  letsPlayButton: {
     backgroundColor: colors.correct,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingLeft: 32,
+    paddingRight: 24,
+    borderRadius: 30,
+    gap: 8,
   },
-  tilePresent: {
-    backgroundColor: colors.present,
-  },
-  tileAbsent: {
-    backgroundColor: colors.absent,
-  },
-  tileHighlighted: {
-    borderWidth: 3,
-    borderColor: '#fff',
-    transform: [{ scale: 1.1 }],
-  },
-  tileLetter: {
-    fontSize: 22,
-    fontFamily: 'Montserrat_800ExtraBold',
-  },
-  tileLetterWhite: {
+  letsPlayText: {
     color: '#fff',
-  },
-  description: {
-    fontSize: 16,
-    fontFamily: 'Montserrat_500Medium',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 20,
-    paddingHorizontal: 8,
-  },
-  tipContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 24,
-    maxWidth: '95%',
-  },
-  tipIcon: {
-    marginRight: 8,
-  },
-  tipText: {
-    fontSize: 13,
-    fontFamily: 'Montserrat_500Medium',
-    flex: 1,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    paddingHorizontal: 16,
-  },
-  navButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonSpacer: {
-    flex: 1,
-  },
-  skipButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    marginRight: 8,
-  },
-  skipButtonText: {
-    fontSize: 15,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontSize: 18,
+    fontFamily: 'Montserrat_700Bold',
   },
   nextButton: {
     backgroundColor: colors.correct,
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingLeft: 24,
+    paddingLeft: 28,
     paddingRight: 20,
     borderRadius: 25,
     gap: 4,
@@ -530,5 +766,125 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontFamily: 'Montserrat_700Bold',
+  },
+});
+
+const stepStyles = StyleSheet.create({
+  // Welcome
+  welcomeContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  logoLetter: {
+    fontSize: 42,
+    fontFamily: 'Montserrat_800ExtraBold',
+    marginHorizontal: 2,
+  },
+  tagline: {
+    fontSize: 18,
+    fontFamily: 'Montserrat_600SemiBold',
+    fontStyle: 'italic',
+  },
+
+  // How It Works
+  howItWorksContainer: {
+    alignItems: 'center',
+    gap: 20,
+    paddingHorizontal: 8,
+  },
+  tileExampleBlock: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  tilesRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  tile: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  tileLetter: {
+    fontSize: 20,
+    fontFamily: 'Montserrat_800ExtraBold',
+  },
+  tileLabel: {
+    fontSize: 13,
+    fontFamily: 'Montserrat_600SemiBold',
+    textAlign: 'center',
+    paddingHorizontal: 8,
+  },
+
+  // Vibe Meter
+  vibeMeterContainer: {
+    alignItems: 'center',
+    gap: 24,
+  },
+  meterWrapper: {
+    alignItems: 'center',
+  },
+  meterScore: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  meterScoreText: {
+    fontSize: 32,
+    fontFamily: 'Montserrat_800ExtraBold',
+  },
+  meterLabel: {
+    fontSize: 11,
+    fontFamily: 'Montserrat_700Bold',
+    letterSpacing: 2,
+    marginTop: 4,
+  },
+  vibeMeterDescription: {
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
+    textAlign: 'center',
+  },
+
+  // Ready
+  readyContainer: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  readyIcon: {
+    marginBottom: 8,
+  },
+  readyTitle: {
+    fontSize: 32,
+    fontFamily: 'Montserrat_800ExtraBold',
+  },
+  readySubtitle: {
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
+    marginBottom: 24,
+  },
+  modeButtons: {
+    gap: 16,
+    width: '100%',
+    maxWidth: 300,
+  },
+  modeButton: {
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    gap: 4,
+  },
+  modeButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontFamily: 'Montserrat_700Bold',
+  },
+  modeButtonSub: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 13,
+    fontFamily: 'Montserrat_600SemiBold',
   },
 });

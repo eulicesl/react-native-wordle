@@ -2,7 +2,7 @@ import * as StoreReview from 'expo-store-review';
 
 import { getStoreData, setStoreData } from './localStorageFuncs';
 
-const LAST_PROMPT_KEY = 'wordle_last_rating_prompt';
+const LAST_PROMPT_KEY = 'wordvibe_last_rating_prompt';
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 export async function maybeRequestReview(
