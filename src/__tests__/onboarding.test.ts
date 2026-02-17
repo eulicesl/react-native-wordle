@@ -143,3 +143,36 @@ describe('Onboarding Rules of Hooks compliance', () => {
     expect(source).toContain('letters.map((letter, i) => (\n          <AnimatedTileCell');
   });
 });
+
+describe('Onboarding mode selection passthrough', () => {
+  const source = fs.readFileSync(
+    path.resolve(__dirname, '../components/Onboarding.tsx'),
+    'utf-8'
+  );
+
+  it('OnboardingProps includes onModeSelect optional callback', () => {
+    expect(source).toContain("onModeSelect?: (mode: 'daily' | 'unlimited') => void");
+  });
+
+  it('handleModeSelect calls onModeSelect with the selected mode', () => {
+    // Verify onModeSelect is called in handleModeSelect (not ignored)
+    expect(source).toContain('onModeSelect?.(mode)');
+  });
+
+  it('does not use underscore-prefixed _mode (mode is actually used)', () => {
+    // The parameter should be `mode`, not `_mode` since it's now consumed
+    expect(source).not.toMatch(/\(_mode:\s*'daily'/);
+  });
+
+  it('calls onModeSelect before handleComplete', () => {
+    // Verify ordering: onModeSelect is called before handleComplete
+    const modeSelectIndex = source.indexOf('onModeSelect?.(mode)');
+    const handleCompleteIndex = source.indexOf('handleComplete()', modeSelectIndex);
+    expect(modeSelectIndex).toBeGreaterThan(-1);
+    expect(handleCompleteIndex).toBeGreaterThan(modeSelectIndex);
+  });
+
+  it('destructures onModeSelect from props', () => {
+    expect(source).toContain('onModeSelect,');
+  });
+});

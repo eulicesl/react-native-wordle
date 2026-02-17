@@ -34,6 +34,7 @@ const TOTAL_STEPS = 4;
 
 interface OnboardingProps {
   onComplete: () => void;
+  onModeSelect?: (mode: 'daily' | 'unlimited') => void;
   forceShow?: boolean;
 }
 
@@ -512,7 +513,7 @@ function ReadyStep({
 
 // --- Main Onboarding ---
 
-export default function Onboarding({ onComplete, forceShow = false }: OnboardingProps) {
+export default function Onboarding({ onComplete, onModeSelect, forceShow = false }: OnboardingProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [visible, setVisible] = useState(forceShow);
   const { theme } = useAppSelector((state) => state.theme);
@@ -570,11 +571,12 @@ export default function Onboarding({ onComplete, forceShow = false }: Onboarding
   }, [currentStep, reduceMotion, contentOpacity, contentTranslateY]);
 
   const handleModeSelect = useCallback(
-    (_mode: 'daily' | 'unlimited') => {
+    (mode: 'daily' | 'unlimited') => {
+      onModeSelect?.(mode);
       playHaptic('correct');
       handleComplete();
     },
-    [handleComplete]
+    [onModeSelect, handleComplete]
   );
 
   const contentAnimStyle = useAnimatedStyle(() => ({

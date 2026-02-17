@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 
+import { useRoute, RouteProp } from '@react-navigation/native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ReAnimated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
@@ -63,10 +64,15 @@ import GameBoard from './components/gameBoard';
 
 type GameMode = 'daily' | 'unlimited' | 'speed';
 
+type GameRouteParams = {
+  Game: { initialMode?: 'daily' | 'unlimited' } | undefined;
+};
+
 const SPEED_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 const SPEED_HARD_DURATION_MS = 2 * 60 * 1000; // 2 minutes in hard mode
 
 export default function Game() {
+  const route = useRoute<RouteProp<GameRouteParams, 'Game'>>();
   const {
     guesses,
     usedKeys,
@@ -531,6 +537,16 @@ export default function Game() {
       dispatch(setSolution(getRandomWord(language)));
     }
   };
+
+  // Auto-start game if onboarding passed a mode selection via route params
+  const initialModeHandledRef = useRef(false);
+  useEffect(() => {
+    const initialMode = route.params?.initialMode;
+    if (initialMode && !gameStarted && !initialModeHandledRef.current) {
+      initialModeHandledRef.current = true;
+      startGame(initialMode);
+    }
+  }, [route.params?.initialMode, gameStarted]);
 
   const handleTimerExpire = useCallback(() => {
     if (gameEnded) return;
